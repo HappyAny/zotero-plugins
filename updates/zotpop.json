@@ -3,6 +3,16 @@
     "zotpop@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.58.4",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v2/zotpop-0.58.4.xpi",
+          "update_hash": "sha256:d08f8dc7e9b3757b20e7f3841decbcc45a5d0c4bd815efe4a31fdcb235a9952f",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "6.999"
+            }
+          }
+        },
+        {
           "version": "0.58.3",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v1/zotpop-0.58.3.xpi",
           "update_hash": "sha256:ea6357fdf3843dfde6329ecd14e841c11876a8d60ee696b31ab13520c0b592b5",

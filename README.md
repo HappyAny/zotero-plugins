@@ -2,29 +2,34 @@
 
 This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOONSUNG/zotero-plugins](https://github.com/JAEYOONSUNG/zotero-plugins).
 It adds Simplified Chinese to ZotPoP and Style Custom. It also keeps the English labels, assistant close fix, and independent column resizing.
-Download both plugins from the [Chinese UI release](https://github.com/HappyAny/zotero-plugins/releases/tag/chinese-ui-v1).
+Download both plugins from the [reviewed Chinese UI release](https://github.com/HappyAny/zotero-plugins/releases/tag/chinese-ui-v2).
 See the [Chinese UI validation record](docs/chinese-ui-validation.json) and the [earlier interaction fixes](docs/english-ui-fixes.md).
 The upstream MIT license remains in place.
 
 简体中文：ZotPoP 设置页的 Language 选择“简体中文”。Style Custom 设置中的“界面语言”选择“简体中文”。
-AI 的“输出语言”另有“简体中文”选项。更改界面语言后重启 Zotero，以更新主列表列名和工具栏提示。
+AI 的“输出语言”和阅读助手摘要面板均可选择“简体中文”。更改界面语言后重启 Zotero，以更新主列表列名和工具栏提示。
 论文题名、作者、笔记和标签保持原文。CSV 等导出的字段标识保持兼容。
 
+The review covers every original Chinese translation in both plugins, with corrections based on the source call sites.
+Reader terms use their context: 正文 for the paper body, 朗读文本 for the transcript, and 生成摘要 for the summary action.
+ZotPoP uses complete Chinese sentences for import reports, author selection, counts, and citation ranking.
 The Chinese catalog covers 2,965 Style Custom messages and all 810 ZotPoP string keys.
-Browser checks cover 144 settings rows and all 19 workbench views.
+Browser checks cover 144 settings rows, all 19 workbench views, and the reader assistant.
+An offline AI fixture confirms that the Chinese summary button sends a Simplified Chinese prompt with Chinese section headings.
 Native Zotero checks confirm Chinese loading and independent column dragging.
-One native check still reports a 14 px oscillation after repeated double-click fitting of the title column.
+The background native run passed the Chinese reader-label check and independent column dragging.
+Four other native reader checks failed on PDF rendering, zoom, or highlighting. The validation record lists them.
 
 Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–10. Style Custom: Zotero 9–10.
 
 | Plugin | What it does | Latest |
 |---|---|---|
-| **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.3.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v1/zotpop-0.58.3.xpi) |
-| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.55.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v1/style-custom-0.59.55.xpi) |
+| **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.4.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v2/zotpop-0.58.4.xpi) |
+| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.56.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v2/style-custom-0.59.56.xpi) |
 
 ![The Zotero item list with Style Custom's columns: impact factor, citation count with a bar, reading status, the journal in its own colour, rating, reading time, file kinds, and the corresponding institution with its tier and flag](docs/images/library-columns.png)
 
-The item list above is Zotero's own, with Style Custom's columns switched on. Every picture on this page is of a demonstration library of well-known public papers. Both plugins are available in English and Korean, and **English is the default**. Anyone who has already chosen a language keeps it. The language is set in each plugin (see **Language** below): English, Korean, or Follow Zotero, which uses Korean only when Zotero itself is in Korean.
+The item list above is Zotero's own, with Style Custom's columns switched on. Every picture on this page is of a demonstration library of well-known public papers. Both plugins offer English, Korean, and Simplified Chinese. **English is the default**. Each plugin keeps an existing language choice. Follow Zotero uses the application language when supported.
 
 ![The two buttons in the items toolbar: the ZotPoP magnifier and the Style Custom panel](docs/images/toolbar-icons.png)
 

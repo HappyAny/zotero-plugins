@@ -36,6 +36,28 @@ test('Chinese error, progress and translation language names cover real service 
  assert.equal(Translate.languageName('zh-CN','zh-CN'),'简体中文');
 });
 
+test('complete Chinese sentences preserve counts, source IDs, titles and import outcomes',()=>{
+ const t=I18N.make('zh');
+ assert.equal(t('personSub',2),'2 篇论文使用了这一姓名。请确认研究者；同一人的多种署名可以多选。');
+ assert.equal(t('searchStopped',3),'检索已停止，已获取 3 条结果。');
+ assert.equal(t('metricsLoadedOf',20,5),'作者档案共 20 篇论文，本次依据其中 5 篇计算。');
+ assert.equal(t('importDone',3,2,4,1,true),'已完成：添加 3 篇（其中 2 篇附有 PDF）；已收录 4 篇；失败 1 篇；已提前停止。');
+ assert.match(t('importFailures',2),/^2 篇添加失败，仍被勾选/);
+ assert.match(t('importFailuresPdf',2,3),/另有 3 篇已保存，但缺少 PDF/);
+ assert.match(t('relLowConf',3),/3 篇.*500.*施引关联/);
+ assert.equal(t('relProgress',2,8),'正在按库内关联排序，请求 2/8');
+ assert.match(t('relDone',2,8,4),/2\/8.*4 次 OpenAlex 请求/);
+ assert.match(t('metricsUnknown',2,5),/共 5 篇论文，其中 2 篇被引次数未知/);
+ assert.match(t('pinShown',3),/新增 3 篇.*标记/);
+ assert.match(t('historyRevalidated',2),/^2 条已保存结果不再符合检索条件/);
+ const original='身体与健康学位论文 {0} user=ABC 가';
+ assert.ok(t('watchAuthorTip',original).includes(original));
+ assert.ok(t('adding',1,2,original).includes(original));
+ for(const key of ['sigCitedByMine','sigCitesMine','relDoneCached','relPartial','relCoverage']){
+  assert.doesNotMatch(t(key,2,5,3),/of my papers|of yours|Ranked|by your library|not counted/);
+ }
+});
+
 test('the real search markup and controllers render Chinese without a network', async () => {
  const out=await buildPreview({locale:'zh'});
  assert.ok(out.rows>=10);

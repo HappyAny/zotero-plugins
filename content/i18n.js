@@ -1469,7 +1469,9 @@ var ZotPoPI18N = (function () {
 	const pluralZh = (n, one) => {
 		const units = {"论文":"篇论文","条目":"个条目","作者":"位作者","作者档案":"份作者档案",
 			"作者简介":"份作者档案","位作者":"位作者","位新作者":"位新作者",
-			"机构":"所机构","期刊":"种期刊","行":"行","结果":"条结果","条结果":"条结果"};
+			"机构":"所机构","期刊":"种期刊","行":"行","结果":"条结果","条结果":"条结果",
+			"其他":"个其他候选项","最新论文":"篇最新论文","缓存结果":"条缓存结果","来源":"个数据源",
+			"点赞":"次点赞","转发":"次转发","回复":"条回复","评论":"条评论"};
 		return groupDigits(n) + " " + (units[one] || one);
 	};
 	const chineseFactory = typeof ZotPoPChinese !== "undefined" ? ZotPoPChinese
@@ -1477,7 +1479,6 @@ var ZotPoPI18N = (function () {
 	const chinese = chineseFactory?.({groupDigits, plural: pluralZh, isOne});
 	if (chinese) {
 		STRINGS.zh = chinese.strings;
-		STRINGS.zh.authorProfilesFound = n => "找到 " + groupDigits(n) + " 份作者档案。请选择正确的作者以加载论文。";
 	}
 	STRINGS.en.prefLangZh = "Simplified Chinese";
 	STRINGS.ko.prefLangZh = "简体中文";

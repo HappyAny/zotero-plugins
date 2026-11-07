@@ -4,7 +4,10 @@ A research workbench for Zotero 9 and 10 (9.0–10.*; the manifest does not load
 
 The repository README has the illustrated tour: [../README.md](../README.md). This file is the reference for what the plugin records, where, and how it decides things.
 
-Version 0.59.55 adds Simplified Chinese to settings, the workbench, main-list badges, and messages.
+Version 0.59.56 corrects Chinese terminology across settings, the workbench, reader tools, and messages.
+The reader uses 正文 for the paper body and 朗读文本 for the read-aloud transcript.
+The summary panel now offers Simplified Chinese and sends a prompt with Chinese section headings.
+Context-specific translations separate reading from read-aloud actions.
 The interface and AI output language each have a Simplified Chinese option.
 The catalog preserves inserted names, paper titles, notes, and tags.
 See the [validation record](../docs/chinese-ui-validation.json).

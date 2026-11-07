@@ -348,7 +348,7 @@
   if(!lines.length)return '';
   return ('MY LIBRARY (the researcher\'s own notes and papers, not part of this paper):\n'+lines.join('\n')).slice(0,max);
  }
- const LANG_HEADINGS={Korean:['요약','핵심 결과','방법','한계','내 연구와의 관계','다음에 읽을 것'],English:['Summary','Key findings','Methods','Limitations','Relation to my library','What to read next']};
+ const LANG_HEADINGS={Korean:['요약','핵심 결과','방법','한계','내 연구와의 관계','다음에 읽을 것'],English:['Summary','Key findings','Methods','Limitations','Relation to my library','What to read next'],'Simplified Chinese':['摘要','关键结果','研究方法','局限性','与我的资料库的关系','后续阅读建议']};
  /* Korean prose with the research vocabulary as the paper writes it: "CRISPR 간섭", not a coined translation. */
  const termsRule=language=>/^english$/i.test(String(language))?'':` Keep technical terms, gene, protein, species, strain and chemical names, method names, units and abbreviations in English as the paper writes them; write the rest in ${language}.`;
  function summaryPrompt(language='Korean'){
@@ -498,7 +498,7 @@ Do not invent numbers, results or citations; every page you cite must be one of 
  const isEventStream=contentType=>/text\/event-stream/i.test(String(contentType||''));
  /* The prompts' own revision: a summary or an answer made under other instructions is a different result, so it
     is part of the summary cache key and of each answer's record. Changes whenever a prompt's text changes. */
- const PROMPT_REVISION=(()=>{const text=summaryPrompt('X')+'\u0001'+chatSystemPrompt('X')+'\u0001'+summaryPrompt('Korean');let h=0x811c9dc5;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h.toString(36);})();
+ const PROMPT_REVISION=(()=>{const text=summaryPrompt('X')+'\u0001'+chatSystemPrompt('X')+'\u0001'+summaryPrompt('Korean')+'\u0001'+summaryPrompt('Simplified Chinese');let h=0x811c9dc5;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h.toString(36);})();
 
  /* A summary or an answer as a child note: the same short Markdown the panel draws (headings, bullets, **bold**),
     every piece of text escaped, and a line naming the paper's question, the account or model and the date. */

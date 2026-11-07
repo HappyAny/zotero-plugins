@@ -42,3 +42,21 @@ test('settings accept a Chinese interface and Chinese AI output independently', 
  assert.equal(PaperTranslate.targetOf('EN-US',false,'','zh-CN').code,'EN-US');
  assert.equal(PaperTranslate.targetOf('auto',false,'de-DE','zh-CN').code,'DE');
 });
+
+test('Chinese terms follow their reader or library context without changing paper text',()=>{
+ I18N.load(Strings);I18N.use('zh-CN');
+ try{
+  assert.equal(I18N.t('본문','reader-assist'),'正文');
+  assert.equal(I18N.t('문장','reader-assist'),'朗读文本');
+  assert.equal(I18N.t('읽기'),'阅读');
+  assert.equal(I18N.t('읽기','reader-assist'),'朗读');
+  assert.equal(I18N.t('이어 읽기'),'继续阅读');
+  assert.equal(I18N.t('이어 읽기','reader-assist'),'继续朗读');
+  assert.equal(I18N.t('만들기','reader-assist'),'生成音频');
+  assert.equal(I18N.t('English','reader-assist'),'英语');
+  assert.equal(I18N.t('身体与健康：成绩单与研究原文'),'身体与健康：成绩单与研究原文');
+  for(const values of Object.values(Strings.contexts['zh-CN']))for(const[key,value]of Object.entries(values)){
+   assert.deepEqual(value.match(/\{\d+\}/g)||[],key.match(/\{\d+\}/g)||[]);
+  }
+ }finally{I18N.use('en-US');}
+});

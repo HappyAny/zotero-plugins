@@ -35,7 +35,8 @@ function memoryIO(){
   exists:async p=>files.has(p)||p==='/usr/bin/say'&&false,stat:async p=>files.has(p)?{size:files.get(p).length,lastModified:1}:{size:1000,lastModified:5},
   readUTF8:async p=>files.get(p),writeUTF8:async(p,text)=>{files.set(p,text);},makeDirectory:async()=>{},remove:async p=>{files.delete(p);}};
 }
-function fixture({prefs={},settings={},structured=paper(),withSpeech=true,voices=null,structCache=true,io=null,runtimeState=null,pdft=null,t4zPrefs={},bridge=false,holdTimers=false}={}){
+function fixture({prefs={},settings={},structured=paper(),withSpeech=true,voices=null,structCache=true,io=null,runtimeState=null,pdft=null,t4zPrefs={},bridge=false,holdTimers=false,locale='en-US'}={}){
+ I18N.load(Strings);I18N.use(locale);
  const {document:doc,window:win}=parseHTML('<html><head></head><body><div id="split-view"></div></body></html>');
  const define=(name,value)=>Object.defineProperty(win,name,{value,configurable:true,writable:true});
  const held=new Map();let heldID=0;
@@ -85,7 +86,7 @@ function fixture({prefs={},settings={},structured=paper(),withSpeech=true,voices
  const remarks=new Map(),memoCalls=[],notes=[],readings=[];
  const copied=[];
  const Z={Items:{get:id=>id===11?attachment:id===10?parent:null},HTTP:http,PDFTranslate:pdft?{api:pdft}:undefined,Prefs:{get:(k)=>k.startsWith('extensions.zotero.ZoteroPDFTranslate.')?t4zPrefs[k.slice(37)]:undefined},Utilities:{Internal:{copyTextToClipboard:t=>copied.push(t)}},DataDirectory:{dir:'/data'},logError:e=>{(Z.errors||(Z.errors=[])).push(e);},Reader:{_readers:[reader]},getMainWindow:()=>win,PDFWorker:{async getFullText(){return {text:'Abstract\n\nPlain text. Second sentence.'};}},isMac:true};
- const runtime={cache:runtimeState||{},dirty:false,rootURI:'file:///plugin/',io:fileIO,paths:{join:(...p)=>p.join('/'),homeDir:bridge?'/home':undefined},i18n:{isKorean:()=>false},t:I18N.t,
+ const runtime={cache:runtimeState||{},dirty:false,rootURI:'file:///plugin/',io:fileIO,paths:{join:(...p)=>p.join('/'),homeDir:bridge?'/home':undefined},i18n:I18N,t:I18N.t,
   pref:(k,d)=>allPrefs[k]??d,getSetting:k=>allSettings[k],setSetting:async(k,v)=>{allSettings[k]=v;allPrefs[k]=v;},scheduleFlush(){},
   entry:item=>({remark:remarks.get(item.id)||''}),addReading:async(item,seconds,location,shown)=>{readings.push({item:item.id,seconds,location,shown});},
   libraryService:{async setRemark(id,text,{base}){memoCalls.push({id,text,base});if(runtime.staleMemo)return {stale:true};remarks.set(id,text);return {};},async createNoteHTML(id,html){notes.push({id,html});return '1';}}};
@@ -179,6 +180,44 @@ test('the summary button sends the prepared text, shows the result with page lin
  const saved=JSON.parse(f.fileIO.files.get(f.folder+'1-ATT.state.json'));
  assert.equal(Object.keys(saved.summary).length,1);assert.match(Object.keys(saved.summary)[0],/^m1\|English\|[\w]+\|[\w]+$/,'model, language, server and prompt revision');
  f.stop();
+});
+
+test('the Chinese reader renders paper terms and sends a selected Chinese summary language to AI',async()=>{
+ const f=fixture({locale:'zh-CN',settings:{aiLanguage:'English'}});
+ try{
+  await f.open();
+  assert.ok(f.byText('正文'),'the read-aloud body is the paper body');
+  assert.ok(f.panel().querySelector('[data-tab="listen"]').textContent.includes('朗读文本'));
+  assert.ok(f.panel().querySelector('input[type="range"]').getAttribute('aria-label').includes('语速'));
+  assert.doesNotMatch(f.panel().textContent,/身体|成绩单/);
+  const zh=f.panel().querySelector('[data-lang="Simplified Chinese"]');
+  assert.ok(zh);assert.equal(zh.textContent,'简体中文');
+  assert.equal(zh.getAttribute('aria-pressed'),'false');
+  f.press(zh);await settle();
+  assert.equal(f.allSettings.aiLanguage,'Simplified Chinese');
+  assert.equal(zh.getAttribute('aria-pressed'),'true');
+  assert.equal(f.requests.filter(r=>r.body).length,0,'choosing a language sends nothing');
+  f.aiReplies.push('## 摘要\n保留原文术语：身体。\n## 关键结果\n- 80% 活性（Results, p. 4）');
+  f.press(f.byText('生成摘要'));await settle(30);
+  const call=f.requests.find(r=>r.body);
+  assert.ok(call);assert.match(call.body.messages[0].content,/Write in Simplified Chinese/);
+  assert.match(call.body.messages[0].content,/## 摘要/);
+  assert.match(call.body.messages[0].content,/## 研究方法/);
+  assert.match(call.body.messages[1].content,/Thermostable polymerase evolution/);
+  assert.match(f.panel().querySelector('.sc-ra-summary').textContent,/保留原文术语：身体/,'AI content is preserved');
+  f.press(f.byText('关闭面板'));await settle();assert.equal(f.panel().hidden,true);
+ }finally{f.stop();I18N.use('en-US');}
+});
+
+test('the Chinese reader selects Chinese when AI language follows the interface',async()=>{
+ const f=fixture({locale:'zh-CN',settings:{aiLanguage:'auto'}});
+ try{
+  await f.open();
+  const zh=f.panel().querySelector('[data-lang="Simplified Chinese"]');
+  assert.equal(zh.getAttribute('aria-pressed'),'true');
+  f.aiReplies.push('## 摘要\n中文摘要。');f.press(f.byText('生成摘要'));await settle(30);
+  assert.match(f.requests.find(r=>r.body).body.messages[0].content,/Write in Simplified Chinese/);
+ }finally{f.stop();I18N.use('en-US');}
 });
 
 test('a summary failure is a sentence, not a stack; the button comes back',async()=>{

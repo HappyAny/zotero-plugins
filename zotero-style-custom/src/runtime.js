@@ -113,7 +113,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     return Array.isArray(found) ? found : [];
   }
   // One place to ask for a string, so nothing has to reach for the module.
-  t(value) { return this.i18n ? this.i18n.t(value) : value; }
+  t(value, context = '') { return this.i18n ? this.i18n.t(value, context) : value; }
   // Every message a menu action reports, in the chosen language. It goes to
   // the panel's status line (the panel opens if it was closed), never to a
   // modal Zotero.alert: the reader is working in Zotero and a pop-up stops

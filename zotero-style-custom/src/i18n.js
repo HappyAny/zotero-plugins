@@ -175,9 +175,11 @@
     misses.add(text);
     return undefined;
   }
-  function t(text) {
+  function t(text, context = '') {
     if (current === 'ko-KR') return text;
     if (typeof text !== 'string' || !text) return text;
+    const contextual = current === 'zh-CN' ? CATALOG?.contexts?.['zh-CN']?.[context]?.[text] : undefined;
+    if (contextual !== undefined) return contextual;
     const found = TABLE[text];
     if (found !== undefined) return found;
     if (!/[가-힣]/.test(text)) return text;

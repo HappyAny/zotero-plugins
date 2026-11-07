@@ -100,6 +100,15 @@ test('the summary prompt asks for a researcher\'s parts in the output language, 
  assert.match(en,/Leave this section out entirely when there is no MY LIBRARY block/);
 });
 
+test('a Chinese summary uses Chinese headings and keeps the evidence rules',()=>{
+ const prompt=PC.summaryPrompt('Simplified Chinese');
+ assert.match(prompt,/Write in Simplified Chinese/);
+ assert.deepEqual([...prompt.matchAll(/^## (.+)$/gm)].map(m=>m[1]),['摘要','关键结果','研究方法','局限性','与我的资料库的关系','后续阅读建议']);
+ assert.match(prompt,/Do not invent numbers/);
+ assert.match(prompt,/every page you cite must be one of the excerpt markers/);
+ assert.notEqual(PC.summaryPrompt('English'),prompt);
+});
+
 test('the spare summary budget goes to more results paragraphs, numbers first, each cited with its own page',()=>{
  const input=PC.summaryInput(paper());
  assert.match(input.text,/\[Results, p\. 5\] Fidelity fell slightly, with an error rate of 2\.1e-5/,'the second results paragraph, on its own page');

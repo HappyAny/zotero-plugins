@@ -262,7 +262,7 @@
 
  function create({Zotero:Z,runtime}){
   const RA=need('CustomStyleReadAloud','./read-aloud.js'),PC=need('CustomStylePaperChat','./paper-chat.js'),TR=need('CustomStylePaperTranslate','./paper-translate.js');
-  const t=value=>typeof runtime.t==='function'?runtime.t(value):value;
+  const t=value=>typeof runtime.t==='function'?runtime.t(value,'reader-assist'):value;
   const T=(key,...values)=>t(key).replace(/\{(\d+)\}/g,(m,i)=>values[Number(i)]);
   const log=error=>{try{Z.logError?.(error);}catch(_){}};
   // A message this plugin wrote for its reader is shown as written; only transport errors go through the generic wording (whose 429 means a daily quota).
@@ -666,7 +666,7 @@
    ui.summaryAgain=button(session,ui.summaryActions,{title:'다시 만들기',iconName:'refresh',cls:'sc-ra-icon',mark:'ai',onClick:()=>runSummary(session,{force:true})});
    // The language the summary is written in, switchable here; each language keeps its own summary.
    const langs=el(doc,'div',{'class':'sc-ra-seg sc-ra-lang',role:'group','aria-label':t('출력 언어')},card);ui.summaryLang={};
-   for(const[id,label]of [['English','English'],['Korean','한국어']]){
+   for(const[id,label]of [['English','English'],['Simplified Chinese','简体中文'],['Korean','한국어']]){
     const b=el(doc,'button',{type:'button','class':'sc-ra-seg-btn','data-writes':'cache','data-lang':id,'aria-pressed':'false',title:t('AI 요약·대화를 이 언어로 씁니다')},langs);b.textContent=t(label);ui.summaryLang[id]=b;
     b.addEventListener('click',event=>{event.stopPropagation();setSummaryLanguage(session,id);});
    }

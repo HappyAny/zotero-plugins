@@ -622,6 +622,20 @@
 
       handle.open();
       await sleep(250);
+      if (runtime.i18n?.locale?.() === 'zh-CN') await check('localization: Chinese reader terms and summary choice', async () => {
+        const panel = handle.panel();
+        const body = panel.querySelector('[data-filter="body"]')?.textContent.trim();
+        const transcript = panel.querySelector('[data-tab="listen"]')?.textContent.trim();
+        const languages = [...panel.querySelectorAll('[data-lang]')].map(node => ({id: node.getAttribute('data-lang'), label: node.textContent.trim(), selected: node.getAttribute('aria-pressed') === 'true'}));
+        const chinese = languages.find(row => row.id === 'Simplified Chinese');
+        const expected = handle.ai?.language?.();
+        const problems = [];
+        if (body !== '正文') problems.push('the body label is ' + body);
+        if (transcript !== '朗读文本') problems.push('the transcript label is ' + transcript);
+        if (!chinese || chinese.label !== '简体中文') problems.push('the Chinese summary choice is missing');
+        if (expected === 'Simplified Chinese' && !chinese?.selected) problems.push('the saved Chinese language is not selected');
+        return {pass: !problems.length, data: {body, transcript, languages, outputLanguage: expected}, detail: problems.length ? problems.join(' ; ') : '正文 · 朗读文本 · 简体中文 summary choice, output ' + expected};
+      });
       await check('re-fit: page 1 fits the viewer narrowed by the panel', async () => {
         const mode = before.scaleValue;
         if (!/^(?:page-width|page-fit|auto)$/.test(String(mode))) return {pass: true, detail: `zoom is fixed at ${mode} (${before.scale}); a fixed zoom is not re-fitted`};
