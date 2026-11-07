@@ -1584,7 +1584,7 @@ test('Translate for Zotero with its DeepL Free key: named, its Korean target fol
  f.press(f.panel().querySelector('[data-tab="translate"]'));await settle(15);
  assert.match(f.panel().textContent,/Translator: Translate for Zotero \(DeepL Free\)/);
  assert.match(f.panel().textContent,/Language follows Translate for Zotero/);
- assert.equal(f.panel().querySelector('.sc-ra-tr .sc-ra-pill-text').textContent,'한국어','an English panel, but Translate for Zotero says Korean');
+ assert.equal(f.panel().querySelector('.sc-ra-tr .sc-ra-pill-text').textContent,'Korean','an English panel, but Translate for Zotero says Korean');
  f.press(f.byText('Translate all'));await settle(40);
  assert.equal(log.length,3);assert.deepEqual([log[0].langto,log[0].service,log[0].pluginID],['ko-KR','deeplfree','style-custom@sungjaeyoon.dev']);
  assert.match(f.panel().querySelector('.sc-ra-row-card').textContent,/번역:DNA polymerases/);
@@ -1667,10 +1667,10 @@ test('the reader\'s language menu offers Automatic, naming what it resolves to, 
  const f=fixture({prefs:{translateTarget:'DE'},pdft:t4z(log),t4zPrefs:T4Z_PREFS});await f.open();
  f.press(f.panel().querySelector('[data-tab="translate"]'));await settle(15);
  const items=[...f.panel().querySelectorAll('.sc-ra-tr .sc-ra-menu-item')];
- assert.equal(items[0].textContent,'Automatic (한국어)');assert.equal(items[0].getAttribute('aria-checked'),'false');
+ assert.equal(items[0].textContent,'Automatic (Korean)');assert.equal(items[0].getAttribute('aria-checked'),'false');
  f.press(items[0]);await settle(10);
  assert.equal(f.allSettings.translateTarget,'auto');
- assert.equal(f.panel().querySelector('.sc-ra-tr .sc-ra-pill-text').textContent,'한국어');
+ assert.equal(f.panel().querySelector('.sc-ra-tr .sc-ra-pill-text').textContent,'Korean');
  assert.equal(f.panel().querySelector('.sc-ra-tr .sc-ra-menu-item').getAttribute('aria-checked'),'true');
  f.stop();
 });

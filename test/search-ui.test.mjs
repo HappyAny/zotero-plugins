@@ -394,11 +394,11 @@ test("the window is in English unless told otherwise; Follow Zotero and 한국�
     const s = I18N.STRINGS[locale];
     // Each choice is named in its own language, whatever the window speaks, and the label says both.
     assert.equal(s.prefLangEn, "English");
-    assert.equal(s.prefLangKo, "한국어");
+    assert.equal(s.prefLangKo, locale === "en" ? "Korean" : "한국어");
     assert.match(s.prefLangAuto, /Follow Zotero/);
-    assert.match(s.prefLangAuto, /Zotero 언어 따르기/);
+    if (locale === "ko") assert.match(s.prefLangAuto, /Zotero 언어 따르기/);
     assert.match(s.prefLanguage, /Language/);
-    assert.match(s.prefLanguage, /언어/);
+    if (locale === "ko") assert.match(s.prefLanguage, /언어/);
   }
   // Nothing set, empty, or unknown is English; only auto asks Zotero, and only a Korean Zotero gives Korean.
   assert.equal(I18N.resolveLocale(undefined, "ko-KR"), "en");
@@ -415,10 +415,10 @@ test("the window is in English unless told otherwise; Follow Zotero and 한국�
 test("the search window's View menu has a Language group that saves the choice and reopens the window", async () => {
   const ui = uiHarness();
   let items = Array.from(ui.viewMenuItems());
-  const at = items.findIndex(item => item.heading === "Language / 언어");
+  const at = items.findIndex(item => item.heading === "prefLanguage");
   assert.ok(at > 0, "a captioned group in the View menu");
   const group = items.slice(at + 1);
-  assert.deepEqual(Array.from(group, item => item.label), ["English", "한국어", "Follow Zotero / Zotero 언어 따르기"]);
+  assert.deepEqual(Array.from(group, item => item.label), ["prefLangEn", "prefLangKo", "prefLangAuto"]);
   assert.ok(group.every(item => item.radio && !item.disabled), "radio choices, none dimmed");
   assert.deepEqual(Array.from(group, item => item.check), [true, false, false], "English is chosen when nothing was");
   // Choosing one writes the setting and reopens the window in it.
@@ -442,7 +442,7 @@ test("the search window's View menu has a Language group that saves the choice a
   ui.state.searching = false;
   ui.openToolbarMenu(ui.get("view-btn"), ui.viewMenuItems(), "view");
   const drawn = Array.from(ui.get("tbmenu").children);
-  assert.ok(drawn.some(node => node.className === "selhead" && node.textContent === "Language / 언어"));
+  assert.ok(drawn.some(node => node.className === "selhead" && node.textContent === "prefLanguage"));
 });
 
 test("a paper already on the shelf without a DOI is still recognised", async () => {

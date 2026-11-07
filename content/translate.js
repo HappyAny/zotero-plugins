@@ -37,6 +37,11 @@ var ZotPoPTranslate = (function () {
 	const CACHE_MAX = 300, TIMEOUT = 90000;
 
 	const byCode = code => LANGUAGES.find(l => l.code === code) || null;
+	function languageName(code, locale = "en") {
+		const language = byCode(code);
+		if (!language) return String(code || "");
+		return /^ko(?:[-_]|$)/i.test(locale) ? language.name : language.ai;
+	}
 	/* "ko-KR", "ko", "zh-Hans", "ZH_tw" -> our code, or null. */
 	function normalizeLang(value) {
 		let v = String(value == null ? "" : value).trim().toLowerCase().replace(/_/g, "-");
@@ -158,7 +163,7 @@ var ZotPoPTranslate = (function () {
 		return { translate, translateCached, cached, available, defaultLanguage, clear: () => cache.clear() };
 	}
 
-	return { create, LANGUAGES, normalizeLang, serviceLabel, readReply, byCode };
+	return { create, LANGUAGES, normalizeLang, serviceLabel, readReply, byCode, languageName };
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = ZotPoPTranslate;

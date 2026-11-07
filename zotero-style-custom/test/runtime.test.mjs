@@ -2727,7 +2727,7 @@ test('when the columns add up to more than the list, the list rolls sideways and
   state.rollCleanup?.();
 });
 
-test('dragging a column edge changes the column to its left only; the columns after it follow', async () => {
+test('native column resize receives the drag and stores widths without plugin interception', async () => {
   const {parseHTML} = await import('linkedom');
   const {document, window} = parseHTML(`<html><body><div id="tbl" class="virtualized-table">
     <div class="virtualized-table-header"><div class="cell title"><span>Title</span></div><div class="cell venue"><div class="resizer venue"><div></div></div><span>Venue</span></div><div class="cell journal"><div class="resizer journal"><div></div></div><span>Journal</span></div></div>
@@ -2747,24 +2747,22 @@ test('dragging a column edge changes the column to its left only; the columns af
   Object.defineProperty(document.querySelector('.virtualized-table-body'), 'clientWidth', {value: 616, configurable: true});
   const state = {listeners: []};
   plugin.attachColumnDrag(window, state);
-  // Press on the edge at the right of the venue column (the journal column's resizer) and pull it 60 px left.
   const handle = document.querySelector('.resizer.journal div');
-  // linkedom has no MouseEvent: a plain event carrying the two fields the handler reads.
+  const received = [];
+  for (const type of ['mousedown', 'mousemove', 'mouseup']) document.addEventListener(type, event => received.push([type, event.defaultPrevented]));
   const mouse = (type, clientX, target = document) => { const event = new window.Event(type, {bubbles: true, cancelable: true}); event.clientX = clientX; event.button = 0; target.dispatchEvent(event); return event; };
-  const down = mouse('mousedown', 500, handle);
-  assert.ok(down.defaultPrevented, 'taken over before Zotero sees it');
-  assert.deepEqual(resized[0], [{title: 300, venue: 200, journal: 100}, false], 'every column set to what it shows, as Zotero does');
-  assert.ok(document.getElementById('tbl').classList.contains('resizing'));
-  mouse('mousemove', 470); mouse('mousemove', 440);
-  assert.deepEqual(resized.at(-1), [{venue: 140}, false], 'the venue alone follows the pointer');
-  const up = mouse('mouseup', 440);
-  assert.ok(up.defaultPrevented, 'swallowed, or the header would sort');
-  assert.deepEqual(resized.at(-1), [{title: 300, venue: 140, journal: 100}, true], 'stored with every flexible column');
-  assert.ok(!document.getElementById('tbl').classList.contains('resizing'));
+  assert.equal(mouse('mousedown', 500, handle).defaultPrevented, false);
+  assert.deepEqual(resized, [], 'the plugin does not resize columns at drag start');
+  assert.equal(mouse('mousemove', 440).defaultPrevented, false);
+  // The native table commits these widths. The plugin only observes the result.
+  tree._columns.onResize({title: 300, venue: 140, journal: 160}, true);
+  assert.equal(mouse('mouseup', 440).defaultPrevented, false);
+  await Promise.resolve();
+  assert.deepEqual(received, [['mousedown', false], ['mousemove', false], ['mouseup', false]]);
+  assert.deepEqual(resized, [[{title: 300, venue: 140, journal: 160}, true]], 'native preferences are not overwritten');
+  assert.equal(state.columnDrag.native, true);
   assert.equal(state.columnDrag.last, 'venue: 200 → 140');
-  // Below its minimum it stops.
-  mouse('mousedown', 440, handle); mouse('mousemove', 0); mouse('mouseup', 0);
-  assert.equal(resized.at(-1)[0].venue, 36);
+
 });
 
 test('Zotero 10 column rules (calc with the padding kept in) are read as the widths on screen', () => {

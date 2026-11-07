@@ -7,6 +7,16 @@ import I18N from "../content/i18n.js";
 const make = (zotero, prefs = {}, extra = {}) => T.create({ zotero, pref: k => prefs[k], uiLocale: "ko", pluginID: "zotpop@sungjaeyoon.dev", ...extra });
 const withPDF = translate => ({ PDFTranslate: { api: { translate } } });
 
+test("translation language names follow the interface without changing the target code", () => {
+	for (const language of T.LANGUAGES) {
+		assert.equal(T.languageName(language.code, "en"), language.ai);
+		assert.equal(T.languageName(language.code, "ko"), language.name);
+		assert.doesNotMatch(T.languageName(language.code, "en-US"), /[가-힣]/);
+	}
+	assert.equal(T.languageName("ko", "en"), "Korean");
+	assert.equal(T.byCode("ko").pdft, "ko-KR");
+});
+
 test("Translate for Zotero is called as translate(text, { langto, pluginID }) and its object answer is read", async () => {
 	const calls = [];
 	const tr = make(withPDF(async function (text, options) { calls.push({ text, options, self: this }); return { status: "success", result: "  안녕  ", service: "deeplfree" }; }));

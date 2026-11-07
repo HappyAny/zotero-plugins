@@ -5180,7 +5180,7 @@
       const at=lastRead?(runtime.localStamp?runtime.localStamp(lastRead)?.getTime():Date.parse(lastRead)):NaN;
       const days=Number.isFinite(at)?Math.floor((Date.now()-at)/864e5):null;
       const whenLabel=days==null?'':days?T(`${days}일 전`):T('오늘');
-      const parts=[seconds>0&&runtime.formatReadTime?runtime.formatReadTime(seconds,{compact:true}):'',p.total?`${p.visited}/${p.total}쪽`:'',whenLabel].filter(Boolean);
+      const parts=[seconds>0&&runtime.formatReadTime?runtime.formatReadTime(seconds,{compact:true}):'',p.total?T(F('{0}/{1}쪽',p.visited,p.total)):'',whenLabel].filter(Boolean);
       node('span',parts.join(' · '),text,{class:'sc-attachment-reading'});
      } else {
       node('span',T('읽기 기록 없음'),text,{class:'sc-attachment-reading sc-muted'});
@@ -6456,7 +6456,7 @@
     const summary=res?.summary||{},status=summary.status||'unknown',failed=Array.isArray(summary.failed)?summary.failed:[];
     const checked=dayOf(summary.checked),line=node('div',null,issuesBox,{class:'sc-around-statusline'});
     let said;
-    if(ISSUE_STATUS[status])said=ISSUE_STATUS[status];
+    if(ISSUE_STATUS[status])said=T(ISSUE_STATUS[status]);
     else if(status==='notice')said=T('다른 논문에 대한 정정·철회 공지입니다');
     else if(status==='clean')said=T('알려진 정정·철회 없음')+(checked?' · '+T(`${checked} 확인`):'');
     else said=T('확인 못함')+(failed.length?' ('+T(`${failed.join(', ')} 응답 없음`)+')':summary.reason==='no-doi'?' ('+T('DOI 없음')+')':'');
@@ -9503,8 +9503,8 @@
      with no headings, and nothing said which control belonged to which. */
   function drawAppearance(){
    const part=(label,note)=>{const box=node('section',null,body,{class:'sc-settings-part'});sectionHead(label,null,box);if(note)node('p',note,box,{class:'sc-muted sc-settings-note'});return box;};
-   /* The language of the panel. Each choice is named in its own language, so someone who cannot read the current one
-      can still find theirs, and the heading says both. It writes a setting, so the self-check never presses it. */
+   /* Language choices use the current interface language. This control writes
+      a setting, so the self-check never presses it. */
    {
     const lang=part('Language / 언어','기본값은 영어입니다. 패널은 바로 바뀌고, 문헌 목록의 열 이름과 오른쪽 클릭 메뉴는 Zotero를 다시 시작하면 바뀝니다.');
     const chosen=String(setting('language','en-US')||'en-US');
@@ -9517,7 +9517,6 @@
       /* Say it again in the new language: the chrome in place, then the tab. */
       retranslate();await render();message(value==='ko-KR'?'언어를 한국어로 바꿨습니다.':value==='auto'?'Zotero의 언어를 따릅니다.':'Language set to English.');
      },group,{'aria-pressed':String(chosen===value),'data-value':value,'data-writes':'setting'});
-     choice.textContent=name;CHROME.delete(choice);
     }
    }
    const menusOn=enabled('menuVisibility');

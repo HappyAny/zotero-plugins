@@ -47,6 +47,14 @@ const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.mi
 
 const css=fs.readFileSync(new URL('../content/reader-assist.css',import.meta.url),'utf8');
 const all=rules(READER_RESET+'\n'+css);
+
+test('closing the assistant hides its root through the actual CSS cascade',()=>{
+ const {document}=parseHTML('<aside class="sc-ra" hidden><div class="sc-ra-main">Paper assistant</div></aside>');
+ const panel=document.querySelector('.sc-ra');
+ assert.match(winner(panel,'display',all).value,/^none\b/,'the author flex rule must not override hidden');
+ panel.removeAttribute('hidden');
+ assert.equal(winner(panel,'display',all).value,'flex','the same panel can reopen');
+});
 const panelVars=Object.fromEntries(Object.entries(rules(css).find(r=>r.sel==='.sc-ra').decls).filter(([k])=>k.startsWith('--')));
 const {document}=parseHTML(`<aside class="sc-ra"><div class="sc-ra-main"><section class="sc-ra-card">
  <button class="sc-ra-btn sc-ra-play" id="play">x</button><button class="sc-ra-btn sc-ra-primary" id="primary">x</button>

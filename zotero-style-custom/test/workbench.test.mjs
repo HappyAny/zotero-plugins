@@ -5028,7 +5028,7 @@ test('저자 추적 order: 관심 저자 first, then 전체 관심 저자 관계
 });
 
 test('segmented controls centre the label and the count on one axis, pressed or not',()=>{
-  const css = fs.readFileSync(new URL('../content/workbench.css', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../content/workbench.css', import.meta.url), 'utf8').replace(/\r\n/g,'\n');
   const rule = css.match(/#style-custom-workbench \.sc-segmented button,\n#style-custom-workbench \.sc-annot-order button,\n#style-custom-workbench \.sc-chip-button \{([^}]*)\}/);
   assert.ok(rule, 'one rule for every segmented family');
   assert.match(rule[1], /display: inline-flex/);assert.match(rule[1], /align-items: center/);
@@ -8499,7 +8499,7 @@ test('draft generations (R22-3): a rev is never reused after a draft is deleted,
  f.bench.destroy();g.bench.destroy();
 });
 
-test('모양 tab: a Language / 언어 control names each language in its own language, writes only through the setting, and re-says the panel at once',async()=>{
+test('language choices follow the interface and changing a choice updates the panel',async()=>{
  const i18n=require('../src/i18n.js');
  try{
   const f=fixture({items:{},readerSettings:{}},undefined,{locale:'en-US'});
@@ -8509,14 +8509,14 @@ test('모양 tab: a Language / 언어 control names each language in its own lan
   await f.bench.show('appearance');await f.bench.load();
   const group=f.bench.panel.querySelector('.sc-language');
   assert.ok(group,'the control is in the 모양 tab');
-  assert.equal(group.getAttribute('aria-label'),'Language / 언어','the label says both languages');
+  assert.equal(group.getAttribute('aria-label'),'Language','the English control has an English label');
   const buttons=[...group.querySelectorAll('button')];
-  assert.deepEqual(buttons.map(b=>b.textContent),['English','한국어','Zotero 언어 따르기 / Follow Zotero'],'each choice in its own language, whatever the panel speaks');
+  assert.deepEqual(buttons.map(b=>b.textContent),['English','Korean','Follow Zotero'],'language choices follow the interface language');
   assert.deepEqual(buttons.map(b=>b.getAttribute('aria-pressed')),['true','false','false'],'English is chosen by default');
   assert.ok(buttons.every(b=>b.getAttribute('data-writes')==='setting'),'a write: the self-check never presses it');
   assert.ok(!buttons.some(b=>b.hasAttribute('data-safe')));
   assert.ok(f.bench.panel.querySelector('nav button[data-tab=explore]').textContent==='Library','English before the change');
-  await f.click('한국어');
+  await f.click('Korean');
   assert.deepEqual(f.calls.filter(c=>c[0]==='setSetting'),[['setSetting','language','ko-KR']]);
   assert.equal(i18n.locale(),'ko-KR');
   assert.equal(f.bench.panel.querySelector('nav button[data-tab=explore]').textContent,'보유 문헌','the sidebar is re-said without rebuilding the panel');
@@ -8794,9 +8794,8 @@ function hangulIn(root,{ignore=()=>false}={}){
  };
  walk(root);return found;
 }
-// What is allowed to stay Korean: the name of the language in its own language.
-const NATIVE_NAMES=new Set(['한국어','Language / 언어','Zotero 언어 따르기 / Follow Zotero']);
-const allowNative=v=>[...NATIVE_NAMES].some(n=>v.includes(n));
+// English interface labels have no native-language exemptions.
+const allowNative=()=>false;
 function englishFixture(extra={}){
  const board={id:'b1',name:'Board one',nodes:[{id:'n1',label:'Card',x:1,y:1,note:'',color:'#ffffff'}],edges:[]};
  return fixture({items:{},readerSettings:{},boards:[board],favoriteCollections:['4'],matrixFields:['title','authors','venue'],...extra},undefined,{locale:'en-US'});

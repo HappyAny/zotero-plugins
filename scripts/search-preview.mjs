@@ -823,7 +823,7 @@ export async function buildPreview({ locale = "en" } = {}) {
 	fire(rowOf("demo14"));
 	await wait(20);
 	fire(document.getElementById("d-tr-lang"));
-	const langItem = [...document.querySelectorAll("#tbmenu .selopt")].find(e => e.textContent === "한국어");
+	const langItem = [...document.querySelectorAll("#tbmenu .selopt")].find(e => e.textContent === (locale === "ko" ? "한국어" : "Korean"));
 	trace.translate = { langItems: [...document.querySelectorAll("#tbmenu .selopt")].map(e => e.textContent), before: document.getElementById("d-tr-run-label").textContent };
 	fire(langItem);
 	const titleBox = document.getElementById("d-tr-title"); titleBox.checked = true; fire(titleBox, "change");
@@ -921,7 +921,7 @@ export function checkPreview(out) {
 		if (!c.metricsTrend) problems.push("the side card should chart the whole result set's citations per year");
 		if (out.stubbed.translate.length !== 4 || tr.again.calls !== 4) problems.push("translation should make one call for the abstract and one for the title, and Translate again one more each; got " + out.stubbed.translate.length + "/" + tr.again.calls);
 		if (tr.call.langto !== "ko-KR" || !tr.call.hasPluginID || tr.call.keys.join() !== "langto,pluginID") problems.push("Translate for Zotero should be called with langto and pluginID only; got " + JSON.stringify(tr.call));
-		if (!/DeepL Free/.test(tr.done.via) || !/한국어/.test(tr.done.via) || !/가상 초록/.test(tr.done.body) || !tr.done.title || tr.done.originalHidden || !/Fictional abstract/.test(tr.done.original)) problems.push("the translation should sit under the original with the service named; got " + JSON.stringify(tr.done));
+		if (!/DeepL Free/.test(tr.done.via) || !/한국어|Korean/.test(tr.done.via) || !/가상 초록/.test(tr.done.body) || !tr.done.title || tr.done.originalHidden || !/Fictional abstract/.test(tr.done.original)) problems.push("the translation should sit under the original with the service named; got " + JSON.stringify(tr.done));
 		if (!tr.folded.originalHidden || tr.unfolded.originalHidden) problems.push("the original should fold and unfold");
 		if (!/Translate for Zotero|번역 서비스가 설정/.test(tr.none.note) || !/err/.test(tr.none.err)) problems.push("with no service the card should say how to set one up; got " + JSON.stringify(tr.none));
 		for (const [name, html] of [["cite", out.citePage]]) if (!/class="tip-card cite-pop show"/.test(html)) problems.push(name + ": no open citation card");

@@ -7,6 +7,24 @@ import Settings from '../src/settings.js';
 import Schema from '../src/settings-schema.js';
 const settle=async()=>{for(let n=0;n<6;n++)await new Promise(resolve=>setImmediate(resolve));};
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
+
+test('every actual settings row and language choice renders in English',async()=>{
+ const i18n=(await import('../src/i18n.js')).default;
+ const strings=(await import('../src/strings.js')).default;
+ i18n.load(strings.en);i18n.use('en-US');
+ const f=fixture(Schema.schema);f.runtime.t=text=>i18n.t(text);
+ const pane=f.mount();
+ try{
+  await pane.ready;
+  const leaks=[];
+  for(const element of f.doc.querySelectorAll('*')){
+   for(const child of element.childNodes)if(child.nodeType===3&&/[가-힣]/.test(child.textContent))leaks.push(child.textContent);
+   for(const attr of ['title','aria-label','placeholder'])if(/[가-힣]/.test(element.getAttribute(attr)||''))leaks.push(element.getAttribute(attr));
+  }
+  assert.deepEqual([...new Set(leaks)],[]);
+  assert.ok([...f.doc.querySelectorAll('option')].some(n=>n.textContent==='Korean'));
+ }finally{pane.destroy();i18n.use('ko-KR');}
+});
 function fixture(schema){
  const {document:doc,window:win}=parseHTML('<html><body><div id="style-custom-settings-root"></div></body></html>');
  Object.defineProperty(win.HTMLSelectElement.prototype,'value',{configurable:true,get(){return this._value??this.querySelector('option')?.getAttribute('value')??'';},set(value){this._value=String(value);}});

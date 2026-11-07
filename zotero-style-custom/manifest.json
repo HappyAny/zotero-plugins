@@ -1,12 +1,12 @@
 {
   "manifest_version": 2,
   "name": "Style Custom",
-  "version": "0.59.52",
+  "version": "0.59.53",
   "description": "Personal title scrolling, reading status, ratings and literature metrics.",
   "applications": {
     "zotero": {
       "id": "style-custom@sungjaeyoon.dev",
-      "update_url": "https://raw.githubusercontent.com/JAEYOONSUNG/zotero-plugins/main/updates/style-custom.json",
+      "update_url": "https://raw.githubusercontent.com/HappyAny/zotero-plugins/main/updates/style-custom.json",
       "strict_min_version": "9.0",
       "strict_max_version": "10.*"
     }
@@ -17,5 +17,6 @@
     "48": "content/icons/style-custom-48.png",
     "96": "content/icons/style-custom-96.png",
     "128": "content/icons/style-custom-128.png"
-  }
+  },
+  "homepage_url": "https://github.com/HappyAny/zotero-plugins"
 }

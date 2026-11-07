@@ -7750,71 +7750,45 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.attachColumnDrag(win, state);
   }
 
-  /* Dragging a column edge. Zotero trades width between the two columns at
-     the edge, so the columns further right stay where they are; with a list
-     that rolls sideways the user expects a spreadsheet: the column to the
-     left of the edge changes and everything after it follows. The drag is
-     taken over at the document, before Zotero's own handler sees the
-     mousedown; the mouseup is swallowed too, or the header would sort. */
+  /* Observe native column resizing. Zotero owns the drag, its minimum widths,
+     pointer tracking and saved preferences. A document-level replacement can
+     block React's resizer before it receives the first mouse event. */
   attachColumnDrag(win, state) {
     const doc = win.document;
     if (typeof doc?.addEventListener !== 'function') return;
-    state.columnDrag = { drags: 0, last: '' };
+    state.columnDrag = { native: true, drags: 0, last: '' };
     let drag = null;
-    const treeOf = () => win.ZoteroPane?.itemsView?.tree;
     const onDown = event => {
-      try {
-        if (event.button !== 0 || drag) return;
-        const resizer = event.target?.closest?.('.virtualized-table-header .resizer');
-        const tree = treeOf();
-        if (!resizer || !tree?.props?.id || !tree._columns?.onResize || !resizer.closest(`#${tree.props.id}`)) return;
-        const edgeKey = [...resizer.classList].find(name => !['resizer', 'draggable', 'react-draggable'].includes(name) && !name.startsWith('react-draggable-'));
-        const visible = tree._getVisibleColumns?.() || [];
-        let index = visible.findIndex(c => c.dataKey === edgeKey) - 1;
-        while (index >= 0 && (visible[index].fixedWidth || visible[index].staticWidth)) index--;
-        const column = visible[index];
-        if (!column) return;
-        const root = doc.getElementById(tree.props.id);
-        const cellFor = key => root?.querySelector(`.virtualized-table-header .cell.${win.CSS.escape(key)}`);
-        // As Zotero does at a drag's start: every column set to the width it
-        // shows, so nothing jumps when the drag begins.
-        const rects = {};
-        for (const c of visible) { const cell = cellFor(c.dataKey); if (cell && !c.fixedWidth) rects[c.dataKey] = cell.getBoundingClientRect().width; }
-        tree._columns.onResize(rects);
-        const start = rects[column.dataKey];
-        if (!(start > 0)) return;
-        event.stopPropagation(); event.preventDefault();
-        drag = { tree, column, visible, startX: event.clientX, start, width: start, min: (column.minWidth || 20) + 16, root };
-        root?.classList.add('resizing');
-      }
-      catch (error) { this.Z.logError(error); }
+      if (event.button !== 0) return;
+      const tree = win.ZoteroPane?.itemsView?.tree;
+      const resizer = event.target?.closest?.('.virtualized-table-header .resizer');
+      if (!resizer || !tree?.props?.id || !resizer.closest(`#${tree.props.id}`)) return;
+      const visible = tree._getVisibleColumns?.() || [];
+      const key = [...resizer.classList].find(name => visible.some(c => c.dataKey === name));
+      const column = visible[visible.findIndex(c => c.dataKey === key) - 1];
+      if (!column) return;
+      drag = { tree, key: column.dataKey, start: this.storedWidths(win, tree).get(column.dataKey) };
     };
-    const onMove = event => {
+    const onUp = () => {
       if (!drag) return;
-      event.stopPropagation(); event.preventDefault();
-      const width = Math.round(Math.max(drag.min, drag.start + (event.clientX - drag.startX)));
-      if (width === drag.width) return;
-      drag.width = width;
-      try { drag.tree._columns.onResize({ [drag.column.dataKey]: width }); this.rollTable(win, state); }
-      catch (error) { this.Z.logError(error); }
-    };
-    const onUp = event => {
-      if (!drag) return;
-      event.stopPropagation(); event.preventDefault();
       const done = drag; drag = null;
-      done.root?.classList.remove('resizing');
-      try {
-        // Stored with every flexible column, so the layout on disk is the one on screen.
-        const stored = this.storedWidths(win, done.tree), changes = {};
-        for (const c of done.visible) if (!c.fixedWidth && !c.staticWidth && stored.has(c.dataKey)) changes[c.dataKey] = Math.round(stored.get(c.dataKey));
-        changes[done.column.dataKey] = done.width;
-        done.tree._columns.onResize(changes, true);
-        this.rollTable(win, state);
-        state.columnDrag.drags++; state.columnDrag.last = `${done.column.dataKey}: ${Math.round(done.start)} → ${done.width}`;
-      }
-      catch (error) { this.Z.logError(error); }
+      // Native mouseup handlers commit the width before this microtask runs.
+      Promise.resolve().then(() => {
+        try {
+          const width = this.storedWidths(win, done.tree).get(done.key);
+          if (Number.isFinite(width) && width !== done.start) {
+            state.columnDrag.drags++;
+            state.columnDrag.last = `${done.key}: ${Math.round(done.start)} → ${Math.round(width)}`;
+          }
+          this.rollTable(win, state);
+        }
+        catch (error) { this.Z.logError(error); }
+      });
     };
-    for (const [name, fn] of [['mousedown', onDown], ['mousemove', onMove], ['mouseup', onUp]]) { doc.addEventListener(name, fn, true); state.listeners.push([doc, name, fn, true]); }
+    for (const [name, fn] of [['mousedown', onDown], ['mouseup', onUp]]) {
+      doc.addEventListener(name, fn, true);
+      state.listeners.push([doc, name, fn, true]);
+    }
   }
 
   /* The width each visible column was given, from the stylesheet Zotero

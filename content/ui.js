@@ -1967,8 +1967,7 @@
 		return items;
 	}
 	function setColsMode(mode) { state.colsMode = mode; applyColumnView(); saveLayout(); }
-	// The window's language: English (the default), Korean, or whatever Zotero speaks. Each is named in its
-	// own language, so a reader who cannot read the current one can still find theirs.
+	// Interface language choices use the current interface language.
 	function languageChoice() { let value = PREF("language"); return value === "ko" || value === "auto" ? value : "en"; }
 	function setLanguage(choice) {
 		if (!["en", "ko", "auto"].includes(choice) || choice === languageChoice()) return;
@@ -1992,10 +1991,10 @@
 			{ label: t("sortMenu"), title: t("sortMenuTip"), run: () => openSortMenu(false) },
 			{ label: t("keysMenu"), title: t("keysMenuTip"), run: () => openKeysHelp($("view-btn")) },
 			"-",
-			{ heading: "Language / 언어" },
-			{ label: "English", check: language === "en", radio: true, run: () => setLanguage("en") },
-			{ label: "한국어", check: language === "ko", radio: true, run: () => setLanguage("ko") },
-			{ label: "Follow Zotero / Zotero 언어 따르기", check: language === "auto", radio: true, run: () => setLanguage("auto") }
+			{ heading: t("prefLanguage") },
+			{ label: t("prefLangEn"), check: language === "en", radio: true, run: () => setLanguage("en") },
+			{ label: t("prefLangKo"), check: language === "ko", radio: true, run: () => setLanguage("ko") },
+			{ label: t("prefLangAuto"), check: language === "auto", radio: true, run: () => setLanguage("auto") }
 		];
 	}
 	// What the detail's More holds: everything but the one main action.
@@ -5000,7 +4999,7 @@
 		let lang = typeof ZotPoPTranslate !== "undefined" && translator ? ZotPoPTranslate.byCode(trLang()) : null;
 		if (!translator || !lang) { row.hidden = true; $("d-tr-out").hidden = true; $("d-abstract").hidden = false; $("d-abs-label").hidden = false; return; }
 		row.hidden = false;
-		$("d-tr-lang-label").textContent = lang.name;
+		$("d-tr-lang-label").textContent = ZotPoPTranslate.languageName(lang.code, t.locale);
 		$("d-tr-title").checked = trTitleOn();
 		let busy = state.trBusy === r.key + "|" + lang.code;
 		$("d-tr-run").disabled = busy;
@@ -5012,7 +5011,7 @@
 		$("d-tr-out").hidden = !shown;
 		$("d-tr-title-out").hidden = !title; $("d-tr-title-out").textContent = title ? title.text : "";
 		$("d-tr-text").hidden = !text; $("d-tr-text").textContent = text ? text.text : "";
-		$("d-tr-via").textContent = shown ? t("trVia", (text || title).service, lang.name) : "";
+		$("d-tr-via").textContent = shown ? t("trVia", (text || title).service, ZotPoPTranslate.languageName(lang.code, t.locale)) : "";
 		let orig = $("d-tr-orig"), hide = shown && state.trHideOrig === true && Boolean(r.abstract);
 		orig.hidden = !shown || !r.abstract;
 		$("d-tr-orig-label").textContent = hide ? t("trShowOrig") : t("trHideOrig");
@@ -5068,7 +5067,7 @@
 		if (r) renderTranslate(r);
 	}
 	function trLangMenuItems() {
-		return ZotPoPTranslate.LANGUAGES.map(l => ({ label: l.name, check: l.code === trLang(), radio: true, run: () => setTrLang(l.code) }));
+		return ZotPoPTranslate.LANGUAGES.map(l => ({ label: ZotPoPTranslate.languageName(l.code, t.locale), check: l.code === trLang(), radio: true, run: () => setTrLang(l.code) }));
 	}
 
 	// ------------------------------------------------------------ detail pane
@@ -6458,7 +6457,7 @@
 			let translatedNote = null;
 			if ($("opt-trnote").checked && translator && r.abstract) {
 				let lang = ZotPoPTranslate.byCode(trLang()), done = lang && translator.cached(r.key, lang.code, "abstract", r.abstract);
-				if (done) translatedNote = { heading: t("noteTranslatedTitle", lang.name), text: done.text, service: done.service };
+				if (done) translatedNote = { heading: t("noteTranslatedTitle", ZotPoPTranslate.languageName(lang.code, t.locale)), text: done.text, service: done.service };
 			}
 			let res = await ZotPoPImporter.importRecord(r, translatedNote ? Object.assign({}, opts, { translatedNote }) : opts);
 			if (res.status === "added") {

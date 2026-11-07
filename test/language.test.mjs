@@ -11,6 +11,18 @@ const read = name => readFileSync(new URL(name, root), "utf8");
 const en = I18N.STRINGS.en, ko = I18N.STRINGS.ko;
 const contentFiles = readdirSync(new URL("content/", root)).filter(name => /\.(js|xhtml)$/.test(name) && name !== "i18n.js");
 
+test("locale variants resolve to the same complete English interface", () => {
+	for (const locale of ["en", "en-US", "en_GB", " EN-us ", undefined, "zh-CN"]) {
+		const t = I18N.make(locale);
+		assert.equal(t.locale, "en");
+		assert.equal(t("prefLanguage"), "Language");
+		assert.equal(t("prefLangKo"), "Korean");
+		assert.equal(t("prefLangAuto"), "Follow Zotero");
+	}
+	assert.equal(I18N.resolveLocale("auto", "ko-KR"), "ko");
+	assert.equal(I18N.resolveLocale("ko_KR"), "ko");
+});
+
 test("English and Korean have exactly the same keys", () => {
 	assert.deepEqual(Object.keys(en).filter(key => !(key in ko)), [], "in English only");
 	assert.deepEqual(Object.keys(ko).filter(key => !(key in en)), [], "in Korean only");
@@ -35,9 +47,9 @@ test("every string key the window asks for exists in English and Korean", () => 
 	assert.deepEqual(missingKo, []);
 });
 
-test("the English strings are English: no Hangul except the name of the language", () => {
+test("the English dictionary contains no Korean interface text", () => {
 	const text = value => typeof value === "function" ? value.toString() : String(value);
-	const bad = Object.entries(en).filter(([, value]) => /[가-힣]/.test(text(value).replace(/한국어|Zotero 언어 따르기|언어/g, ""))).map(([key]) => key);
+	const bad = Object.entries(en).filter(([, value]) => /[가-힣]/.test(text(value))).map(([key]) => key);
 	assert.deepEqual(bad, []);
 });
 

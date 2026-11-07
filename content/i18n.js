@@ -518,10 +518,10 @@ var ZotPoPI18N = (function () {
 
 			prefTitle: "ZotPoP — Find papers and add them to your library",
 			prefOpenHint: "Open it from the magnifier button in the items toolbar, or Tools → ZotPoP — Find papers…",
-			prefLanguage: "Language / 언어",
+			prefLanguage: "Language",
 			prefLangEn: "English",
-			prefLangKo: "한국어",
-			prefLangAuto: "Follow Zotero / Zotero 언어 따르기",
+			prefLangKo: "Korean",
+			prefLangAuto: "Follow Zotero",
 			prefLangNote: "English is the default. Choosing a language also reopens the search window in it (View menu → Language); the Tools menu entry and toolbar tooltip change when Zotero restarts.",
 			langAppliesLater: "Language saved. It applies the next time the search window opens.",
 			prefEmail: "Contact e-mail (Crossref's polite pool; also sent to OpenAlex, PubMed and Unpaywall):",
@@ -1469,6 +1469,8 @@ var ZotPoPI18N = (function () {
 	const SUPPORTED = ["en", "ko"];
 
 	function resolveLocale(pref, systemLocale) {
+		pref = typeof pref === "string" ? pref.trim().toLowerCase().replace(/_/g, "-") : pref;
+		if (/^(en|ko)-/.test(String(pref || ""))) pref = pref.split("-")[0];
 		if (SUPPORTED.includes(pref)) return pref;
 		if (pref === "auto") {
 			let base = String(systemLocale || "en").toLowerCase().split(/[-_]/)[0];
@@ -1478,6 +1480,7 @@ var ZotPoPI18N = (function () {
 	}
 
 	function make(locale) {
+		locale = resolveLocale(locale);
 		let table = STRINGS[locale] || STRINGS.en;
 		function t(key, ...args) {
 			let v = table[key] !== undefined ? table[key] : STRINGS.en[key];

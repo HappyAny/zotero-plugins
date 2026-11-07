@@ -63,6 +63,6 @@ test("both plugins ship the same marks, so a source never looks different in one
   const fs = await import("node:fs");
   const mine = fs.readFileSync(new URL("../src/brand-icons.js", import.meta.url), "utf8");
   const theirs = fs.readFileSync(new URL("../../content/brand-icons.js", import.meta.url), "utf8");
-  const strip = text => text.replace(/\n\s*root\.ZotPoPBrandIcons = api;/, "");
+  const strip = text => text.replace(/\r\n/g, "\n").replace(/\n\s*root\.ZotPoPBrandIcons = api;/, "");
   assert.equal(strip(theirs), strip(mine), "the two copies of brand-icons.js have drifted apart");
 });

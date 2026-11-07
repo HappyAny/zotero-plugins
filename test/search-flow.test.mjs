@@ -300,7 +300,7 @@ test("Cmd+C with text selected copies the text, not the focused row's citation",
 
 test("a translation that ends after the reader moved on leaves the other paper's card alone", async () => {
 	let finish;
-	const ui = uiHarness({ realRows: true, prefs: { translateTitle: false }, globals: { ZotPoPTranslate: { byCode: c => ({ code: c, name: "Korean" }), LANGUAGES: [] } },
+	const ui = uiHarness({ realRows: true, prefs: { translateTitle: false }, globals: { ZotPoPTranslate: { byCode: c => ({ code: c, name: "Korean" }), languageName: () => "Korean", LANGUAGES: [] } },
 		sources: { fetchPubMedAbstracts: () => new Promise(r => { finish = r; }) },
 		search: async () => [paper("a", { pmid: "1" }), paper("b", { abstract: "B abstract" })] });
 	await ui.runSearch();

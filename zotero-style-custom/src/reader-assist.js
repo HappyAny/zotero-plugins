@@ -667,7 +667,7 @@
    // The language the summary is written in, switchable here; each language keeps its own summary.
    const langs=el(doc,'div',{'class':'sc-ra-seg sc-ra-lang',role:'group','aria-label':t('출력 언어')},card);ui.summaryLang={};
    for(const[id,label]of [['English','English'],['Korean','한국어']]){
-    const b=el(doc,'button',{type:'button','class':'sc-ra-seg-btn','data-writes':'cache','data-lang':id,'aria-pressed':'false',title:t('AI 요약·대화를 이 언어로 씁니다')},langs);b.textContent=label;ui.summaryLang[id]=b;
+    const b=el(doc,'button',{type:'button','class':'sc-ra-seg-btn','data-writes':'cache','data-lang':id,'aria-pressed':'false',title:t('AI 요약·대화를 이 언어로 씁니다')},langs);b.textContent=t(label);ui.summaryLang[id]=b;
     b.addEventListener('click',event=>{event.stopPropagation();setSummaryLanguage(session,id);});
    }
    ui.summaryBody=el(doc,'div',{'class':'sc-ra-md'},card);
@@ -1050,7 +1050,8 @@
    const providers=service.providers(),current=service.pickProvider(),target=service.target(),busy=trBusy(session);
    // "Automatic" first, naming what it resolves to now; the pill shows the language itself.
    const chosen=String(runtime.pref('translateTarget','auto')||'auto').toUpperCase(),explicit=TR.TARGETS.some(x=>x.code===chosen);
-   ui.trTarget.set({items:[{value:'auto',label:T('자동 ({0})',service.autoTarget().label)},...TR.TARGETS.map(x=>({value:x.code,label:x.label}))],current:explicit?target.code:'auto',label:target.label});
+   const targetLabel=x=>runtime.i18n?.isKorean?.()?x.label:(x.ai||x.label);
+   ui.trTarget.set({items:[{value:'auto',label:T('자동 ({0})',targetLabel(service.autoTarget()))},...TR.TARGETS.map(x=>({value:x.code,label:targetLabel(x)}))],current:explicit?target.code:'auto',label:targetLabel(target)});
    ui.trProvider.textContent=current?T('번역기: {0}',service.providerLabel(current))+(providers.length>1?' · '+T('대체: {0}',providers.slice(providers.indexOf(current)+1).map(service.providerLabel).join(', ')||'—'):'')
     +(service.targetOrigin()==='pdftranslate'?' · '+t('번역 언어는 Translate for Zotero 설정을 따릅니다'):''):t('번역기가 없습니다. 설정 → 번역·AI에서 DeepL 키를 넣거나 Translate for Zotero를 설치하세요. DeepL 무료 키는 한 달 50만 자까지 쓸 수 있습니다.');
    const usage=service.usage();

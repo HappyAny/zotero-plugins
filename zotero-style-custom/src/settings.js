@@ -120,7 +120,7 @@
    win.clearTimeout(section.armed);section.armed=null;section.reset.textContent=t('이 분류 기본값 복원');
    const members=[...states.values()].filter(state=>state.spec.category===category);
    if(members.some(state=>state.pending)){notify('진행 중인 적용이 끝난 뒤 기본값으로 되돌리세요.',true);return;}
-   const revisions=new Map(members.map(state=>[state,state.revision]));section.pending=true;section.reset.disabled=true;members.forEach(sync);notify(section.label+' 기본값을 적용하는 중…');
+   const revisions=new Map(members.map(state=>[state,state.revision]));section.pending=true;section.reset.disabled=true;members.forEach(sync);notify(t('{0} 기본값을 적용하는 중…').replace('{0}',t(section.label)));
    try{
     await runtime.resetSettings(category);if(destroyed)return;
     await Promise.all(members.filter(state=>!secret(state.spec)).map(state=>hydrate(state,{force:true,expectedRevision:revisions.get(state)})));
@@ -138,7 +138,7 @@
   for(const category of schema.categories){
    const button=node('button',category.label,nav,{type:'button','data-category':category.id});button.addEventListener('click',()=>selectCategory(category.id));
    const section=node('section',null,content,{class:'scs-category','data-category':category.id}),title=node('div',null,section,{class:'scs-category-heading'});node('h3',category.label,title);if(category.description)node('p',category.description,section,{class:'scs-help'});
-   const resetButton=node('button','이 분류 기본값 복원',title,{type:'button','aria-label':category.label+' 기본값 복원'});resetButton.addEventListener('click',()=>reset(category.id));
+   const resetButton=node('button','이 분류 기본값 복원',title,{type:'button','aria-label':t('{0} 기본값 복원').replace('{0}',t(category.label))});resetButton.addEventListener('click',()=>reset(category.id));
    const sectionStatus=node('p','',title,{class:'scs-feedback scs-section-status',role:'status','aria-live':'polite'});
    categories.set(category.id,{label:category.label,button,reset:resetButton,status:sectionStatus,pending:false});sections.set(category.id,section);
   }
@@ -159,7 +159,7 @@
     if(spec.opens)state.input.setAttribute('data-opens',spec.opens);
     state.input.addEventListener('click',async()=>{if(state.pending||destroyed)return;state.pending=true;state.error=false;state.feedback.textContent=t('실행하는 중…');sync(state);try{const answer=await runtime.runSettingAction(spec.action);if(!destroyed){state.feedback.textContent=typeof answer==='string'&&answer?answer:t('실행했습니다.');await refreshStatus();}}catch(error){if(!destroyed){state.error=true;state.feedback.textContent=t('실행하지 못했습니다: ')+t(String(error.message||error));}}finally{state.pending=false;if(!destroyed)sync(state);}});
    }else{
-    if(spec.type==='select'){state.input=node('select',null,line,{id});for(const option of spec.options||[]){const entry=node('option',null,state.input,{value:option.value});/* a language is named in its own language, whatever the interface speaks */entry.textContent=spec.literal?option.label:t(option.label);}}
+     if(spec.type==='select'){state.input=node('select',null,line,{id});for(const option of spec.options||[]){const entry=node('option',null,state.input,{value:option.value});entry.textContent=t(option.label);}}
     else if(spec.type==='textarea'){state.input=node('textarea',null,line,{id,rows:spec.rows||4});}
     else if(['boolean','number','color','text','password','email','url'].includes(spec.type)){state.input=node('input',null,line,{id,type:secret(spec)?'password':spec.type==='boolean'?'checkbox':spec.type});}
     else throw new Error('Unsupported settings type: '+spec.type);
@@ -168,7 +168,7 @@
      reveal.addEventListener('click',()=>{const show=state.input.type==='password';state.input.type=show?'text':'password';reveal.textContent=t(show?'가리기':'표시');reveal.setAttribute('aria-pressed',String(show));});}
     if(spec.unit)node('span',spec.unit,line,{class:'scs-unit'});
     for(const key of ['min','max','step'])if(spec[key]!==undefined)state.input.setAttribute(key,spec[key]);
-    display(state,spec.default);state.apply=node('button','적용',line,{type:'button','aria-label':spec.label+' 적용'});state.apply.addEventListener('click',()=>save(state));
+    display(state,spec.default);state.apply=node('button','적용',line,{type:'button','aria-label':t('{0} 적용').replace('{0}',t(spec.label))});state.apply.addEventListener('click',()=>save(state));
     state.input.addEventListener('input',()=>changed(state));state.input.addEventListener('change',()=>{changed(state);if(['boolean','select'].includes(spec.type))void save(state);});
     state.input.addEventListener('keydown',event=>{if(event.key==='Enter'&&spec.type!=='textarea'){event.preventDefault();void save(state);}});
    }
