@@ -1,0 +1,80 @@
+{
+  "release": "chinese-ui-v1",
+  "artifacts": [
+    {
+      "plugin": "zotpop",
+      "version": "0.58.3",
+      "file": "zotpop-0.58.3.xpi",
+      "sha256": "ea6357fdf3843dfde6329ecd14e841c11876a8d60ee696b31ab13520c0b592b5",
+      "bytes": 3931813
+    },
+    {
+      "plugin": "style-custom",
+      "version": "0.59.55",
+      "file": "style-custom-0.59.55.xpi",
+      "sha256": "e0ba4fc41df54464cb7de0a6f69f97c5c47e9fe2c1fca8a883ab853a5b258ef0",
+      "bytes": 14093581
+    }
+  ],
+  "catalogs": {
+    "style_custom_keys_per_locale": 2965,
+    "zotpop_translated_fragments": 832,
+    "placeholder_contract": "checked",
+    "scope": "Simplified Chinese interface. Library content and machine export headers stay as stored."
+  },
+  "offline_tests": {
+    "zotpop": {
+      "suite": "root",
+      "files": 60,
+      "exitCode": 0,
+      "summary": [
+        "ℹ tests 867",
+        "ℹ pass 867",
+        "ℹ fail 0",
+        "ℹ skipped 0",
+        "ℹ duration_ms 78369.7684"
+      ],
+      "excluded": [
+        "pop-bridge.test.mjs: Unix executable fixtures on Windows"
+      ]
+    },
+    "style_custom": {
+      "suite": "style",
+      "files": 62,
+      "exitCode": 0,
+      "summary": [
+        "ℹ tests 2067",
+        "ℹ pass 2037",
+        "ℹ fail 0",
+        "ℹ skipped 30",
+        "ℹ duration_ms 136531.4273"
+      ],
+      "excluded": [
+        "bake.test.mjs: Unix executable fixtures on Windows"
+      ]
+    }
+  },
+  "browser": {
+    "settings_rows": 144,
+    "workbench_views": 19,
+    "korean_interface_leaks": 0,
+    "script_errors": 0,
+    "assistant_close_css": "passed"
+  },
+  "zotero_native": {
+    "version": "0.59.55",
+    "when": "2026-11-07T19:10:40.227Z",
+    "passed": 56,
+    "failed": 1,
+    "chinese_locale_loaded": true,
+    "independent_column_drag": true,
+    "failed_checks": [
+      "a second double-click on any column edge leaves the column where the first put it"
+    ]
+  },
+  "limits": [
+    "The desktop automation native pipe was unavailable. No manual desktop click test ran in this round.",
+    "The native repeat-fit check still reports a 14 px oscillation on the title column. The independent drag check passed.",
+    "Unix executable fixture tests were excluded on Windows, as recorded in the offline test receipts."
+  ]
+}

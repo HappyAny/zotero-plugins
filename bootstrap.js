@@ -15,6 +15,7 @@ async function startup({ id, version, rootURI }) {
 		["content", "zotpop", rootURI + "content/"]
 	]);
 
+	Services.scriptloader.loadSubScript(rootURI + "content/i18n-zh.js", Zotero);
 	Services.scriptloader.loadSubScript(rootURI + "content/i18n.js", Zotero);
 	Services.scriptloader.loadSubScript(rootURI + "content/updater.js");
 	Services.scriptloader.loadSubScript(rootURI + "src/zotpop.js");

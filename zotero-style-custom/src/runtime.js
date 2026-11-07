@@ -45,7 +45,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.metadataQueue = Promise.resolve();
     this.activityQueue=Promise.resolve();this.tabItems=new Map();
     this.i18n=typeof CustomStyleI18N!=='undefined'?CustomStyleI18N:require('./i18n.js');
-    try{this.i18n.load((typeof CustomStyleStrings!=='undefined'?CustomStyleStrings:require('./strings.js')).en);}catch(error){}
+    try{this.i18n.load(typeof CustomStyleStrings!=='undefined'?CustomStyleStrings:require('./strings.js'));}catch(error){}
     this.settingsTools=typeof CustomStyleSettingsSchema!=='undefined'?CustomStyleSettingsSchema:require('./settings-schema.js');this.settingsSchema=this.settingsTools.schema;
     this.workspaceTools=typeof CustomStyleWorkspace!=="undefined"?CustomStyleWorkspace:require("./workspace.js");
     this.Workbench=typeof CustomStyleWorkbench!=="undefined"?CustomStyleWorkbench:require("./workbench.js");
@@ -61,7 +61,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.readerAssist=ReaderAssist.create({Zotero:this.Z,runtime:this});
   }
   // English unless the chosen language is Korean (the setting, not the OS).
-  text(english, korean) { return this.i18n ? (this.i18n.isKorean() ? korean : english) : english; }
+  text(english, korean) { return this.i18n?.isChinese?.() ? this.t(korean) : this.i18n?.isKorean?.() ? korean : english; }
   pref(name, fallback) { return this.Z.Prefs.get("extensions.style-custom." + name, true) ?? fallback; }
   isRegular(item) { return !!item?.isRegularItem?.() && !item.isFeedItem && !item.deleted; }
   canEdit(item) {

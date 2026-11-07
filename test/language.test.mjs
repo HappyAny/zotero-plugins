@@ -12,7 +12,7 @@ const en = I18N.STRINGS.en, ko = I18N.STRINGS.ko;
 const contentFiles = readdirSync(new URL("content/", root)).filter(name => /\.(js|xhtml)$/.test(name) && name !== "i18n.js");
 
 test("locale variants resolve to the same complete English interface", () => {
-	for (const locale of ["en", "en-US", "en_GB", " EN-us ", undefined, "zh-CN"]) {
+	for (const locale of ["en", "en-US", "en_GB", " EN-us ", undefined, "fr-FR"]) {
 		const t = I18N.make(locale);
 		assert.equal(t.locale, "en");
 		assert.equal(t("prefLanguage"), "Language");

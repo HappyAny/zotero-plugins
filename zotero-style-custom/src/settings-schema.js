@@ -75,6 +75,10 @@
           "label": "English"
         },
         {
+          "value": "zh-CN",
+          "label": "简体中文"
+        },
+        {
           "value": "ko-KR",
           "label": "한국어"
         },
@@ -1240,7 +1244,8 @@
       "options": [
         { "value": "auto", "label": "패널 언어를 따름" },
         { "value": "Korean", "label": "한국어" },
-        { "value": "English", "label": "English" }
+        { "value": "English", "label": "English" },
+        { "value": "Simplified Chinese", "label": "简体中文" }
       ]
     },
     {

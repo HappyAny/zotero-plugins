@@ -966,6 +966,9 @@
       if (active === 'en-US' && shown.every((text, i) => text === samples[i])) {
         throw new Error('English is selected but nothing is being translated');
       }
+      if (active === 'zh-CN' && (shown.some(text => /[가-힣]/.test(text)) || runtime.t('학위논문') !== '学位论文')) {
+        throw new Error('Chinese is selected but main-list labels are not translated');
+      }
       if (active === 'ko-KR' && shown.some((text, i) => text !== samples[i])) {
         throw new Error('Korean is selected but text is being translated anyway');
       }

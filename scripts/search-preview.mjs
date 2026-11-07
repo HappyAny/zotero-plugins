@@ -246,7 +246,7 @@ export async function buildPreview({ locale = "en" } = {}) {
 			getCurrentTarget: () => ({ libraryID: 1, collectionID: null }), forgetTitleIndex() {} }
 	});
 	win.Zotero = ctx.Zotero;
-	for (const f of ["i18n", "query", "brand-icons", "affiliations", "journal-marks", "jcr", "history", "sources", "authors", "metrics", "filters", "journals", "signals", "reactions", "tooltip", "cite", "translate", "preview"]) vm.runInContext(read(`content/${f}.js`), ctx, { filename: f });
+	for (const f of ["i18n-zh", "i18n", "query", "brand-icons", "affiliations", "journal-marks", "jcr", "history", "sources", "authors", "metrics", "filters", "journals", "signals", "reactions", "tooltip", "cite", "translate", "preview"]) vm.runInContext(read(`content/${f}.js`), ctx, { filename: f });
 	// linkedom's dataset drops "data-i18n" (a digit in the name); read the attribute instead. Strings stay the real ones.
 	ctx.ZotPoPI18N.apply = (root, t) => {
 		for (const el of root.querySelectorAll("[data-i18n]")) el.textContent = t(el.getAttribute("data-i18n"));
@@ -823,7 +823,7 @@ export async function buildPreview({ locale = "en" } = {}) {
 	fire(rowOf("demo14"));
 	await wait(20);
 	fire(document.getElementById("d-tr-lang"));
-	const langItem = [...document.querySelectorAll("#tbmenu .selopt")].find(e => e.textContent === (locale === "ko" ? "한국어" : "Korean"));
+	const langItem = [...document.querySelectorAll("#tbmenu .selopt")].find(e => e.textContent === ctx.ZotPoPTranslate.languageName("ko", locale));
 	trace.translate = { langItems: [...document.querySelectorAll("#tbmenu .selopt")].map(e => e.textContent), before: document.getElementById("d-tr-run-label").textContent };
 	fire(langItem);
 	const titleBox = document.getElementById("d-tr-title"); titleBox.checked = true; fire(titleBox, "change");
@@ -934,10 +934,10 @@ export function checkPreview(out) {
 	const t = out.trace, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 	if (t.columns.basic !== "basic" || t.columns.all !== "all" || t.columns.back !== "basic") problems.push("column view did not switch basic/all/basic");
 	if (t.columns.statusAttr) problems.push("status column shown before any status");
-	if (!t.menu.open || t.menu.expanded !== "true" || t.menu.labels.length !== 10 || !same(t.menu.roles, ["menuitemradio", "menuitemradio", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitem", "menuitem", "menuitemradio", "menuitemradio", "menuitemradio"])) problems.push("the View menu should open with two radio items, three checkable items, Sort by, Keyboard shortcuts and the three languages; got " + JSON.stringify(t.menu));
+	if (!t.menu.open || t.menu.expanded !== "true" || t.menu.labels.length !== 11 || !same(t.menu.roles, ["menuitemradio", "menuitemradio", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitem", "menuitem", "menuitemradio", "menuitemradio", "menuitemradio", "menuitemradio"])) problems.push("the View menu should open with two radio items, three checkable items, Sort by, Keyboard shortcuts and the four language choices; got " + JSON.stringify(t.menu));
 	if (!t.menu.closed || !t.menu.closedByOutsideClick) problems.push("a menu should close after a choice and on an outside click");
-	// the last three items are the languages: the one the window runs in is checked
-	const langChecked = out.locale === "ko" ? ["false", "true", "false"] : ["true", "false", "false"];
+	// The last four items are the language choices: the one the window runs in is checked
+	const langChecked = out.locale === "ko" ? ["false", "false", "true", "false"] : out.locale === "zh" ? ["false", "true", "false", "false"] : ["true", "false", "false", "false"];
 	if (!same(t.menu.reopened, ["false", "true", "true", "true", "true", null, null, ...langChecked])) problems.push("the reopened View menu should show Columns: all as chosen; got " + t.menu.reopened);
 	if (t.menu.export.length < 2) problems.push("the Export menu should offer copy and save");
 	if (!/전체 12 \/ 미보유 11 \/ 보유 1|All 12 \/ Not in library 11 \/ In library 1/.test(t.library.start)) problems.push("the library filter should start at 12 / 11 / 1; got " + t.library.start);

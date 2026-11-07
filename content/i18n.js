@@ -1466,14 +1466,32 @@ var ZotPoPI18N = (function () {
 		}
 	};
 
-	const SUPPORTED = ["en", "ko"];
+	const pluralZh = (n, one) => {
+		const units = {"论文":"篇论文","条目":"个条目","作者":"位作者","作者档案":"份作者档案",
+			"作者简介":"份作者档案","位作者":"位作者","位新作者":"位新作者",
+			"机构":"所机构","期刊":"种期刊","行":"行","结果":"条结果","条结果":"条结果"};
+		return groupDigits(n) + " " + (units[one] || one);
+	};
+	const chineseFactory = typeof ZotPoPChinese !== "undefined" ? ZotPoPChinese
+		: typeof require === "function" ? require("./i18n-zh.js") : null;
+	const chinese = chineseFactory?.({groupDigits, plural: pluralZh, isOne});
+	if (chinese) {
+		STRINGS.zh = chinese.strings;
+		STRINGS.zh.authorProfilesFound = n => "找到 " + groupDigits(n) + " 份作者档案。请选择正确的作者以加载论文。";
+	}
+	STRINGS.en.prefLangZh = "Simplified Chinese";
+	STRINGS.ko.prefLangZh = "简体中文";
+	if (chinese) STRINGS.zh.prefLangZh = "简体中文";
+	const SUPPORTED = ["en", "ko", "zh"];
 
 	function resolveLocale(pref, systemLocale) {
 		pref = typeof pref === "string" ? pref.trim().toLowerCase().replace(/_/g, "-") : pref;
+		if (/^zh(?:$|-(?:cn|sg|hans)(?:-|$))/.test(String(pref || ""))) pref = "zh";
 		if (/^(en|ko)-/.test(String(pref || ""))) pref = pref.split("-")[0];
 		if (SUPPORTED.includes(pref)) return pref;
 		if (pref === "auto") {
-			let base = String(systemLocale || "en").toLowerCase().split(/[-_]/)[0];
+			let raw = String(systemLocale || "en").toLowerCase().replace(/_/g, "-");
+			let base = /^zh(?:$|-(?:cn|sg|hans)(?:-|$))/.test(raw) ? "zh" : raw.split("-")[0] === "zh" ? "en" : raw.split("-")[0];
 			return SUPPORTED.includes(base) ? base : "en";
 		}
 		return "en";
@@ -1553,6 +1571,11 @@ var ZotPoPI18N = (function () {
 			orcidInput: "올바른 ORCID iD나 orcid.org 프로필 URL을 넣거나 이름을 입력하세요."
 		}
 	};
+	if (chinese) {
+		EXPLAIN.zh = chinese.errors;
+		EXPLAIN.zh.scholarAmbiguous = "无法判断这是姓名还是作者标识。请选择姓名或作者档案类型，或粘贴 Google Scholar 作者主页。";
+		EXPLAIN.zh.orcidInput = "请输入有效的 ORCID iD、ORCID 主页地址或作者姓名。";
+	}
 	function explainError(message, locale) {
 		let raw = String(message ?? "").trim(), lang = EXPLAIN[locale] ? locale : "en";
 		let x = EXPLAIN[lang], table = STRINGS[lang];
@@ -1582,7 +1605,7 @@ var ZotPoPI18N = (function () {
 		if ((m = raw.match(/^(arXiv|Europe PMC) returned (?:an empty|an incomplete|a response that is not)/))) return x.incomplete(m[1]);
 		if (/Google Scholar profile URL or 12-character profile ID|^Invalid Google Scholar profile ID$/.test(raw)) return x.scholarProfile;
 		if (/Publish or Perish executable is unavailable|requires the configured Publish or Perish|Publish or Perish native search is unavailable/.test(raw)) return x.popMissing;
-		if (lang === "ko") {
+		if (lang === "ko" || lang === "zh") {
 			if (/^This text could be an author name or a profile ID/.test(raw)) return x.scholarAmbiguous;
 			if (/^Enter (?:a valid ORCID iD|an ORCID iD or an author name)/.test(raw)) return x.orcidInput;
 			if (/^Enter an author name or profile identifier$/.test(raw)) return table.authorNeedInput;
@@ -1601,6 +1624,7 @@ var ZotPoPI18N = (function () {
 	/* The sources report progress in English ("Citation counts: 50 / 120"); the status line and
 	   the busy text show it in the window's language. A service name with a count stays as it is. */
 	const PROGRESS = {
+		zh: { "Citation counts": "正在查询被引次数", "Journal metrics": "正在查询期刊指标", "Institutions": "正在查询所属机构", searching: "正在搜索…", results: n => groupDigits(n) + " 条结果", Preprints: "预印本" },
 		en: { "Citation counts": "Loading citation counts", "Journal metrics": "Loading journal metrics", "Institutions": "Loading institutions", searching: "searching…", results: n => plural(n, "result") },
 		ko: { "Citation counts": "인용 수 조회 중", "Journal metrics": "저널 지표 조회 중", "Institutions": "소속 기관 조회 중", searching: "검색 중…", results: n => `${groupDigits(n)}편`, Preprints: "프리프린트" }
 	};

@@ -43,9 +43,9 @@
   return TARGETS.find(t=>t.pdft.split('-')[0]===lang)||null;
  };
  /* "auto" follows Translate for Zotero's target when it has one we offer, else the panel language. */
- const targetOf=(setting,uiKorean,external='')=>{
+ const targetOf=(setting,uiKorean,external='',uiLocale='')=>{
   const wanted=String(setting||'auto').toUpperCase();
-  return TARGETS.find(t=>t.code===wanted)||targetFromLocale(external)||(uiKorean?TARGETS[0]:TARGETS[1]);
+  return TARGETS.find(t=>t.code===wanted)||targetFromLocale(external)||targetFromLocale(uiLocale)||(uiKorean?TARGETS[0]:TARGETS[1]);
  };
  /* Hash of a source paragraph: the cache key. FNV-1a over UTF-16 units, twice with different seeds. */
  function hash(text){
@@ -202,7 +202,7 @@
  }
 
  /* ---- the translator -------------------------------------------------------- */
- function create({http,sleep=ms=>new Promise(r=>setTimeout(r,ms)),now=()=>new Date(),pref=()=>'',cache=null,usageStore=null,pdfTranslate=()=>null,pdfTranslatePref=()=>'',pdftUsageStore=null,ai=null,uiKorean=true,retries=3}={}){
+ function create({http,sleep=ms=>new Promise(r=>setTimeout(r,ms)),now=()=>new Date(),pref=()=>'',cache=null,usageStore=null,pdfTranslate=()=>null,pdfTranslatePref=()=>'',pdftUsageStore=null,ai=null,uiKorean=true,uiLocale='',retries=3}={}){
   const memory=new Map(),store=cache||{get:k=>memory.get(k),set:(k,v)=>memory.set(k,v),save:async()=>{}};
   let running=null;const tokens=new Set();
   const monthKey=()=>{const d=now();return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');};
@@ -218,8 +218,9 @@
   const pdftTarget=()=>hasPdfTranslate()?pdftPref('targetLanguage'):'';
   // Asked each time: a panel switched to another language moves the automatic target with it.
   const korean=()=>typeof uiKorean==='function'?uiKorean()!==false:!!uiKorean;
-  const target=()=>targetOf(pref('translateTarget'),korean(),pdftTarget());
-  const autoTarget=()=>targetOf('auto',korean(),pdftTarget());
+  const locale=()=>typeof uiLocale==='function'?uiLocale():uiLocale;
+  const target=()=>targetOf(pref('translateTarget'),korean(),pdftTarget(),locale());
+  const autoTarget=()=>targetOf('auto',korean(),pdftTarget(),locale());
   /* Where the language came from: the setting, Translate for Zotero's own target, or the panel language. */
   const targetOrigin=()=>{
    const wanted=String(pref('translateTarget')||'auto').toUpperCase();

@@ -418,19 +418,19 @@ test("the search window's View menu has a Language group that saves the choice a
   const at = items.findIndex(item => item.heading === "prefLanguage");
   assert.ok(at > 0, "a captioned group in the View menu");
   const group = items.slice(at + 1);
-  assert.deepEqual(Array.from(group, item => item.label), ["prefLangEn", "prefLangKo", "prefLangAuto"]);
+  assert.deepEqual(Array.from(group, item => item.label), ["prefLangEn", "prefLangZh", "prefLangKo", "prefLangAuto"]);
   assert.ok(group.every(item => item.radio && !item.disabled), "radio choices, none dimmed");
-  assert.deepEqual(Array.from(group, item => item.check), [true, false, false], "English is chosen when nothing was");
+  assert.deepEqual(Array.from(group, item => item.check), [true, false, false, false], "English is chosen when nothing was");
   // Choosing one writes the setting and reopens the window in it.
-  group[1].run();
+  group[2].run();
   assert.equal(ui.prefs.language, "ko");
   assert.equal(ui.reloads.length, 1);
   items = Array.from(ui.viewMenuItems());
-  assert.deepEqual(Array.from(items.slice(at + 1), item => item.check), [false, true, false]);
+  assert.deepEqual(Array.from(items.slice(at + 1), item => item.check), [false, false, true, false]);
   // The same choice again does nothing.
-  items.slice(at + 1)[1].run();
-  assert.equal(ui.reloads.length, 1);
   items.slice(at + 1)[2].run();
+  assert.equal(ui.reloads.length, 1);
+  items.slice(at + 1)[3].run();
   assert.equal(ui.prefs.language, "auto");
   // A search in progress is not interrupted: the choice is saved and the window says it applies later.
   ui.state.searching = true;

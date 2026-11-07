@@ -18,14 +18,15 @@
 (function (root) {
   'use strict';
 
-  const LOCALES = ['auto', 'en-US', 'ko-KR'];
+  const LOCALES = ['auto', 'en-US', 'ko-KR', 'zh-CN'];
 
   // Filled from strings.js; kept separate so the table can be regenerated
   // without touching this logic.
-  let TABLE = {};
+  let TABLE = {}, CATALOG = null;
 
   function load(table) {
-    TABLE = table && typeof table === 'object' ? table : {};
+    CATALOG = table?.en && typeof table.en === 'object' ? table : null;
+    TABLE = CATALOG ? (current === 'zh-CN' ? CATALOG.zh : CATALOG.en) || {} : table && typeof table === 'object' ? table : {};
     patterns = null; misses.clear();
     return Object.keys(TABLE).length;
   }
@@ -42,20 +43,29 @@
   function detect(zotero) {
     let raw = '';
     try { raw = String(zotero?.locale || zotero?.Prefs?.get?.('intl.locale.requested') || '').trim(); } catch (error) { }
-    detected = /^ko(\b|$)/i.test(raw) ? 'ko-KR' : DEFAULT;
+    detected = canonical(raw);
     return detected;
   }
 
   // `auto` follows Zotero; a known language is taken as given; a missing,
   // empty or unknown choice is English, never "whatever Zotero says".
   function use(choice, zotero) {
-    if (choice === 'auto') { current = detect(zotero); return current; }
-    current = LOCALES.includes(choice) ? choice : DEFAULT;
+    current = choice === 'auto' ? detect(zotero) : canonical(choice);
+    if (CATALOG) TABLE = (current === 'zh-CN' ? CATALOG.zh : CATALOG.en) || {};
+    patterns = null; misses.clear();
     return current;
   }
 
+  function canonical(value) {
+    const raw = String(value || '').trim().replace(/_/g, '-').toLowerCase();
+    if (/^zh(?:$|-(?:cn|sg|hans)(?:-|$))/.test(raw)) return 'zh-CN';
+    if (/^ko(?:-|$)/.test(raw)) return 'ko-KR';
+    return DEFAULT;
+  }
   const locale = () => current;
   const isKorean = () => current === 'ko-KR';
+  const isChinese = () => current === 'zh-CN';
+  const aiLanguage = () => isChinese() ? 'Simplified Chinese' : isKorean() ? 'Korean' : 'English';
 
   /* Numbers, dates and plurals follow the chosen language, not the operating
      system's: a Korean Mac with the panel in English still reads "1,234". */
@@ -150,7 +160,7 @@
       held.push(text);
       return '\uE000' + (held.length - 1) + '\uE001';
     });
-    return singular(filled).replace(/\uE000(\d+)\uE001/g, (whole, i) => held[Number(i)]);
+    return (current === 'en-US' ? singular(filled) : filled).replace(/\uE000(\d+)\uE001/g, (whole, i) => held[Number(i)]);
   }
   function byPattern(text) {
     if (misses.has(text)) return undefined;
@@ -206,7 +216,7 @@
     return {total: wanted.length, translated: wanted.length - missing.length, missing};
   }
 
-  const api = {t, template, format, count, use, detect, locale, isKorean, load, coverage, LOCALES, DEFAULT, singular, number, date, time, plural,
+  const api = {t, template, format, count, use, detect, locale, isKorean, isChinese, aiLanguage, load, coverage, LOCALES, DEFAULT, singular, number, date, time, plural,
     _table: () => TABLE};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.CustomStyleI18N = api;

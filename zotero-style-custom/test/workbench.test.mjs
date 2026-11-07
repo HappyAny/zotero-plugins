@@ -2605,10 +2605,10 @@ test('the library splits by kind with one chip: patents and theses apart from th
  f.library.snapshot=async()=>[...f.papers,...extra];
  await f.bench.show('explore');
  const chips=[...f.bench.panel.querySelectorAll('.sc-kind-chips button')].map(b=>b.textContent);
- assert.deepEqual(chips,['전체 4','논문 2','Preprint 1','학위논문 1']);
+ assert.deepEqual(chips,['전체 4','논문 2','프리프린트 1','학위논문 1']);
  // The card says what kind of thing it is, unless it is a plain paper.
  const kinds=[...f.body().querySelectorAll('.sc-paper-card')].map(c=>c.querySelector('.sc-kind')?.textContent||'');
- assert.deepEqual(kinds.sort(),['','','Preprint','학위논문']);
+ assert.deepEqual(kinds.sort(),['','','프리프린트','학위논문']);
  await f.click('학위논문 1');
  // 2026-10-03: the kind chip opens the meta line, so every title starts at the same x.
  assert.deepEqual([...f.body().querySelectorAll('.sc-paper-title')].map(h=>h.textContent),['A Thesis']);assert.equal(f.body().querySelector('.sc-paper-meta .sc-kind')?.textContent,'학위논문');
@@ -4990,7 +4990,7 @@ test('an inbox row says each thing once: the journal in its ink, Preprint as one
   const [preprint, paper] = inbox;
   const pm = preprint.querySelector('.sc-hit-meta'), jm = paper.querySelector('.sc-hit-meta');
   assert.equal(pm.querySelectorAll('.sc-preprint').length, 1, 'one chip');
-  assert.equal(pm.querySelector('.sc-preprint').textContent, 'Preprint', 'in English, not mixed with Korean');
+  assert.equal(pm.querySelector('.sc-preprint').textContent, '프리프린트', 'the chip follows the selected interface language');
   assert.equal(pm.querySelector('.sc-paper-venue').textContent, 'bioRxiv', 'the server once, shortened');
   assert.equal(pm.textContent.match(/bioRxiv/g).length, 1);
   assert.equal(jm.querySelector('.sc-preprint'), null, 'a journal paper carries no chip');
@@ -5007,7 +5007,7 @@ test('an inbox row says each thing once: the journal in its ink, Preprint as one
   const roles = [...jm.querySelectorAll('.sc-inbox-who')].map(w => w.textContent);
   assert.deepEqual(roles, ['Ada마지막 저자 · 교신', 'Brent']);
   assert.equal([...pm.querySelectorAll('.sc-inbox-role')].map(r => r.textContent).join(), '1저자');
-  assert.equal(/프리프린트/.test(f.body().querySelector('.sc-author-inbox').textContent), false);
+  assert.equal(f.body().querySelectorAll('.sc-author-inbox .sc-preprint').length, 1, 'the localized preprint label appears once');
   f.bench.destroy();
 });
 
@@ -5511,14 +5511,14 @@ test('상세 필터 rules: an exclude rule is added in the panel, shows as a 제
 test('상세 필터 rules: click a chip to edit it, flip it to 포함, and 모두 지우기 clears every rule and filter', async () => {
  const f=fixture();await f.bench.show('explore');await settle();
  await f.bench.filters.set([{id:'a',kind:'type',mode:'ex',values:['preprint']},{id:'b',kind:'tag',mode:'in',values:['topic/b']}]);
- assert.equal(cardCount(f),1);assert.deepEqual(chipTexts(f),['제외 · 유형: Preprint','태그: topic/b']);
+ assert.equal(cardCount(f),1);assert.deepEqual(chipTexts(f),['제외 · 유형: 프리프린트','태그: topic/b']);
  press(f,f.bench.panel.querySelectorAll('.sc-rule-chip-main')[1]);await settle();
  const editor=f.bench.panel.querySelector('.sc-rule-editor');assert.equal(editor.hidden,false);
  assert.equal(editor.getAttribute('aria-label'),'태그 규칙 편집');
  assert.equal(editor.querySelector('input[aria-label="topic/b"]').checked,true,'the rule loads into its editor');
  press(f,editor.querySelector('.sc-rule-head [data-mode="ex"]'));await settle();
  await f.click('변경 적용');
- assert.deepEqual(chipTexts(f),['제외 · 유형: Preprint','제외 · 태그: topic/b']);assert.equal(cardCount(f),1);
+ assert.deepEqual(chipTexts(f),['제외 · 유형: 프리프린트','제외 · 태그: topic/b']);assert.equal(cardCount(f),1);
  assert.ok(f.body().textContent.includes('Paper Alpha'));
  f.bench.state.type='journalArticle';await f.bench.render();
  assert.ok([...f.bench.panel.querySelectorAll('.sc-filter-chips button')].some(b=>b.textContent==='모두 지우기'));
@@ -5531,7 +5531,7 @@ test('상세 필터 rules: click a chip to edit it, flip it to 포함, and 모�
 test('상세 필터 rules: saved rules come back when the panel opens again, per tab, and bad saved data is ignored', async () => {
  const cache={items:{},workbenchUI:{filterRules:{explore:[{id:'x',kind:'type',mode:'ex',values:['preprint']},{id:'y',kind:'tag',values:['topic/b']},{id:'z',kind:'nope'}],notes:[{id:'n',kind:'pdf'}]}}};
  const f=fixture(cache);await f.bench.show('explore');await settle();
- assert.deepEqual(chipTexts(f),['제외 · 유형: Preprint','태그: topic/b']);assert.equal(cardCount(f),1);
+ assert.deepEqual(chipTexts(f),['제외 · 유형: 프리프린트','태그: topic/b']);assert.equal(cardCount(f),1);
  assert.equal(f.bench.panel.querySelector('.sc-filters summary').textContent,'상세 필터 · 2개 적용');
  await f.bench.show('attachments');await settle();
  assert.equal(chipTexts(f).length,0,'another tab keeps its own rules');
@@ -8511,8 +8511,8 @@ test('language choices follow the interface and changing a choice updates the pa
   assert.ok(group,'the control is in the 모양 tab');
   assert.equal(group.getAttribute('aria-label'),'Language','the English control has an English label');
   const buttons=[...group.querySelectorAll('button')];
-  assert.deepEqual(buttons.map(b=>b.textContent),['English','Korean','Follow Zotero'],'language choices follow the interface language');
-  assert.deepEqual(buttons.map(b=>b.getAttribute('aria-pressed')),['true','false','false'],'English is chosen by default');
+  assert.deepEqual(buttons.map(b=>b.textContent),['English','Simplified Chinese','Korean','Follow Zotero'],'language choices follow the interface language');
+  assert.deepEqual(buttons.map(b=>b.getAttribute('aria-pressed')),['true','false','false','false'],'English is chosen by default');
   assert.ok(buttons.every(b=>b.getAttribute('data-writes')==='setting'),'a write: the self-check never presses it');
   assert.ok(!buttons.some(b=>b.hasAttribute('data-safe')));
   assert.ok(f.bench.panel.querySelector('nav button[data-tab=explore]').textContent==='Library','English before the change');
@@ -8526,6 +8526,12 @@ test('language choices follow the interface and changing a choice updates the pa
   assert.equal(f.bench.panel.querySelector('nav button[data-tab=explore]').textContent,'Library');
   assert.equal(f.bench.panel.querySelector('nav button[data-tab=reading]').textContent,'Reading','back to the short English form, not the Korean or the full English name');
   assert.equal(f.bench.panel.querySelector('.sc-language button[aria-pressed=true]').textContent,'English');
+  i18n.load(require('../src/strings.js'));
+  await f.click('Simplified Chinese');
+  assert.equal(i18n.locale(),'zh-CN');
+  assert.equal(f.bench.panel.querySelector('nav button[data-tab=explore]').textContent,'资料库');
+  assert.equal(f.bench.panel.querySelector('nav button[data-tab=reading]').textContent,'阅读进度');
+  assert.equal(f.bench.panel.querySelector('.sc-language button[aria-pressed=true]').textContent,'简体中文');
   f.bench.destroy();
  }finally{i18n.use('ko-KR');}
 });

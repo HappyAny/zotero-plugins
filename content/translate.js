@@ -40,6 +40,10 @@ var ZotPoPTranslate = (function () {
 	function languageName(code, locale = "en") {
 		const language = byCode(code);
 		if (!language) return String(code || "");
+		if (/^zh(?:[-_]|$)/i.test(locale)) return {
+			ko:"韩语",en:"英语",ja:"日语","zh-CN":"简体中文","zh-TW":"繁体中文",
+			de:"德语",fr:"法语",es:"西班牙语",pt:"葡萄牙语",ru:"俄语",it:"意大利语"
+		}[language.code] || language.ai;
 		return /^ko(?:[-_]|$)/i.test(locale) ? language.name : language.ai;
 	}
 	/* "ko-KR", "ko", "zh-Hans", "ZH_tw" -> our code, or null. */

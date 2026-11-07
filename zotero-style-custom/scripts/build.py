@@ -3,6 +3,7 @@
 import re
 import json
 import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import zipfile
@@ -63,6 +64,7 @@ def validate(path, expected):
 
 
 def main():
+    subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts/build-strings.py")], cwd=ROOT, check=True)
     catalogs = sorted((ROOT / "data").glob("if-*.json"))
     # if-jcr-2025.json is a Journal Citation Reports export, licensed to whoever holds
     # the subscription. It is not an input to anything that gets published: a reader's

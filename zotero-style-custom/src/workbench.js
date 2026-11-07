@@ -82,7 +82,7 @@
   const enabled=id=>runtime.featureEnabled?.(id)!==false;
   const setting=(key,fallback)=>runtime.getSetting?runtime.getSetting(key):runtime.pref(key,fallback);
   // The AI's output language: "auto" (the default) is the panel's own language.
-  const aiLanguage=()=>{const v=setting('aiLanguage','auto');if(v&&v!=='auto')return v;try{return runtime.i18n&&runtime.i18n.isKorean&&runtime.i18n.isKorean()?'Korean':'English';}catch(_){return 'English';}};
+  const aiLanguage=()=>{const v=setting('aiLanguage','auto');if(v&&v!=='auto')return v;try{return runtime.i18n?.aiLanguage?.()||(runtime.i18n?.isKorean?.()?'Korean':'English');}catch(_){return 'English';}};
   const tabFeature={explore:'explore',recent:'Recent',graph:'graphView',tags:'tags',notes:'noteManager',annotations:'annotationManager',backlinks:'backlinks',attachments:'attachmentPreview',tabs:'tabManager',views:'viewManager',canvas:'canvas'};
   const actionFeature={'선택 주석 색상 변경':'annotationColors','선택 주석 색 바꾸기':'annotationColors','선택 주석 병합':'reader.mergeAnnotations','참조 노트 보기':'backlinks','참조 노트':'backlinks','밝은 PDF':'PDFStyles','어두운 PDF':'PDFStyles','세피아 PDF':'PDFStyles','사용자 PDF 테마 적용':'PDFStyles','주석 팔레트 적용':'annotationColors','주석 팔레트 삭제':'annotationColors','주석 팔레트 저장':'annotationColors','색상 이름 저장':'showAnnotationColorName','여백 주석 설정 적용':'marginAnnotation','관련 문헌으로 연결':'relatedItems','선택 문헌끼리 연결 해제':'relatedItems','선택 문헌에 태그 추가':'addTags','선택 문헌에서 태그 제거':'addTags','선택 문헌 태그 이름 변경':'addTags','초록 요약':'tldr','읽기 메모 제안':'AIGenerateRemark','태그 제안':'AIGenerateTags','앱 밝게/어둡게 전환':'darkLightButton'};
   /* Ordinary drafts are cut at DRAFT_LENGTH. A memo draft (it has an owner) is never cut: the reader's whole text is kept (up to MEMO_DRAFT_MAX, far beyond any memo). */
@@ -187,7 +187,7 @@
   const D=value=>value instanceof Shown?value:new Shown(value);
   const T=value=>value instanceof Shown?value.text:i18n.t(value);
   // The rail's name for a section: the short English form where the language has been translated, the Korean name whole.
-  const navLabel=id=>{const full=TABS.find(([key])=>key===id)?.[1]||'';const shown=T(full);return shown!==full&&NAV_SHORT[id]?NAV_SHORT[id]:shown;};
+  const navLabel=id=>{const full=TABS.find(([key])=>key===id)?.[1]||'';const shown=T(full);return (!i18n.locale||i18n.locale()==='en-US')&&shown!==full&&NAV_SHORT[id]?NAV_SHORT[id]:shown;};
   // Library text if there is any, else the panel's own fallback wording (translated like any other).
   const Dor=(value,fallback)=>value==null||value===''?fallback:D(value);
   const F=(sentence,...values)=>new Shown(typeof i18n.format==='function'?i18n.format(sentence,values.map(v=>v instanceof Shown?v.text:v)):sentence.replace(/\{(\d+)\}/g,(whole,n)=>values[Number(n)]===undefined?whole:String(values[Number(n)])));
@@ -600,7 +600,7 @@
   }
   /* Country names for a tooltip, from the platform's own list when it has one. */
   function countryLabel(code){
-   try{return new Intl.DisplayNames([LOC()==='ko-KR'?'ko':'en'],{type:'region'}).of(code)||code;}catch(error){return code;}
+   try{return new Intl.DisplayNames([LOC()],{type:'region'}).of(code)||code;}catch(error){return code;}
   }
   /* A followed author's round face: the photo the plugin already holds
      (never fetched for the sake of drawing), the initials otherwise. */
@@ -830,7 +830,7 @@
      splits the library by kind with one click. The user asked for patents
      and theses to sit apart from the papers rather than blend in; the tree
      cannot group, so the panel does: 특허 6 · 학위논문 6 · 프리프린트 26. */
-  const KIND_LABELS={journalArticle:'논문',preprint:'Preprint',patent:'특허',thesis:'학위논문',book:'책',bookSection:'책의 장',conferencePaper:'학회 논문',report:'보고서',dataset:'데이터셋',computerProgram:'소프트웨어',document:'문서',webpage:'웹페이지',magazineArticle:'잡지 기사',newspaperArticle:'신문 기사',manuscript:'원고',standard:'표준',presentation:'발표'};
+  const KIND_LABELS={journalArticle:'논문',preprint:'프리프린트',patent:'특허',thesis:'학위논문',book:'책',bookSection:'책의 장',conferencePaper:'학회 논문',report:'보고서',dataset:'데이터셋',computerProgram:'소프트웨어',document:'문서',webpage:'웹페이지',magazineArticle:'잡지 기사',newspaperArticle:'신문 기사',manuscript:'원고',standard:'표준',presentation:'발표'};
   const kindLabel=type=>KIND_LABELS[type]||type||'';
   const kindChips=node('div',null,null,{class:'sc-kind-chips','aria-label':'문헌 종류'});
   function drawKindChips(){
@@ -1063,7 +1063,7 @@
     }
     node('p',d.kind==='rating'?'별점을 매기지 않은 문헌은 0점으로 셉니다.':'값이 기록되지 않은 문헌은 이 범위에 들어가지 않습니다.',form,{class:'sc-rule-note'});
    }else if(d.kind==='preprint'){
-    seg(form,'Preprint 또는 출판본',[['preprint','Preprint'],['published','출판본']],d.value,v=>{d.value=v;});
+    seg(form,'Preprint 또는 출판본',[['preprint','프리프린트'],['published','출판본']],d.value,v=>{d.value=v;});
    }else{
     node('p',({pdf:'PDF 첨부가 하나라도 있는 문헌',annotation:'주석이 하나라도 달린 문헌',note:'내가 쓴 노트가 하나라도 있는 문헌'})[d.kind],form,{class:'sc-rule-note'});
     node('p','포함은 이런 문헌만 남기고, 제외는 이런 문헌을 뺍니다. 읽기 시간 기록용 노트는 세지 않습니다.',form,{class:'sc-rule-note'});
@@ -6334,7 +6334,7 @@
    /* A preprint is six to twelve months ahead of the paper it becomes, and it
       used to sit in the list looking like one more journal article. */
    const preprint=work.preprint||/preprint/i.test(String(work.type||''))||/rxiv|research square|ssrn/i.test(String(work.venue||''));
-   if(preprint){const chip=node('span','Preprint',meta,{class:'sc-preprint',title:'아직 심사 전 원고입니다. 정식 게재본은 나중에 따로 나올 수 있습니다.'});chip.style.marginInlineEnd='6px';}
+   if(preprint){const chip=node('span','프리프린트',meta,{class:'sc-preprint',title:'아직 심사 전 원고입니다. 정식 게재본은 나중에 따로 나올 수 있습니다.'});chip.style.marginInlineEnd='6px';}
    // Worst news first, in the row: a withdrawn paper must not read like a paper.
    const rank=Number(work.signals&&work.signals.rank)||0;
    if(rank>=1){
@@ -7493,7 +7493,7 @@
     if(ctx.isNew){title.appendChild(doc.createTextNode(' '));node('span',T('새'),title,{class:'sc-tag sc-new',title:T('마지막 확인 이후 새로 나온 논문')});}
     const meta=node('p',null,text,{class:'sc-hit-meta sc-inbox-meta'});
     const preprint=isPreprintWork(work);
-    if(preprint)node('span','Preprint',meta,{class:'sc-preprint',title:T('아직 심사 전 원고입니다. 정식 게재본은 나중에 따로 나올 수 있습니다.')});
+    if(preprint)node('span','프리프린트',meta,{class:'sc-preprint',title:T('아직 심사 전 원고입니다. 정식 게재본은 나중에 따로 나올 수 있습니다.')});
     // Saved before the namesake check existed, and not judged yet: said so, so nobody takes it as verified.
     if(work.unclassified)node('span',T('미분류 · 다음 조회 때 확인'),meta,{class:'sc-tag sc-unclassified',title:T('이 논문은 동명이인 검사가 도입되기 전에 저장되어 아직 확인되지 않았습니다. 다음 조회 때 이 저자의 논문인지 가려집니다.')});
     const parts=[];
@@ -7827,7 +7827,7 @@
        plugin already holds, and the followed authors with their part. */
     const meta=node('p',null,text,{class:'sc-hit-meta sc-inbox-meta'});
     const preprint=isPreprintWork(work);
-    if(preprint)node('span','Preprint',meta,{class:'sc-preprint',title:T('아직 심사 전 원고입니다. 정식 게재본은 나중에 따로 나올 수 있습니다.')});
+    if(preprint)node('span','프리프린트',meta,{class:'sc-preprint',title:T('아직 심사 전 원고입니다. 정식 게재본은 나중에 따로 나올 수 있습니다.')});
     // Saved before the namesake check existed, and not judged yet: said so, so nobody takes it as verified.
     if(entry.copies.some(copy=>copy?.unclassified))node('span',T('미분류 · 다음 조회 때 확인'),meta,{class:'sc-tag sc-unclassified',title:T('이 논문은 동명이인 검사가 도입되기 전에 저장되어 아직 확인되지 않았습니다. 다음 조회 때 이 저자의 논문인지 가려집니다.')});
     const parts=[];
@@ -9509,13 +9509,13 @@
     const lang=part('Language / 언어','기본값은 영어입니다. 패널은 바로 바뀌고, 문헌 목록의 열 이름과 오른쪽 클릭 메뉴는 Zotero를 다시 시작하면 바뀝니다.');
     const chosen=String(setting('language','en-US')||'en-US');
     const group=node('div',null,lang,{class:'sc-segmented sc-language',role:'group','aria-label':'Language / 언어'});
-    for(const[value,name]of [['en-US','English'],['ko-KR','한국어'],['auto','Zotero 언어 따르기 / Follow Zotero']]){
+    for(const[value,name]of [['en-US','English'],['zh-CN','简体中文'],['ko-KR','한국어'],['auto','Zotero 언어 따르기 / Follow Zotero']]){
      const choice=button(name,async()=>{
       if(typeof runtime.setSetting!=='function')return;
       await runtime.setSetting('language',value);
       for(const b of group.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.value===value));
       /* Say it again in the new language: the chrome in place, then the tab. */
-      retranslate();await render();message(value==='ko-KR'?'언어를 한국어로 바꿨습니다.':value==='auto'?'Zotero의 언어를 따릅니다.':'Language set to English.');
+      retranslate();await render();message(value==='zh-CN'?'界面语言已设为简体中文。':value==='ko-KR'?'언어를 한국어로 바꿨습니다.':value==='auto'?'Zotero의 언어를 따릅니다.':'Language set to English.');
      },group,{'aria-pressed':String(chosen===value),'data-value':value,'data-writes':'setting'});
     }
    }

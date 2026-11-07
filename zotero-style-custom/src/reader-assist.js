@@ -274,7 +274,7 @@
   const setting=(key,fallback)=>{try{const v=runtime.getSetting(key);return v===undefined||v===null?fallback:v;}catch(_){return fallback;}};
   /* The answer language: "auto" (the default) follows the panel's own language, so an English panel gets English
      summaries; a person who chose Korean or English keeps it. */
-  const language=()=>{const v=setting('aiLanguage','auto');if(v&&v!=='auto')return v;try{return runtime.i18n&&typeof runtime.i18n.isKorean==='function'&&runtime.i18n.isKorean()?'Korean':'English';}catch(_){return 'English';}};
+  const language=()=>{const v=setting('aiLanguage','auto');if(v&&v!=='auto')return v;try{return runtime.i18n?.aiLanguage?.()||(runtime.i18n?.isKorean?.()?'Korean':'English');}catch(_){return 'English';}};
   /* A wait that the job's Stop ends at once. The work behind it (the paper's text, which other features share)
      goes on; only this job stops waiting for it. */
   const cancelledError=()=>Object.assign(new Error('중지했습니다.'),{code:'cancelled',own:true});
@@ -1024,7 +1024,7 @@
     pdfTranslatePref:key=>{try{return Z.Prefs&&Z.Prefs.get('extensions.zotero.ZoteroPDFTranslate.'+key,true);}catch(_){return '';}},
     pdftUsageStore:{get:()=>runtime.cache.pdftUsage,set:v=>{runtime.cache.pdftUsage=v;persistUI();}},
     ai:{available:()=>!!runtime.assist?.available?.(),translate:(texts,o)=>runtime.assist.translateParagraphs(texts,o)},
-    uiKorean:()=>runtime.i18n?.isKorean?.()!==false});
+    uiKorean:()=>runtime.i18n?.isKorean?.()!==false,uiLocale:()=>runtime.i18n?.locale?.()||''});
    // What is shown comes from the cache under the current settings (service.resolved): switching the language, the
    // formality or the AI model shows that setting's translations, never another's.
    return session.tr={service,paragraphs:[]};
@@ -1050,7 +1050,7 @@
    const providers=service.providers(),current=service.pickProvider(),target=service.target(),busy=trBusy(session);
    // "Automatic" first, naming what it resolves to now; the pill shows the language itself.
    const chosen=String(runtime.pref('translateTarget','auto')||'auto').toUpperCase(),explicit=TR.TARGETS.some(x=>x.code===chosen);
-   const targetLabel=x=>runtime.i18n?.isKorean?.()?x.label:(x.ai||x.label);
+   const targetLabel=x=>runtime.i18n?.isChinese?.()?({KO:'韩语','EN-US':'英语',JA:'日语','ZH-HANS':'简体中文',DE:'德语',FR:'法语',ES:'西班牙语'}[x.code]||x.label):runtime.i18n?.isKorean?.()?x.label:(x.ai||x.label);
    ui.trTarget.set({items:[{value:'auto',label:T('자동 ({0})',targetLabel(service.autoTarget()))},...TR.TARGETS.map(x=>({value:x.code,label:targetLabel(x)}))],current:explicit?target.code:'auto',label:targetLabel(target)});
    ui.trProvider.textContent=current?T('번역기: {0}',service.providerLabel(current))+(providers.length>1?' · '+T('대체: {0}',providers.slice(providers.indexOf(current)+1).map(service.providerLabel).join(', ')||'—'):'')
     +(service.targetOrigin()==='pdftranslate'?' · '+t('번역 언어는 Translate for Zotero 설정을 따릅니다'):''):t('번역기가 없습니다. 설정 → 번역·AI에서 DeepL 키를 넣거나 Translate for Zotero를 설치하세요. DeepL 무료 키는 한 달 50만 자까지 쓸 수 있습니다.');

@@ -1,19 +1,26 @@
 # Zotero plugins: ZotPoP and Style Custom
 
 This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOONSUNG/zotero-plugins](https://github.com/JAEYOONSUNG/zotero-plugins).
-It completes English interface labels, fixes the Paper assistant close button, and lets you resize main-list columns independently.
-Download Style Custom from the [English UI v2 release](https://github.com/HappyAny/zotero-plugins/releases/tag/english-ui-v2).
-ZotPoP 0.58.2 is available from the first English UI release.
-See [changes, installation, and verification](docs/english-ui-fixes.md).
+It adds Simplified Chinese to ZotPoP and Style Custom. It also keeps the English labels, assistant close fix, and independent column resizing.
+Download both plugins from the [Chinese UI release](https://github.com/HappyAny/zotero-plugins/releases/tag/chinese-ui-v1).
+See the [Chinese UI validation record](docs/chinese-ui-validation.json) and the [earlier interaction fixes](docs/english-ui-fixes.md).
 The upstream MIT license remains in place.
 
+简体中文：ZotPoP 设置页的 Language 选择“简体中文”。Style Custom 设置中的“界面语言”选择“简体中文”。
+AI 的“输出语言”另有“简体中文”选项。更改界面语言后重启 Zotero，以更新主列表列名和工具栏提示。
+论文题名、作者、笔记和标签保持原文。CSV 等导出的字段标识保持兼容。
+
+The Chinese catalog covers 2,965 Style Custom messages and all 810 ZotPoP string keys.
+Browser checks cover 144 settings rows and all 19 workbench views.
+Native Zotero checks confirm Chinese loading and independent column dragging.
+One native check still reports a 14 px oscillation after repeated double-click fitting of the title column.
 
 Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–10. Style Custom: Zotero 9–10.
 
 | Plugin | What it does | Latest |
 |---|---|---|
-| **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.2.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/english-ui-v1/zotpop-0.58.2.xpi) |
-| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.54.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/english-ui-v2/style-custom-0.59.54.xpi) |
+| **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.3.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v1/zotpop-0.58.3.xpi) |
+| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.55.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v1/style-custom-0.59.55.xpi) |
 
 ![The Zotero item list with Style Custom's columns: impact factor, citation count with a bar, reading status, the journal in its own colour, rating, reading time, file kinds, and the corresponding institution with its tier and flag](docs/images/library-columns.png)
 

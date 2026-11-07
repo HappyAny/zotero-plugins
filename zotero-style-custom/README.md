@@ -4,6 +4,11 @@ A research workbench for Zotero 9 and 10 (9.0–10.*; the manifest does not load
 
 The repository README has the illustrated tour: [../README.md](../README.md). This file is the reference for what the plugin records, where, and how it decides things.
 
+Version 0.59.55 adds Simplified Chinese to settings, the workbench, main-list badges, and messages.
+The interface and AI output language each have a Simplified Chinese option.
+The catalog preserves inserted names, paper titles, notes, and tags.
+See the [validation record](../docs/chinese-ui-validation.json).
+
 Version 0.59.54 translates the main-list Thesis and Patent badges and their tooltips into the selected interface language.
 Drag a header divider to resize the column on its left. The other columns keep their widths.
 The list scrolls horizontally when the columns exceed the available space.

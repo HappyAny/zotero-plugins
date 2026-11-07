@@ -1968,9 +1968,9 @@
 	}
 	function setColsMode(mode) { state.colsMode = mode; applyColumnView(); saveLayout(); }
 	// Interface language choices use the current interface language.
-	function languageChoice() { let value = PREF("language"); return value === "ko" || value === "auto" ? value : "en"; }
+	function languageChoice() { let value = PREF("language"); return value === "ko" || value === "zh" || value === "auto" ? value : "en"; }
 	function setLanguage(choice) {
-		if (!["en", "ko", "auto"].includes(choice) || choice === languageChoice()) return;
+		if (!["en", "ko", "zh", "auto"].includes(choice) || choice === languageChoice()) return;
 		PREF("language", choice);
 		// Everything the window says is made from the language at open, so it is opened again in the new one.
 		// The last search comes back from the history. A search or an import in progress is not interrupted:
@@ -1993,6 +1993,7 @@
 			"-",
 			{ heading: t("prefLanguage") },
 			{ label: t("prefLangEn"), check: language === "en", radio: true, run: () => setLanguage("en") },
+			{ label: t("prefLangZh"), check: language === "zh", radio: true, run: () => setLanguage("zh") },
 			{ label: t("prefLangKo"), check: language === "ko", radio: true, run: () => setLanguage("ko") },
 			{ label: t("prefLangAuto"), check: language === "auto", radio: true, run: () => setLanguage("auto") }
 		];
