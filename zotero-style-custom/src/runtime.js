@@ -7579,7 +7579,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     });
     if (!found) { chip?.remove(); return; }
     const P = this.palette(win.document);
-    const label = found.kind === 'patent' ? '특허' : '학위논문';
+    const label = this.t(found.kind === 'patent' ? '특허' : '학위논문');
     const tone = found.kind === 'patent' ? P.amber : P.purple;
     if (!chip) {
       chip = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
@@ -7593,7 +7593,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     chip.style.background = this.tint(tone, 0.16);
     chip.style.color = tone;
     chip.title = found.kind === 'patent'
-      ? `${found.number ? this.itemKinds.office(found.number) + ' ' + this.t('특허') + ' ' + found.number : this.t('특허')} · ${this.t(found.why === 'file name' ? '파일 이름으로 판별' : found.why === 'title' ? '제목으로 판별' : '항목 유형')}`
+      ? `${found.number ? this.t(this.itemKinds.office(found.number)) + ' ' + this.t('특허') + ' ' + found.number : this.t('특허')} · ${this.t(found.why === 'file name' ? '파일 이름으로 판별' : found.why === 'title' ? '제목으로 판별' : '항목 유형')}`
       : `${this.t('학위논문')} · ${this.t(found.why === 'title' ? '제목으로 판별' : '항목 유형')}`;
   }
 
@@ -7612,6 +7612,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       state.columnFit.seen++;
       const tree = win.ZoteroPane?.itemsView?.tree;
       if (!tree?._columns?.onResize || !tree.props?.id) { state.columnFit.last = 'no tree: ' + [!!tree, !!tree?._columns?.onResize, tree?.props?.id].join(','); return; }
+      if (!resizer.closest(`#${win.CSS.escape(tree.props.id)}`) || tree.props.staticColumns) return;
       const edgeKey = [...resizer.classList].find(name => !['resizer', 'draggable', 'react-draggable'].includes(name) && !name.startsWith('react-draggable-'));
       if (!edgeKey) { state.columnFit.last = 'no key in ' + resizer.className; return; }
       const visible = tree._getVisibleColumns?.() || [];
@@ -7731,7 +7732,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         for (const c of visible) if (!c.fixedWidth && !c.staticWidth) changes[c.dataKey] = Math.round(stored.get(c.dataKey) || widths.get(c.dataKey) || 0);
         const width = want;
         changes[dataKey] = width;
-        tree._columns.onResize(changes, true);
+        this.resizeColumns(win, tree, changes, true);
         this.rollTable(win, state);
         if (pass) { state.columnFit.last += ` · settled ${Math.round(current)} → ${Math.round(width)}`; return; }
         state.columnFit.fitted++; state.columnFit.last = `${dataKey}: ${Math.round(current)} → ${Math.round(width)} (content ${Math.round(widest)} by text, ${Math.round(byScroll)} by scrollWidth, ${cells} cells, widest "${widestText}", ${state.tableRoll?.rolling ? 'list rolls to ' + Math.round(state.tableRoll.wanted) : 'fits the list'})`;
@@ -7750,45 +7751,106 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.attachColumnDrag(win, state);
   }
 
-  /* Observe native column resizing. Zotero owns the drag, its minimum widths,
-     pointer tracking and saved preferences. A document-level replacement can
-     block React's resizer before it receives the first mouse event. */
+  /* Resize one column without borrowing room from its neighbour. Zotero's
+     pair resize stops as soon as the neighbour reaches its minimum, even
+     when our list can scroll. Track the pointer from its starting position,
+     and keep the actual header and row widths fixed throughout the gesture. */
   attachColumnDrag(win, state) {
     const doc = win.document;
     if (typeof doc?.addEventListener !== 'function') return;
-    state.columnDrag = { native: true, drags: 0, last: '' };
+    state.columnDrag = { independent: true, drags: 0, last: '' };
     let drag = null;
+    const consume = event => { event.preventDefault(); event.stopImmediatePropagation(); };
+    const finish = (commit, event) => {
+      if (!drag) return;
+      if (event) consume(event);
+      const done = drag; drag = null;
+      done.root.classList.remove('style-custom-resizing');
+      if (!done.moved) return;
+      try {
+        this.resizeColumns(win, done.tree, commit ? {...done.widths, [done.key]: done.width} : done.widths, commit);
+        this.rollTable(win, state);
+        if (commit) {
+          state.columnDrag.drags++;
+          state.columnDrag.last = `${done.key}: ${Math.round(done.start)} → ${Math.round(done.width)}`;
+        }
+      }
+      catch (error) { this.Z.logError(error); }
+    };
     const onDown = event => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || drag) return;
       const tree = win.ZoteroPane?.itemsView?.tree;
       const resizer = event.target?.closest?.('.virtualized-table-header .resizer');
-      if (!resizer || !tree?.props?.id || !resizer.closest(`#${tree.props.id}`)) return;
+      if (!resizer || !tree?._columns?.onResize || !tree.props?.id || tree.props.staticColumns) return;
+      const root = resizer.closest(`#${win.CSS.escape(tree.props.id)}`);
+      if (!root) return;
       const visible = tree._getVisibleColumns?.() || [];
       const key = [...resizer.classList].find(name => visible.some(c => c.dataKey === name));
-      const column = visible[visible.findIndex(c => c.dataKey === key) - 1];
-      if (!column) return;
-      drag = { tree, key: column.dataKey, start: this.storedWidths(win, tree).get(column.dataKey) };
+      let index = visible.findIndex(c => c.dataKey === key) - 1;
+      while (index >= 0 && (visible[index].fixedWidth || visible[index].staticWidth)) index--;
+      const column = visible[index];
+      if (!column || !Number.isFinite(event.clientX)) return;
+      const widths = {};
+      for (const c of visible) {
+        const width = root.querySelector(`.virtualized-table-header .cell.${win.CSS.escape(c.dataKey)}`)?.getBoundingClientRect().width;
+        if (!c.fixedWidth && !c.staticWidth && Number.isFinite(width) && width > 0) widths[c.dataKey] = width;
+      }
+      const start = widths[column.dataKey];
+      if (!start) return;
+      consume(event);
+      const body = root.querySelector('.virtualized-table-body');
+      const rtl = win.getComputedStyle?.(root)?.direction === 'rtl' || this.Z.rtl;
+      const min = Math.max(30, (Number(column.minWidth) || 20) + (column.iconLabel ? 0 : 16));
+      drag = { tree, root, body, widths, key: column.dataKey, start, width: start, min,
+        x: event.clientX, scroll: Math.abs(body?.scrollLeft || 0), direction: rtl ? -1 : 1, moved: false };
+      root.classList.add('style-custom-resizing');
     };
-    const onUp = () => {
+    const onMove = event => {
       if (!drag) return;
-      const done = drag; drag = null;
-      // Native mouseup handlers commit the width before this microtask runs.
-      Promise.resolve().then(() => {
-        try {
-          const width = this.storedWidths(win, done.tree).get(done.key);
-          if (Number.isFinite(width) && width !== done.start) {
-            state.columnDrag.drags++;
-            state.columnDrag.last = `${done.key}: ${Math.round(done.start)} → ${Math.round(width)}`;
-          }
-          this.rollTable(win, state);
-        }
-        catch (error) { this.Z.logError(error); }
-      });
+      consume(event);
+      if (!Number.isFinite(event.clientX)) return;
+      if (win.ZoteroPane?.itemsView?.tree !== drag.tree || !drag.root.isConnected) { finish(false); return; }
+      const width = Math.max(drag.min, drag.start + (event.clientX - drag.x) * drag.direction
+        + Math.abs(drag.body?.scrollLeft || 0) - drag.scroll);
+      if (Math.abs(width - drag.width) < 0.5) return;
+      try {
+        if (!drag.moved) this.resizeColumns(win, drag.tree, drag.widths);
+        this.resizeColumns(win, drag.tree, {[drag.key]: width});
+        drag.width = width; drag.moved = true;
+        this.rollTable(win, state);
+      }
+      catch (error) { this.Z.logError(error); finish(false); }
     };
-    for (const [name, fn] of [['mousedown', onDown], ['mouseup', onUp]]) {
+    const onUp = event => finish(true, event);
+    const onKey = event => { if (event.key === 'Escape') finish(false, event); };
+    const onBlur = () => finish(false);
+    for (const [name, fn] of [['mousedown', onDown], ['mousemove', onMove], ['mouseup', onUp], ['keydown', onKey]]) {
       doc.addEventListener(name, fn, true);
       state.listeners.push([doc, name, fn, true]);
     }
+    win.addEventListener?.('blur', onBlur);
+    state.listeners.push([win, 'blur', onBlur]);
+    state.columnDragCleanup = onBlur;
+  }
+
+  /* Zotero 10 writes a full border-box basis, but subtracts the padding when
+     it saves a flexible column. Its constructor feeds that saved width back
+     without adding the padding. Store the full width, then restore the live
+     basis, so rebuilding the list does not lose 16 px at every resize. Older
+     Zotero rules already use a content-box basis and keep their own contract. */
+  resizeColumns(win, tree, widths, persist = false) {
+    const columns = tree._getVisibleColumns?.() || [];
+    const manager = tree._columns;
+    const rules = manager?._stylesheet?.sheet?.cssRules;
+    const native10 = columns.some(c => /^calc\(/.test(rules?.[manager._columnStyleMap?.[win.CSS.escape(c.dataKey)]]?.style?.flexBasis || ''));
+    if (!persist || !native10) { manager.onResize(widths, persist); return; }
+    const saved = {};
+    for (const [key, width] of Object.entries(widths)) {
+      const c = columns.find(c => c.dataKey === key);
+      saved[key] = width + (c && !c.fixedWidth && !c.staticWidth && !c.iconLabel ? 16 : 0);
+    }
+    manager.onResize(saved, true);
+    manager.onResize(widths, false);
   }
 
   /* The width each visible column was given, from the stylesheet Zotero
@@ -7813,7 +7875,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       const rule = sheet?.cssRules?.[map[win.CSS.escape(c.dataKey)]]?.style;
       const room = c === visible[0] ? extra : 0;
       let width;
-      if (c.fixedWidth || c.staticWidth) width = parseFloat(rule?.minWidth) || parseFloat(c.width) || 0;
+      if (c.fixedWidth || c.staticWidth) width = calc(rule?.minWidth) >= 0 ? calc(rule.minWidth) + room : parseFloat(rule?.minWidth) || parseFloat(c.width) || 0;
       else if (calc(rule?.flexBasis) >= 0) width = calc(rule.flexBasis) + room;
       else if (rule && parseFloat(rule.flexBasis) >= 0) width = parseFloat(rule.flexBasis) + 16;
       else width = parseFloat(c.width) || 0;
@@ -7842,6 +7904,20 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const header = root?.querySelector('.virtualized-table-header');
     const body = root?.querySelector('.virtualized-table-body'), list = body?.querySelector('.windowed-list');
     if (!table || !header || !body || !list) { state.tableRoll = { error: 'missing ' + [!table && 'table', !header && 'header', !body && 'body', !list && 'list'].filter(Boolean).join(', ') }; return null; }
+    // The native cells grow and shrink even with a basis. Disable both on
+    // this list, otherwise the header edge moves less than the mouse, and
+    // the content of a narrow column is squeezed again after a fit.
+    if (!state.columnLayoutStyle) {
+      const style = doc.createElementNS('http://www.w3.org/1999/xhtml', 'style');
+      style.textContent = `.virtualized-table.style-custom-column-widths>.virtualized-table-header>.cell,.virtualized-table.style-custom-column-widths>.virtualized-table-body .row>.cell{flex-grow:0!important;flex-shrink:0!important}
+.virtualized-table.style-custom-column-widths .virtualized-table-header .resizer{min-width:12px;left:-6px;z-index:2}
+.virtualized-table.style-custom-column-widths:dir(rtl) .virtualized-table-header .resizer{left:auto;right:-6px}
+.style-custom-resizing,.style-custom-resizing .cell{cursor:col-resize!important;user-select:none!important}`;
+      (doc.head || doc.documentElement).appendChild(style);
+      state.columnLayoutStyle = style;
+    }
+    table.classList.add('style-custom-column-widths');
+    (state.rollTables ||= new Set()).add(table);
     let wanted = 0;
     for (const width of this.storedWidths(win, tree).values()) wanted += width;
     const PADDING = 16; // the body's own inline padding
@@ -7867,27 +7943,39 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   attachTableRoll(win, state) {
     const doc = win.document;
     if (typeof doc?.addEventListener !== 'function' || typeof win.setTimeout !== 'function') return;
-    let timer = null;
+    let timer = null, retry = null, stopped = false;
     const schedule = () => { if (timer) return; timer = win.setTimeout(() => { timer = null; try { this.rollTable(win, state); } catch (error) { this.Z.logError(error); } }, 50); };
     const follow = event => { const header = event.target?.parentNode?.querySelector?.('.virtualized-table-header'); if (header && header.style.width) header.style.transform = `translateX(${-(event.target.scrollLeft || 0)}px)`; };
     // The list is built after the window: watch for it, then for its columns.
-    let observer = null;
+    // Switching libraries can replace the whole table, including its scroll
+    // element. Rebind when that happens, without scheduling work for row paints.
+    let observer = null, watchedBody = null, watchedHeader = null;
     const watch = () => {
       const tree = win.ZoteroPane?.itemsView?.tree, root = tree?.props?.id && doc.getElementById(tree.props.id);
       const body = root?.querySelector('.virtualized-table-body'), header = root?.querySelector('.virtualized-table-header');
       if (!body || !header) return false;
-      body.addEventListener('scroll', follow); state.listeners.push([body, 'scroll', follow]);
-      if (typeof win.MutationObserver === 'function') { observer = new win.MutationObserver(schedule); observer.observe(header, { childList: true }); }
+      if (body === watchedBody && header === watchedHeader) return true;
+      watchedBody?.removeEventListener('scroll', follow);
+      watchedBody = body; watchedHeader = header;
+      body.addEventListener('scroll', follow);
       schedule();
       return true;
     };
+    if (typeof win.MutationObserver === 'function') {
+      observer = new win.MutationObserver(records => {
+        if (stopped) return;
+        watch();
+        if (records.some(record => record.target === watchedHeader)) schedule();
+      });
+      observer.observe(doc.documentElement, { childList: true, subtree: true });
+    }
     let tries = 0;
-    const tryWatch = () => { if (watch() || ++tries > 40) return; win.setTimeout(tryWatch, 500); };
+    const tryWatch = () => { if (stopped || watch() || ++tries > 40) return; retry = win.setTimeout(tryWatch, 500); };
     tryWatch();
     const onUp = () => schedule();
     doc.addEventListener('mouseup', onUp); state.listeners.push([doc, 'mouseup', onUp]);
     win.addEventListener('resize', schedule); state.listeners.push([win, 'resize', schedule]);
-    state.rollCleanup = () => { observer?.disconnect(); if (timer) win.clearTimeout(timer); const tree = win.ZoteroPane?.itemsView?.tree, root = tree?.props?.id && doc.getElementById(tree.props.id); for (const [node, prop] of [[root?.querySelector('.windowed-list'), 'min-width'], [root?.querySelector('.virtualized-table-header'), 'width'], [root?.querySelector('.virtualized-table-header'), 'transform'], [root?.classList?.contains('virtualized-table') ? root : root?.querySelector('.virtualized-table'), 'overflow']]) node?.style.removeProperty(prop); };
+    state.rollCleanup = () => { stopped = true; observer?.disconnect(); watchedBody?.removeEventListener('scroll', follow); if (timer) win.clearTimeout(timer); if (retry) win.clearTimeout(retry); state.columnLayoutStyle?.remove(); for (const table of state.rollTables || []) table.classList.remove('style-custom-column-widths'); const tree = win.ZoteroPane?.itemsView?.tree, root = tree?.props?.id && doc.getElementById(tree.props.id); for (const [node, prop] of [[root?.querySelector('.windowed-list'), 'min-width'], [root?.querySelector('.virtualized-table-header'), 'width'], [root?.querySelector('.virtualized-table-header'), 'transform'], [root?.classList?.contains('virtualized-table') ? root : root?.querySelector('.virtualized-table'), 'overflow']]) node?.style.removeProperty(prop); };
   }
 
   attachMotion(win, state, {marquee=true,reading=true}={}) {
@@ -8265,7 +8353,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     cleanup(()=>win.clearInterval(state.timer));cleanup(()=>state.marqueeCleanup?.());
     cleanup(()=>state.workbench?.destroy());cleanup(()=>state.readerCleanup?.());
     cleanup(()=>state.itemPaneObserver?.disconnect());
-    cleanup(()=>state.rollCleanup?.());cleanup(()=>state.cellsCleanup?.());
+    cleanup(()=>state.columnDragCleanup?.());cleanup(()=>state.rollCleanup?.());cleanup(()=>state.cellsCleanup?.());
     for(const row of win.document.querySelectorAll('#zotero-item-pane .meta-row[style*="min-height"]'))cleanup(()=>row.style.removeProperty('min-height'));
     for(const node of state.titleNodes||[])cleanup(()=>node.remove());
     for(const[cell,position]of state.titlePositions||[])cleanup(()=>{if(cell.style.position==='relative'){if(position)cell.style.position=position;else cell.style.removeProperty('position');}});

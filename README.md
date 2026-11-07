@@ -1,8 +1,9 @@
 # Zotero plugins: ZotPoP and Style Custom
 
 This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOONSUNG/zotero-plugins](https://github.com/JAEYOONSUNG/zotero-plugins).
-It completes English interface labels, fixes the Paper assistant close button, and restores native Zotero column resizing.
-Download both updated plugins from the [English UI release](https://github.com/HappyAny/zotero-plugins/releases/tag/english-ui-v1).
+It completes English interface labels, fixes the Paper assistant close button, and lets you resize main-list columns independently.
+Download Style Custom from the [English UI v2 release](https://github.com/HappyAny/zotero-plugins/releases/tag/english-ui-v2).
+ZotPoP 0.58.2 is available from the first English UI release.
 See [changes, installation, and verification](docs/english-ui-fixes.md).
 The upstream MIT license remains in place.
 
@@ -12,7 +13,7 @@ Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–
 | Plugin | What it does | Latest |
 |---|---|---|
 | **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.2.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/english-ui-v1/zotpop-0.58.2.xpi) |
-| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.53.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/english-ui-v1/style-custom-0.59.53.xpi) |
+| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.54.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/english-ui-v2/style-custom-0.59.54.xpi) |
 
 ![The Zotero item list with Style Custom's columns: impact factor, citation count with a bar, reading status, the journal in its own colour, rating, reading time, file kinds, and the corresponding institution with its tier and flag](docs/images/library-columns.png)
 

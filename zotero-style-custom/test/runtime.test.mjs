@@ -2519,6 +2519,7 @@ test('a patent PDF sitting as a bare attachment gets a chip in the title cell', 
   const {parseHTML} = await import('linkedom');
   const {document, window} = parseHTML('<html><body><div class="row"><span class="cell title"><span class="cell-text">US20240352440A1.pdf</span></span></div></body></html>');
   const {plugin} = fixture();
+  plugin.applyLocale();
   const state = {titleNodes: new Set()};
   const attachment = {itemType: 'attachment', attachmentFilename: 'US20240352440A1.pdf', parentItemID: null,
     isAttachment: () => true, isRegularItem: () => false, getField: key => key === 'title' ? 'US20240352440A1.pdf' : ''};
@@ -2538,6 +2539,49 @@ test('a patent PDF sitting as a bare attachment gets a chip in the title cell', 
   const paper = {itemType: 'journalArticle', isAttachment: () => false, isRegularItem: () => true, getField: key => key === 'title' ? 'Structure of a SMC complex' : ''};
   plugin.paintKind(row, paper, state, window);
   assert.equal(row.querySelector('.style-custom-kind'), null);
+});
+
+test('English main-list title enhancement translates thesis and patent badges and offices while preserving item text', async () => {
+  const {parseHTML} = await import('linkedom');
+  const {document, window} = parseHTML('<html><body><div id="zotero-items-tree"></div></body></html>');
+  const {plugin, item, Z} = fixture();
+  Z.Prefs.set('extensions.style-custom.language', 'en-US'); plugin.applyLocale();
+  const inputs = [
+    ['thesis', 'Spectral shaping of electro-optical frequency combs'],
+    ['journalArticle', 'A doctoral thesis about 학위논문'],
+    ...['US20240352440A1', 'EP3456789B1', 'WO2021/123456A1', 'KR10-2345678', 'JP2020-123456', 'CN123456789'].map(n => ['attachment', n + '.pdf']),
+    ['patent', '이름을 그대로 유지'], ['journalArticle', 'A paper about optics']
+  ];
+  const refs = inputs.map(([type, title], i) => {
+    const ref = item(i + 1); ref.itemType = type; ref.fields.title = title;
+    ref.isAttachment = () => type === 'attachment'; ref.isRegularItem = () => type !== 'attachment';
+    ref.attachmentFilename = type === 'attachment' ? title : '';
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'items-row-' + i;
+    const cell = document.createElement('span'); cell.className = 'cell title';
+    const label = document.createElement('span'); label.className = 'cell-text'; label.textContent = title;
+    cell.append(label); row.append(cell); document.getElementById('zotero-items-tree').append(row);
+    return ref;
+  });
+  window.ZoteroPane = {itemsView: {getRow: index => ({ref: refs[index]})}};
+  const state = {titleNodes: new Set(), titleWeights: new Map(), titlePositions: new Map()};
+  plugin.featureEnabled = () => false;
+  try {
+    plugin.enhanceTitles(window, state);
+    const chips = [...document.querySelectorAll('.style-custom-kind')];
+    assert.equal(chips.length, 9);
+    assert.deepEqual(chips.map(n => n.textContent), ['Thesis', 'Thesis', ...Array(7).fill('Patent')]);
+    assert.ok(chips.every(n => !/[\uac00-\ud7af]/.test(n.textContent + n.title)));
+    assert.match(chips[2].title, /US Patent US20240352440A1/);
+    assert.match(chips[5].title, /KR Patent/);
+    assert.deepEqual([...document.querySelectorAll('.cell-text')].map(n => n.textContent), inputs.map(([, title]) => title));
+    // A language change repaints existing badges, including reused rows.
+    Z.Prefs.set('extensions.style-custom.language', 'ko-KR'); plugin.applyLocale();
+    plugin.enhanceTitles(window, state);
+    assert.equal(chips[0].textContent, '학위논문');
+    Z.Prefs.set('extensions.style-custom.language', 'en-US'); plugin.applyLocale();
+    plugin.enhanceTitles(window, state);
+    assert.equal(chips[0].textContent, 'Thesis');
+  } finally { plugin.i18n.use('ko-KR'); }
 });
 
 test('double-clicking the edge at the right of a column fits that column to its widest visible cell', async () => {
@@ -2727,7 +2771,7 @@ test('when the columns add up to more than the list, the list rolls sideways and
   state.rollCleanup?.();
 });
 
-test('native column resize receives the drag and stores widths without plugin interception', async () => {
+test('a main-list drag changes one column when its neighbour is at minimum width, and Escape restores the layout', async () => {
   const {parseHTML} = await import('linkedom');
   const {document, window} = parseHTML(`<html><body><div id="tbl" class="virtualized-table">
     <div class="virtualized-table-header"><div class="cell title"><span>Title</span></div><div class="cell venue"><div class="resizer venue"><div></div></div><span>Venue</span></div><div class="cell journal"><div class="resizer journal"><div></div></div><span>Journal</span></div></div>
@@ -2735,14 +2779,14 @@ test('native column resize receives the drag and stores widths without plugin in
   </div></body></html>`);
   const {plugin} = fixture();
   const resized = [];
-  const columns = [{dataKey: 'title', minWidth: 50}, {dataKey: 'venue', minWidth: 20}, {dataKey: 'journal', minWidth: 40}];
-  const rules = {title: {flexBasis: '284px'}, venue: {flexBasis: '184px'}, journal: {flexBasis: '84px'}};
+  const columns = [{dataKey: 'title', minWidth: 50}, {dataKey: 'venue', minWidth: 20}, {dataKey: 'journal', minWidth: 50}];
+  const rules = {title: {flexBasis: '284px'}, venue: {flexBasis: '184px'}, journal: {flexBasis: '50px'}};
   const tree = {props: {id: 'tbl'}, _getVisibleColumns: () => columns, _columns: {
     onResize: (widths, store) => { resized.push([widths, !!store]); for (const [k, w] of Object.entries(widths)) rules[k].flexBasis = (w - 16) + 'px'; },
     _stylesheet: {sheet: {cssRules: [{style: rules.title}, {style: rules.venue}, {style: rules.journal}]}}, _columnStyleMap: {title: 0, venue: 1, journal: 2}}};
   window.ZoteroPane = {itemsView: {tree}};
   window.CSS = {escape: s => s};
-  const size = {title: 300, venue: 200, journal: 100};
+  const size = {title: 300, venue: 200, journal: 66};
   for (const key of Object.keys(size)) document.querySelector(`.virtualized-table-header .cell.${key}`).getBoundingClientRect = () => ({width: size[key]});
   Object.defineProperty(document.querySelector('.virtualized-table-body'), 'clientWidth', {value: 616, configurable: true});
   const state = {listeners: []};
@@ -2751,18 +2795,24 @@ test('native column resize receives the drag and stores widths without plugin in
   const received = [];
   for (const type of ['mousedown', 'mousemove', 'mouseup']) document.addEventListener(type, event => received.push([type, event.defaultPrevented]));
   const mouse = (type, clientX, target = document) => { const event = new window.Event(type, {bubbles: true, cancelable: true}); event.clientX = clientX; event.button = 0; target.dispatchEvent(event); return event; };
-  assert.equal(mouse('mousedown', 500, handle).defaultPrevented, false);
-  assert.deepEqual(resized, [], 'the plugin does not resize columns at drag start');
-  assert.equal(mouse('mousemove', 440).defaultPrevented, false);
-  // The native table commits these widths. The plugin only observes the result.
-  tree._columns.onResize({title: 300, venue: 140, journal: 160}, true);
-  assert.equal(mouse('mouseup', 440).defaultPrevented, false);
-  await Promise.resolve();
-  assert.deepEqual(received, [['mousedown', false], ['mousemove', false], ['mouseup', false]]);
-  assert.deepEqual(resized, [[{title: 300, venue: 140, journal: 160}, true]], 'native preferences are not overwritten');
-  assert.equal(state.columnDrag.native, true);
-  assert.equal(state.columnDrag.last, 'venue: 200 → 140');
-
+  assert.equal(mouse('mousedown', 500, handle).defaultPrevented, true);
+  assert.equal(mouse('mousemove', 580).defaultPrevented, true);
+  assert.equal(mouse('mouseup', 580).defaultPrevented, true);
+  assert.deepEqual(resized.at(-1), [{title: 300, venue: 280, journal: 66}, true]);
+  assert.equal(state.columnDrag.independent, true);
+  assert.equal(state.columnDrag.last, 'venue: 200 → 280');
+  assert.equal(state.columnDrag.drags, 1);
+  assert.deepEqual(received, [], 'the native pair resize must not process the same gesture');
+  const commits = resized.filter(([, saved]) => saved).length;
+  // The DOM fixture supplies the current boxes after the first drag.
+  document.querySelector('.cell.venue').getBoundingClientRect = () => ({width: 280, left: 300});
+  mouse('mousedown', 580, handle); mouse('mousemove', 650);
+  const escape = new window.Event('keydown', {bubbles: true, cancelable: true}); escape.key = 'Escape'; document.dispatchEvent(escape);
+  assert.deepEqual(resized.at(-1), [{title: 300, venue: 280, journal: 66}, false]);
+  assert.equal(resized.filter(([, saved]) => saved).length, commits, 'cancel does not persist a temporary width');
+  assert.equal(document.getElementById('tbl').classList.contains('style-custom-resizing'), false);
+  assert.equal(mouse('mousedown', 200, document.querySelector('.cell.title')).defaultPrevented, false, 'ordinary header clicks stay native');
+  state.columnDragCleanup();
 });
 
 test('Zotero 10 column rules (calc with the padding kept in) are read as the widths on screen', () => {
@@ -2781,6 +2831,8 @@ test('Zotero 10 column rules (calc with the padding kept in) are read as the wid
   // A basis shrunk below the cell's 30 px min-width is drawn at 30 and counted at 30.
   rules.venue.flexBasis = 'calc(var(--extra-width, 0px) + 14px)';
   assert.equal(plugin.storedWidths({CSS: {escape: s => s}}, tree).get('venue'), 30);
+  rules.year.minWidth = 'calc(var(--extra-width, 0px) + 60px)';
+  assert.equal(plugin.storedWidths({CSS: {escape: s => s}}, tree).get('year'), 60, 'static calc widths are read from the current CSS too');
 });
 
 test('the tree draws the italics and subscripts of a title instead of its tags', async () => {

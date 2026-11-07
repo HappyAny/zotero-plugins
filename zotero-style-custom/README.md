@@ -4,6 +4,12 @@ A research workbench for Zotero 9 and 10 (9.0–10.*; the manifest does not load
 
 The repository README has the illustrated tour: [../README.md](../README.md). This file is the reference for what the plugin records, where, and how it decides things.
 
+Version 0.59.54 translates the main-list Thesis and Patent badges and their tooltips into the selected interface language.
+Drag a header divider to resize the column on its left. The other columns keep their widths.
+The list scrolls horizontally when the columns exceed the available space.
+Double-click a divider to fit that column to its visible content.
+The [verification notes](../docs/english-ui-fixes.md) include a browser check with the installed Zotero handlers.
+
 ## What it adds
 
 **Columns in the item list.** IF (a Journal Impact Factor only for journals in your own JCR export or among the 86 publisher-page figures; otherwise blank), OA 2-yr mean citedness (OpenAlex's figure, not a JIF), Citations, Read time, Status (unread / reading / read), Rating, Journal mark (each journal in its own colour and abbreviation), First-author institution with country, File kinds. Right-click → *Style Custom → Switch to custom columns* turns them on together and hides the corresponding columns of the older Ethereal Style plugin if it is installed. Double-click a column's right edge to fit it to its content, as in a spreadsheet. The institution's tier is read off its OpenAlex h-index with fixed cut-points shared with ZotPoP: T1 at 2000 or more, T2 at 1400, T3 at 400, T4 below. Citations per year (the library overview's *연 N회 인용*) follow ZotPoP's convention: citations ÷ max(1, this year − publication year). Long titles scroll while the pointer rests on them and return when it leaves; the system's reduced-motion setting is respected.

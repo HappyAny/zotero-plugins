@@ -802,7 +802,7 @@
       target.dispatchEvent(new win.MouseEvent('dblclick', { bubbles: true, cancelable: true, view: win }));
       await new Promise(resolve => win.setTimeout(resolve, 120));
       const after = cell()?.getBoundingClientRect().width;
-      try { tree._columns.onResize(layout, true); runtime.rollTable?.(win, state); } catch (error) { Zotero.logError(error); }
+      try { runtime.resizeColumns(win, tree, layout, true); runtime.rollTable?.(win, state); } catch (error) { Zotero.logError(error); }
       if (!state.columnFit.seen) throw new Error(`the double-click never reached the handler (resizer classes: ${target.className})`);
       if (!state.columnFit.fitted) throw new Error(`the handler stopped: ${state.columnFit.last}`);
       return `${state.columnFit.last} · header ${Math.round(before)} → ${Math.round(after)}px · ${resizers.length} resizers`;
@@ -831,7 +831,7 @@
       mouse('mousedown', x, target.firstElementChild || target); mouse('mousemove', x + 20, win.document); mouse('mousemove', x + 40, win.document); mouse('mouseup', x + 40, win.document);
       await new Promise(resolve => win.setTimeout(resolve, 120));
       const after = { left: cell(left).getBoundingClientRect().width, right: cell(right).getBoundingClientRect().width };
-      try { tree._columns.onResize(layout, true); runtime.rollTable?.(win, state); } catch (error) { Zotero.logError(error); }
+      try { runtime.resizeColumns(win, tree, layout, true); runtime.rollTable?.(win, state); } catch (error) { Zotero.logError(error); }
       if (!state.columnDrag.drags) throw new Error('the drag never reached the handler');
       if (Math.abs(after.left - before.left - 40) > 2) throw new Error(`${left} went ${Math.round(before.left)} → ${Math.round(after.left)}, not +40`);
       if (Math.abs(after.right - before.right) > 2) throw new Error(`${right} moved with it: ${Math.round(before.right)} → ${Math.round(after.right)}`);
