@@ -137,6 +137,10 @@ return {strings:{
 			previewRetry: "重试",
 
 			metricsTitle: "被引指标",
+			resizeAuthors: "调整作者卡片区大小", resizeMetrics: "调整指标栏宽度", resizeDetail: "调整论文详情区大小",
+			resizeAuthorsTip: "上下拖动可调整作者卡片区高度。方向键可微调；双击或按 Enter 恢复默认大小。",
+			resizeMetricsTip: "左右拖动可调整指标栏宽度。方向键可微调；双击或按 Enter 恢复默认大小。",
+			resizeDetailTip: "上下拖动可调整论文详情和 PDF 预览区高度。方向键可微调；双击或按 Enter 恢复默认大小。",
 			mYears: "发表年份",
 			mCitationYears: "被引年份",
 			mPapers: "论文",

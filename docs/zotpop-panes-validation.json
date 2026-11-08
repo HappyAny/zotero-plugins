@@ -1,0 +1,207 @@
+{
+  "release": "zotpop-panes-v1",
+  "artifact": {
+    "file": "zotpop-0.58.5.xpi",
+    "version": "0.58.5",
+    "sha256": "17a995f75d3e957cea5a501abed6ef4ff4391993e8953da0dbe6c73f6ddcb747",
+    "bytes": 3935498
+  },
+  "scope": "Resize author card height, metrics sidebar width, and paper details/PDF preview height. Persist sizes, support keyboard adjustment and reset, and reserve space for results.",
+  "offline_tests": {
+    "suite": "root",
+    "files": 61,
+    "exitCode": 0,
+    "summary": [
+      "ℹ tests 872",
+      "ℹ pass 872",
+      "ℹ fail 0",
+      "ℹ skipped 0",
+      "ℹ duration_ms 76545.1276"
+    ],
+    "excluded": [
+      "pop-bridge.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "checks": [
+      {
+        "name": "all three resize handles are visible",
+        "pass": true
+      },
+      {
+        "name": "author cards grow and the table yields space",
+        "pass": true
+      },
+      {
+        "name": "metrics sidebar grows horizontally",
+        "pass": true
+      },
+      {
+        "name": "short details grow beyond their natural content height",
+        "pass": true
+      },
+      {
+        "name": "the results retain at least four rows",
+        "pass": true
+      },
+      {
+        "name": "all three saved sizes restore",
+        "pass": true
+      },
+      {
+        "name": "arrow keys adjust pane sizes",
+        "pass": true
+      },
+      {
+        "name": "double-click restores automatic author sizing",
+        "pass": true
+      },
+      {
+        "name": "Enter restores compact detail sizing",
+        "pass": true
+      },
+      {
+        "name": "dragging over a PDF frame finishes and releases the shield",
+        "pass": true
+      },
+      {
+        "name": "empty details remain a compact hint with the grip hidden",
+        "pass": true
+      },
+      {
+        "name": "selecting a paper restores the detail grip",
+        "pass": true
+      },
+      {
+        "name": "smaller windows preserve a usable table and avoid page overflow",
+        "pass": true
+      }
+    ],
+    "measurements": [
+      {
+        "stage": "initial",
+        "authors": {
+          "width": 1534,
+          "height": 192,
+          "top": 171,
+          "bottom": 363
+        },
+        "metrics": {
+          "width": 250,
+          "height": 534,
+          "top": 396,
+          "bottom": 930
+        },
+        "detail": {
+          "width": 1306,
+          "height": 100,
+          "top": 830,
+          "bottom": 930
+        },
+        "main": {
+          "width": 1568,
+          "height": 534,
+          "top": 396,
+          "bottom": 930
+        },
+        "table": {
+          "width": 1306,
+          "height": 382,
+          "top": 436,
+          "bottom": 818
+        },
+        "tableMinimum": 228,
+        "overflow": 0
+      },
+      {
+        "stage": "resized",
+        "authors": {
+          "width": 1534,
+          "height": 272,
+          "top": 171,
+          "bottom": 443
+        },
+        "metrics": {
+          "width": 360,
+          "height": 454,
+          "top": 476,
+          "bottom": 930
+        },
+        "detail": {
+          "width": 1196,
+          "height": 170,
+          "top": 760,
+          "bottom": 930
+        },
+        "main": {
+          "width": 1568,
+          "height": 454,
+          "top": 476,
+          "bottom": 930
+        },
+        "table": {
+          "width": 1196,
+          "height": 232,
+          "top": 516,
+          "bottom": 748
+        },
+        "tableMinimum": 228,
+        "overflow": 0
+      },
+      {
+        "stage": "smaller-window",
+        "authors": {
+          "width": 934,
+          "height": 142,
+          "top": 215,
+          "bottom": 357
+        },
+        "metrics": {
+          "width": 380,
+          "height": 340,
+          "top": 390,
+          "bottom": 730
+        },
+        "detail": {
+          "width": 576,
+          "height": 60,
+          "top": 670,
+          "bottom": 730
+        },
+        "main": {
+          "width": 968,
+          "height": 340,
+          "top": 390,
+          "bottom": 730
+        },
+        "table": {
+          "width": 576,
+          "height": 228,
+          "top": 430,
+          "bottom": 658
+        },
+        "tableMinimum": 228,
+        "overflow": 0
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-08T10:10:28.171180+00:00",
+    "version": "0.58.5",
+    "active": true,
+    "sha256": "17a995f75d3e957cea5a501abed6ef4ff4391993e8953da0dbe6c73f6ddcb747",
+    "plugin_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "other_plugin_versions_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "geometry_verification": "Headless Chrome with actual search markup, stylesheet, and layout functions. Native Zotero pane dragging was not tested."
+  },
+  "limits": [
+    "Geometry was tested in headless Chrome with the actual search markup, stylesheet, and layout functions. Native Zotero pane dragging was not tested.",
+    "The browser fixture uses fictional papers and researchers. It does not test publisher or author APIs.",
+    "The Windows test run excludes pop-bridge.test.mjs because its Unix executable fixtures are incompatible.",
+    "Style Custom remains at 0.59.59. Its code and package were not changed."
+  ]
+}

@@ -77,6 +77,7 @@
 		<div class="author-helprow"><p id="author-help" class="author-help"></p><button id="author-help-toggle" type="button" class="ghost note-help" aria-expanded="false" aria-controls="author-help-more" data-i18n-aria="metricsMore" data-i18n-title="metricsMore"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-help"/></svg></button></div>
 		<p id="author-help-more" class="author-help author-help-more" hidden="hidden"></p>
 		<div id="author-profiles" class="author-profiles" role="region" data-i18n-aria="authorProfilesLabel"></div>
+		<div id="asplit" class="splitter-h" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="author-profiles" data-i18n-aria="resizeAuthors" data-i18n-title="resizeAuthorsTip" hidden="hidden"></div>
 	</section>
 	<form id="query-form" class="query glass" onsubmit="return false;">
 		<div class="field grow2 keep">
@@ -202,7 +203,7 @@
 			<div id="metrics-notes" class="metrics-notes"></div>
 		</aside>
 
-		<div id="vsplit" class="splitter-v"></div>
+		<div id="vsplit" class="splitter-v" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="metrics" data-i18n-aria="resizeMetrics" data-i18n-title="resizeMetricsTip"></div>
 
 		<section id="results">
 			<div class="toolbar glass">
@@ -261,7 +262,7 @@
 				<div id="empty" class="empty"></div>
 				<div id="busy" class="empty" hidden="hidden"><span class="spinner"></span><span id="busy-text"></span></div>
 			</div>
-			<div id="hsplit" class="splitter-h"></div>
+			<div id="hsplit" class="splitter-h" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="detail" data-i18n-aria="resizeDetail" data-i18n-title="resizeDetailTip"></div>
 			<div id="detail" class="glass">
 				<div id="detail-empty" class="detail-empty" data-i18n="detailEmpty"></div>
 				<div id="detail-body" hidden="hidden">

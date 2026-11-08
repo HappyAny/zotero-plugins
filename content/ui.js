@@ -546,6 +546,7 @@
 		window.addEventListener("unload", () => { clearTimeout(previewTimer); previewViewer?.close(); });
 		window.addEventListener("resize", debounce(saveLayout, 400));
 		window.addEventListener("resize", debounce(fitTitleColumn, 100));
+		window.addEventListener("resize", clampPanes);
 	}
 
 	// ---------------------------------------------------------------- dropdowns
@@ -958,6 +959,8 @@
 		host.textContent = "";
 		try { drawAuthorProfiles(host, session); }
 		finally {
+			$("asplit").hidden = !session.profiles.length;
+			clampPanes();
 			let want = authorView.focusNext || had;
 			if (want) {
 				let found = host.querySelector?.(`[data-fkey="${CSS.escape(want)}"]`);
@@ -2032,9 +2035,11 @@
 		let w = parseInt(PREF("metricsWidth"), 10);
 		if (w >= 140) $("metrics").style.width = Math.min(w, metricsCap()) + "px";
 		let h = parseInt(PREF("detailHeight"), 10);
-		// A stored 0 used to come back as a dead strip with no way to grab the splitter. The detail sizes to its
-		// content; the saved height is only the most it may grow to.
-		if (h >= 60) $("detail").style.setProperty("--detail-max", Math.min(h, detailCap()) + "px");
+		// A manual height is an actual size, including for a short abstract or PDF.
+		// Without one, keep the compact content-sized default.
+		if (h >= 60) setDetailHeight(h);
+		let authors = parseInt(PREF("authorProfilesHeight"), 10);
+		if (authors >= 48) setAuthorsHeight(authors);
 		if (PREF("detailHidden") === true) setDetailVisible(false);
 		if (PREF("metricsHidden") === true) setMetricsVisible(false);
 		// COL_VERSION guards against stale widths after the defaults change
@@ -2049,10 +2054,11 @@
 	}
 	function saveLayout() {
 		try {
-			PREF("metricsWidth", $("metrics").offsetWidth);
+			if (!$("metrics").hidden) PREF("metricsWidth", $("metrics").offsetWidth);
 			// offsetHeight is 0 for a hidden pane; saving that brings it back as a dead strip
 			// Nor the one-line hint it folds to while nothing is chosen.
-			if (!$("detail").hidden && !$("detail").hasAttribute("data-empty")) { let cap = parseInt($("detail").style.getPropertyValue("--detail-max"), 10); PREF("detailHeight", cap >= 60 ? cap : $("detail").offsetHeight); }
+			if (!$("detail").hidden && !$("detail").hasAttribute("data-empty")) PREF("detailHeight", parseInt($("detail").style.getPropertyValue("--detail-height"), 10) || 0);
+			PREF("authorProfilesHeight", parseInt($("author-profiles").style.getPropertyValue("--authors-height"), 10) || 0);
 			PREF("detailHidden", $("detail").hidden === true);
 			PREF("metricsHidden", $("metrics").hidden === true);
 			PREF("colWidths", JSON.stringify(state.colWidths));
@@ -2067,8 +2073,40 @@
 		catch (e) { log("saveLayout failed: " + e.message); }
 	}
 
-	const metricsCap = () => Math.max(140, Math.floor((window.innerWidth || 1200) * 0.3));
-	const detailCap = () => Math.max(60, Math.floor((window.innerHeight || 800) * 0.5));
+	const tableMinimum = () => parseFloat(window.getComputedStyle?.($("table-wrap"))?.minHeight) || 200;
+	const resultsToolbarHeight = () => {
+		let toolbar = $("results").querySelector?.(".toolbar"), css = toolbar && window.getComputedStyle?.(toolbar);
+		return (toolbar?.offsetHeight || 36) + (parseFloat(css?.marginTop) || 0) + (parseFloat(css?.marginBottom) || 0);
+	};
+	const metricsCap = () => Math.max(140, Math.min(Math.floor((window.innerWidth || 1200) * 0.6), ($("main").clientWidth || window.innerWidth || 1200) - 372));
+	const detailCap = () => Math.max(60, ($("results").clientHeight || (window.innerHeight || 800) * 0.75) - tableMinimum() - resultsToolbarHeight() - 12);
+	const authorsCap = () => Math.max(48, Math.min(Math.floor((window.innerHeight || 800) * 0.6),
+		($("author-profiles").offsetHeight || 0) + ($("main").clientHeight || (window.innerHeight || 800) * 0.75) - tableMinimum() - resultsToolbarHeight() - ($("detail").hidden ? 0 : 72)));
+	function setAuthorsHeight(value) {
+		let el = $("author-profiles"), h = Math.round(Math.max(48, Math.min(authorsCap(), value)));
+		el.setAttribute("data-sized", ""); el.style.setProperty("--authors-height", h + "px");
+	}
+	function setDetailHeight(value) {
+		let el = $("detail"), h = Math.round(Math.max(60, Math.min(detailCap(), value)));
+		el.setAttribute("data-sized", ""); el.style.setProperty("--detail-height", h + "px");
+	}
+	function syncPaneGrips() {
+		for (let [id, value, min, max] of [["vsplit", $("metrics").offsetWidth, 140, metricsCap()], ["hsplit", $("detail").offsetHeight, 60, detailCap()], ["asplit", $("author-profiles").offsetHeight, 48, authorsCap()]]) {
+			let handle = $(id); if (!handle) continue;
+			handle.setAttribute("aria-valuemin", min); handle.setAttribute("aria-valuemax", Math.round(max)); handle.setAttribute("aria-valuenow", Math.round(value || min));
+		}
+	}
+	function clampPanes() {
+		let metrics = $("metrics"), authors = $("author-profiles"), detail = $("detail");
+		if (!metrics.hidden) metrics.style.width = Math.round(Math.max(140, Math.min(metricsCap(), metrics.offsetWidth || 250))) + "px";
+		if (!$("author-panel").hidden && authors.children.length) {
+			authors.style.setProperty("--authors-cap", authorsCap() + "px");
+			if (authors.hasAttribute("data-sized")) setAuthorsHeight(parseInt(authors.style.getPropertyValue("--authors-height"), 10));
+		}
+		detail.style.setProperty("--detail-max", Math.min(340, detailCap()) + "px");
+		if (!detail.hidden && detail.hasAttribute("data-sized")) setDetailHeight(parseInt(detail.style.getPropertyValue("--detail-height"), 10));
+		syncPaneGrips();
+	}
 	function setMetricsVisible(on) {
 		$("metrics").hidden = !on;
 		$("vsplit").hidden = !on;
@@ -2089,6 +2127,7 @@
 	function syncDetailSplitter() {
 		let detail = $("detail"), grip = $("hsplit");
 		if (grip) grip.hidden = detail.hidden || detail.hasAttribute("data-empty");
+		clampPanes();
 	}
 	function toggleDetail() {
 		setDetailVisible($("detail").hidden);
@@ -2096,37 +2135,61 @@
 	}
 
 	function setupSplitters() {
-		drag($("vsplit"), "col-resize", (dx) => {
-			let el = $("metrics");
-			let w = Math.max(140, Math.min(metricsCap(), el.offsetWidth + dx));
-			el.style.width = w + "px";
-		});
-		drag($("hsplit"), "row-resize", (dx, dy) => {
-			let el = $("detail");
-			let h = Math.max(60, Math.min(detailCap(), el.offsetHeight - dy));
-			el.style.setProperty("--detail-max", h + "px");
-		});
+		let panes = [
+			{ id: "vsplit", axis: "x", sign: 1, size: () => $("metrics").offsetWidth || 250,
+				set: value => { $("metrics").style.width = Math.round(Math.max(140, Math.min(metricsCap(), value))) + "px"; }, reset: () => { $("metrics").style.width = Math.min(250, metricsCap()) + "px"; } },
+			{ id: "asplit", axis: "y", sign: 1, size: () => $("author-profiles").offsetHeight || 192, set: setAuthorsHeight,
+				reset: () => { $("author-profiles").removeAttribute("data-sized"); $("author-profiles").style.removeProperty("--authors-height"); PREF("authorProfilesHeight", 0); } },
+			{ id: "hsplit", axis: "y", sign: -1, size: () => $("detail").offsetHeight || 60, set: setDetailHeight,
+				reset: () => { $("detail").removeAttribute("data-sized"); $("detail").style.removeProperty("--detail-height"); PREF("detailHeight", 0); } }
+		];
+		for (let pane of panes) {
+			let handle = $(pane.id); if (!handle) continue;
+			let adjust = value => { pane.set(value); clampPanes(); };
+			drag(handle, pane.axis === "x" ? "col-resize" : "row-resize", () => {
+				let initial = pane.size(); return (dx, dy) => adjust(initial + pane.sign * (pane.axis === "x" ? dx : dy));
+			});
+			handle.addEventListener("dblclick", () => { pane.reset(); clampPanes(); saveLayout(); });
+			handle.addEventListener("keydown", e => {
+				if (e.key === "Enter") { e.preventDefault(); pane.reset(); clampPanes(); saveLayout(); return; }
+				let keys = pane.axis === "x" ? ["ArrowLeft", "ArrowRight"] : ["ArrowUp", "ArrowDown"], index = keys.indexOf(e.key);
+				if (index < 0) return;
+				e.preventDefault(); adjust(pane.size() + (index ? 1 : -1) * pane.sign * (e.shiftKey ? 50 : 20)); saveLayout();
+			});
+		}
+		syncPaneGrips();
 	}
 
-	function drag(handle, cursor, onMove) {
+	let cancelPaneDrag = null;
+	function drag(handle, cursor, start) {
 		handle.addEventListener("mousedown", e => {
+			if (e.button !== undefined && e.button !== 0) return;
 			e.preventDefault();
+			cancelPaneDrag?.();
 			handle.classList.add("dragging");
-			let lastX = e.clientX, lastY = e.clientY;
+			let x = e.clientX, y = e.clientY, onMove = start(), previousCursor = document.body.style.cursor;
+			// Cover embedded PDF frames while dragging so mouse events do not get
+			// lost inside them. Remove the shield on release, blur, or unload.
+			let shield = document.createElement("div"), moving = false; shield.className = "pane-resize-shield"; shield.style.cursor = cursor; shield.setAttribute("aria-hidden", "true");
 			let move = ev => {
-				onMove(ev.clientX - lastX, ev.clientY - lastY);
-				lastX = ev.clientX; lastY = ev.clientY;
+				let dx = ev.clientX - x, dy = ev.clientY - y;
+				if (!moving && Math.abs(dx) + Math.abs(dy) < 2) return;
+				if (!moving) { moving = true; document.body.appendChild(shield); }
+				onMove(dx, dy);
 			};
 			let up = () => {
 				handle.classList.remove("dragging");
-				document.removeEventListener("mousemove", move);
-				document.removeEventListener("mouseup", up);
-				document.body.style.cursor = "";
+				document.removeEventListener("mousemove", move, true);
+				document.removeEventListener("mouseup", up, true);
+				window.removeEventListener?.("blur", up); window.removeEventListener?.("unload", up);
+				shield.remove(); document.body.style.cursor = previousCursor || ""; cancelPaneDrag = null;
 				saveLayout();
 			};
+			cancelPaneDrag = up;
 			document.body.style.cursor = cursor;
-			document.addEventListener("mousemove", move);
-			document.addEventListener("mouseup", up);
+			document.addEventListener("mousemove", move, true);
+			document.addEventListener("mouseup", up, true);
+			window.addEventListener("blur", up); window.addEventListener("unload", up);
 		});
 	}
 

@@ -30,7 +30,7 @@ export function mockElement(tagName = "div") {
 	let text = "";
 	const node = {
 		tagName: tagName.toUpperCase(), nodeType: tagName === "#fragment" ? 11 : tagName === "#text" ? 3 : 1,
-		children: [], parentNode: null, connected: false, value: "", checked: false, hidden: true, style: {}, scrollLeft: 0,
+		children: [], parentNode: null, connected: false, value: "", checked: false, hidden: true, style: { setProperty(key, value) { this[key] = String(value); }, getPropertyValue(key) { return this[key] || ""; }, removeProperty(key) { const old = this[key]; delete this[key]; return old; } }, scrollLeft: 0,
 		get parentElement() { return this.parentNode; },
 		get isConnected() { return this.parentNode ? this.parentNode.isConnected : this.connected; },
 		get firstChild() { return this.children[0] || null; },
@@ -187,7 +187,7 @@ export function uiHarness({ sort = "relevance", search, request, refreshLibraryF
 		cacheIO = setupStorage();
 		globalThis.harness = { refreshLibraryFlags, saveCSV, tipContent, journalMark, state, runSearch, render, showInLibrary, http, stopOperation, onKeyDown, clearAll, clearFilter, syncFilterClear, openPreview, closePreview, togglePreview, syncPreview, viewerOfPreview, paintPreview, previewRecord, buildRow, rowSignature, setRowStatus, onDocumentScroll, restoreCachedSearch, cancelCacheRestore,
 			openHistoryEntry, openHistoryMenu, closeHistoryMenu, sortValue, matchesFilter, csvText, popOriginalJSON, displaySearchResults, checkCitations, readQuery, populateSearchSources, sourceHint, savePrefs, saveQuery, restoreQuery, setupColumnOrder, setupColumnResize, applyColumnWidths, restoreLayout, normalizeColumnOrder,
-			wireEvents, importRecords, openToolbarMenu, closeToolbarMenu, onToolbarMenuKey, viewMenuItems, setLanguage, languageChoice, renderVersions, renderSignals, followAuthor, heldVersion, revealRecord, buildResultContext, applyLocalFacet, setFacet, updateCounts, applyColumnView, saveLayout, originalRenderDetail, runAuthorAction, showAuthorHistory, switchSearchMode, switchAuthorProvider, renderAuthorProfiles, authorQuery, authorInputChanged, restoreAuthorPreferences, saveAuthorPreferences, originalRenderMetrics,
+			wireEvents, setupSplitters, clampPanes, syncDetailSplitter, importRecords, openToolbarMenu, closeToolbarMenu, onToolbarMenuKey, viewMenuItems, setLanguage, languageChoice, renderVersions, renderSignals, followAuthor, heldVersion, revealRecord, buildResultContext, applyLocalFacet, setFacet, updateCounts, applyColumnView, saveLayout, originalRenderDetail, runAuthorAction, showAuthorHistory, switchSearchMode, switchAuthorProvider, renderAuthorProfiles, authorQuery, authorInputChanged, restoreAuthorPreferences, saveAuthorPreferences, originalRenderMetrics,
 			yearBins, filterSpec, addRule, openFilterPop, closeFilterPop, syncFilterUI, clearAllFilters, affLineParts, shortInstitution, renderAuthors, addVenueChip, removeVenueChip, setVenueChips, refreshVenueSuggestions, onVenueKey, wireVenueBox, ensureJournalCatalog, citeCardBody, renderCiteStrip,
 			searchMode: () => searchSurface, authorSessions, setAuthorProvider: provider => { activeAuthorProvider = provider; }, personPick, setPick, peopleClusters, setPersonMembership, unverifiedAuthorResults, validPick, metricsOwner, authorMetricsInfo,
 			syncWindow, virtualView, revealRow, rowStats, renderWhy, renderReactions, loadReactions, reactionsBusy: () => reactState.busy.size > 0, selectHeld, relatedTipText, relatedChip, loadJournalFigures, setDetailVisible,
@@ -197,5 +197,5 @@ export function uiHarness({ sort = "relevance", search, request, refreshLibraryF
 	`);
 	vm.runInContext(code, context);
 	if (startOnScholar) context.harness.setAuthorProvider("scholar");
-	return { copied, reloads, counts, selection, Z: context.Zotero, ...context.harness, get, errors, events, prefs, emitDocument: (name, event) => docEvents.emit(name, event), emitWindow: (name, event) => winEvents.emit(name, event) };
+	return { win: context.window, copied, reloads, counts, selection, Z: context.Zotero, ...context.harness, get, errors, events, prefs, emitDocument: (name, event) => docEvents.emit(name, event), emitWindow: (name, event) => winEvents.emit(name, event) };
 }

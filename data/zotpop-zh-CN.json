@@ -1,4 +1,10 @@
 {
+  "Resize author cards": "调整作者卡片区大小",
+  "Resize metrics sidebar": "调整指标栏宽度",
+  "Resize paper details": "调整论文详情区大小",
+  "Drag up or down to resize author cards. Use arrow keys to adjust; double-click or press Enter to reset.": "上下拖动可调整作者卡片区高度。方向键可微调；双击或按 Enter 恢复默认大小。",
+  "Drag left or right to resize the metrics sidebar. Use arrow keys to adjust; double-click or press Enter to reset.": "左右拖动可调整指标栏宽度。方向键可微调；双击或按 Enter 恢复默认大小。",
+  "Drag up or down to resize paper details and PDF preview. Use arrow keys to adjust; double-click or press Enter to reset.": "上下拖动可调整论文详情和 PDF 预览区高度。方向键可微调；双击或按 Enter 恢复默认大小。",
   " (from the file name)": "（依据文件名）",
   " (from the file)": " （来自文件）",
   " (not a JIF)": "（并非官方 JIF）",

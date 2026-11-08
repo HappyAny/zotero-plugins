@@ -235,7 +235,7 @@ input[type=checkbox] { accent-color: var(--pill); }
 #query-form:not(.collapsed) .cond-toggle { width: auto; }
 
 /* ---------------------------------------------------------------- the author tab: the same rhythm */
-.author-panel { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 16px; }
+.author-panel { display: flex; flex: 0 0 auto; flex-direction: column; gap: 12px; padding: 12px 16px 8px; }
 .author-query { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
 .author-query .field select { min-width: 152px; }
 .author-query .sel { min-width: 152px; }
@@ -244,7 +244,7 @@ input[type=checkbox] { accent-color: var(--pill); }
 .author-helprow { display: flex; align-items: center; gap: 8px; }
 .author-help { margin: 0; color: var(--muted); }
 .author-help-more { max-width: 80ch; }
-.author-profiles { display: flex; flex-wrap: wrap; gap: 8px; max-height: 192px; overflow: auto; }
+.author-profiles { display: flex; flex-wrap: wrap; gap: 8px; max-height: min(192px, var(--authors-cap, 192px)); overflow: auto; }
 .author-profile { display: flex; flex: 1 1 248px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-box); min-width: 0; }
 .author-profile.selected { border-color: var(--accent); background: var(--bg-tint); }
 .author-profile-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -262,7 +262,9 @@ input[type=checkbox] { accent-color: var(--pill); }
 .author-profile.open { flex-basis: 100%; align-items: flex-start; }
 /* An opened profile shows its whole summary (employment, education, works) rather than a 300px slice: the list
    grows with it, up to most of the window, and only then scrolls. Only a long expanded bio scrolls by itself. */
-.author-profiles:has(.author-profile.open) { max-height: min(64vh, 620px); }
+.author-profiles:has(.author-profile.open) { max-height: var(--authors-cap, min(64vh, 620px)); }
+.author-profiles[data-sized]:not(:empty) { height: var(--authors-height); max-height: var(--authors-height); flex: 0 0 auto; }
+#asplit { margin-top: -8px; }
 .author-bio:not(.clamped) { max-height: 220px; overflow: auto; }
 .author-profile.open .author-profile-info { flex: 1 1 auto; }
 .author-profile-stats { margin: 0; }
@@ -292,10 +294,14 @@ input[type=checkbox] { accent-color: var(--pill); }
 #main { display: flex; flex: 1 1 auto; min-height: 0; }
 #metrics { width: 250px; flex: 0 0 auto; padding: 16px; overflow: auto; }
 #results { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
-.splitter-v { flex: 0 0 8px; cursor: col-resize; background: transparent; }
-.splitter-h { height: 8px; cursor: row-resize; background: transparent; }
-.splitter-v:hover::after, .splitter-v.dragging::after { content: ""; display: block; width: 2px; height: 100%; margin: 0 auto; background: var(--border-strong); }
-.splitter-h:hover::after, .splitter-h.dragging::after { content: ""; display: block; height: 2px; margin: 3px 0; background: var(--border-strong); }
+.splitter-v, .splitter-h { display: flex; align-items: center; justify-content: center; background: transparent; touch-action: none; user-select: none; }
+.splitter-v { flex: 0 0 12px; cursor: col-resize; }
+.splitter-h { height: 12px; flex: 0 0 12px; cursor: row-resize; }
+.splitter-v::after, .splitter-h::after { content: ""; display: block; border-radius: 4px; background: var(--muted); opacity: .55; }
+.splitter-v::after { width: 3px; height: 36px; }
+.splitter-h::after { width: 44px; height: 3px; }
+.splitter-v:hover::after, .splitter-h:hover::after, .splitter-v.dragging::after, .splitter-h.dragging::after, .splitter-v:focus-visible::after, .splitter-h:focus-visible::after { background: var(--text); opacity: 1; }
+.pane-resize-shield { position: fixed; inset: 0; z-index: 2147483647; user-select: none; }
 
 /* ---------------------------------------------------------------- citation metrics card */
 #metrics h3 { margin: 0 0 12px; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--text); }
@@ -628,6 +634,7 @@ button.rx-item:hover:not(:disabled) { background: var(--row-hover); }
 
 /* ---------------------------------------------------------------- detail card */
 #detail { height: auto; max-height: var(--detail-max, 340px); flex: 0 1 auto; min-height: 0; overflow: auto; padding: 16px; }
+#detail[data-sized]:not([data-empty]) { height: var(--detail-height); max-height: var(--detail-height); flex: 0 0 auto; }
 #hsplit[hidden] + #detail { margin-top: 8px; }
 #detail[data-empty] { height: auto; min-height: 0; padding: 8px 16px; overflow: hidden; flex: none; }
 .detail-empty { color: var(--muted); }
