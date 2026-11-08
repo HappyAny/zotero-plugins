@@ -3,6 +3,16 @@
     "style-custom@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.59.59",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/workbench-dismiss-v1/style-custom-0.59.59.xpi",
+          "update_hash": "sha256:1a2526e561123f227a6aae511f1dc9e0253ef18f2b31efa0e03cc29ba79bcfa2",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0"
+            }
+          }
+        },
+        {
           "version": "0.59.58",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/citation-key-layout-v1/style-custom-0.59.58.xpi",
           "update_hash": "sha256:43946b6c8fcf61a679211b12db7e0c529bbd834b8e6e8193829aff5d9a8f1900",

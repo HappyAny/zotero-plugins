@@ -1,0 +1,110 @@
+{
+  "release": "workbench-dismiss-v1",
+  "artifact": {
+    "file": "style-custom-0.59.59.xpi",
+    "version": "0.59.59",
+    "sha256": "1a2526e561123f227a6aae511f1dc9e0253ef18f2b31efa0e03cc29ba79bcfa2",
+    "bytes": 14097803
+  },
+  "scope": "Dismiss the floating research workbench on outside presses; preserve native actions, focus, memo drafts, toolbar toggling, and docked tabs.",
+  "offline_tests": {
+    "exitCode": 0,
+    "files": 62,
+    "summary": [
+      "ℹ tests 2082",
+      "ℹ pass 2052",
+      "ℹ fail 0",
+      "ℹ skipped 30",
+      "ℹ duration_ms 136757.8424"
+    ],
+    "excluded": [
+      "bake.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "checks": [
+      {
+        "name": "inside click stays open",
+        "pass": true
+      },
+      {
+        "name": "outside click dismisses through capture",
+        "pass": true
+      },
+      {
+        "name": "outside action runs and receives focus once",
+        "pass": true
+      },
+      {
+        "name": "toolbar reopens after dismissal",
+        "pass": true
+      },
+      {
+        "name": "toolbar closes without reopening",
+        "pass": true
+      },
+      {
+        "name": "docked panel ignores outside click",
+        "pass": true
+      },
+      {
+        "name": "undocking restores outside dismissal",
+        "pass": true
+      },
+      {
+        "name": "internal iframe stays open",
+        "pass": true
+      },
+      {
+        "name": "outside PDF iframe dismisses",
+        "pass": true
+      },
+      {
+        "name": "ordinary window blur stays open",
+        "pass": true
+      },
+      {
+        "name": "dragging from inside to outside stays open",
+        "pass": true
+      },
+      {
+        "name": "reopened panel still dismisses",
+        "pass": true
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-08T07:14:21.559153+00:00",
+    "version": "0.59.59",
+    "active": true,
+    "sha256": "1a2526e561123f227a6aae511f1dc9e0253ef18f2b31efa0e03cc29ba79bcfa2",
+    "plugin_configuration_preserved": true,
+    "better_bibtex_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "native": {
+      "when": "2026-11-08T07:13:58.203Z",
+      "passed": 58,
+      "failed": 2,
+      "outside_dismissal": {
+        "passed": true,
+        "detail": "inside press kept open; outside press hid without cancellation; reopened and dismissed again"
+      },
+      "failed_checks": [
+        "every column in the list takes the hover, not only the first",
+        "the citation-key field keeps its natural height"
+      ]
+    },
+    "test_mode": "Built-in self-check in background Zotero. The visible desktop control pipe was unavailable.",
+    "manual_desktop_test_performed": false
+  },
+  "limits": [
+    "The native result uses the built-in self-check and synthetic native DOM events. Manual desktop clicks were not tested because the desktop-control pipe is unavailable.",
+    "A focus transition directly between embedded frames is detected by the existing 500 ms selection timer.",
+    "The older native hover and citation-key geometry checks remain outside this change; their results are reported by name in the installed evidence.",
+    "No live AI, backfill, or repair request was made by the added check.",
+    "Unix executable fixtures are excluded on Windows; thirty tests are skipped."
+  ]
+}

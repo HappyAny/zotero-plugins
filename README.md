@@ -2,7 +2,9 @@
 
 This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOONSUNG/zotero-plugins](https://github.com/JAEYOONSUNG/zotero-plugins).
 It adds Simplified Chinese to ZotPoP and Style Custom. It also keeps the English labels, assistant close fix, and independent column resizing.
-Download ZotPoP from the [reviewed Chinese UI release](https://github.com/HappyAny/zotero-plugins/releases/tag/chinese-ui-v2) and Style Custom from the [citation-key layout fix](https://github.com/HappyAny/zotero-plugins/releases/tag/citation-key-layout-v1).
+Download ZotPoP from the [reviewed Chinese UI release](https://github.com/HappyAny/zotero-plugins/releases/tag/chinese-ui-v2) and Style Custom from the [floating workbench update](https://github.com/HappyAny/zotero-plugins/releases/tag/workbench-dismiss-v1).
+
+Style Custom 0.59.59 closes its floating workbench when you press outside it. The press continues to Zotero, memo drafts remain available, and the toolbar can reopen the panel. A workbench docked in a Zotero tab stays open. See the [dismissal validation](docs/workbench-dismiss-validation.json).
 See the [citation-key layout validation](docs/citation-key-layout-validation.json), [Chinese UI validation record](docs/chinese-ui-validation.json), [progress-message validation](docs/chinese-progress-validation.json), and [earlier interaction fixes](docs/english-ui-fixes.md).
 The upstream MIT license remains in place.
 
@@ -25,7 +27,7 @@ Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–
 | Plugin | What it does | Latest |
 |---|---|---|
 | **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.4.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v2/zotpop-0.58.4.xpi) |
-| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.58.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/citation-key-layout-v1/style-custom-0.59.58.xpi) |
+| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.59.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/workbench-dismiss-v1/style-custom-0.59.59.xpi) |
 
 ![The Zotero item list with Style Custom's columns: impact factor, citation count with a bar, reading status, the journal in its own colour, rating, reading time, file kinds, and the corresponding institution with its tier and flag](docs/images/library-columns.png)
 
@@ -157,7 +159,7 @@ Settings → Style Custom, in eleven categories (Columns, Views and panels, Read
 
 ### Self-check
 
-Runs only when `extensions.style-custom.selfCheck` is set (it then clears itself): up to 69 checks, 62 by default, against the real library; the report is written to `<Zotero data folder>/style-custom-selfcheck.json`. No window is opened. One of them lays out every tab of the panel in Zotero itself, at the panel's real size and in both densities, and lists anything that overflows its box, wraps where it should not or overlaps other text in `style-custom-layout.json`.
+Runs only when `extensions.style-custom.selfCheck` is set (it then clears itself): up to 70 checks, 63 by default, against the real library; the report is written to `<Zotero data folder>/style-custom-selfcheck.json`. No window is opened. One of them lays out every tab of the panel in Zotero itself, at the panel's real size and in both densities, and lists anything that overflows its box, wraps where it should not or overlaps other text in `style-custom-layout.json`.
 
 ---
 

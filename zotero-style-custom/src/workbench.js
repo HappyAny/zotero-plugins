@@ -1686,7 +1686,7 @@
    if(notifierLoad){notifierLoad=false;if(memoBusy()){if(!reloadDeferSince)reloadDeferSince=Date.now();if(reloadTimer)win.clearTimeout(reloadTimer);reloadTimer=win.setTimeout(reloadAgain,300);return;}}
    await render();
   }
-  async function toggle(show){const wasHidden=panel.hidden,open=show===undefined?wasHidden:!!show;
+  async function toggle(show,{restoreFocus=true}={}){const wasHidden=panel.hidden,open=show===undefined?wasHidden:!!show;
    // Read the pane's selection before docking moves the window to another tab.
    const fromPane=open?runtime.selected(win).map(i=>String(i.id)):[];
    if(open&&wasHidden){syncDock();if(!tabID&&runtime.cache.workbenchUI?.docked===true&&canDock())dock({save:false});}
@@ -1708,7 +1708,7 @@
       ko.textContent='한국어로 보기';CHROME.delete(ko);
      }
      button('알겠어요',()=>{welcome.hidden=true;welcome.replaceChildren();saveUI({welcomed:true});},welcome);welcome.hidden=false;
-    }if(!disposed&&!panel.hidden)(controls.hidden?body:search).focus?.();}else{navigationEpoch++;closeCommands(false);epoch++;loadEpoch++;aiEpoch++;clear();if(returnFocus?.isConnected&&!win.closed)returnFocus.focus?.();returnFocus=null;}}
+    }if(!disposed&&!panel.hidden)(controls.hidden?body:search).focus?.();}else{navigationEpoch++;closeCommands(false);epoch++;loadEpoch++;aiEpoch++;clear();if(restoreFocus&&returnFocus?.isConnected&&!win.closed)returnFocus.focus?.();returnFocus=null;}}
   /* 읽기 대기, one store for every place that adds to it: kept per library
      by item, with when and from whom it came. Adding again keeps the first
      date and source; finished or started papers are not added in bulk. */
@@ -9824,6 +9824,33 @@
     if(filterPanel.contains(e.target)&&(ruleDraft||filtersOpen())){e.preventDefault();e.stopPropagation();if(ruleDraft)closeRuleEditor(true);else{setFiltersOpen(false);filterSummary.focus?.();}return;}
     if(e.target?.closest?.('input,textarea')){e.target.blur();return;}e.stopPropagation();toggle(false);}
   };panel.addEventListener('keydown',keyboard);
+  // A floating panel dismisses on an outside press without consuming it or
+  // moving focus back over the control the user is about to use. A toolbar
+  // command owns its own toggle, and native popup choices belong to their menu.
+  const outsidePress=e=>{
+   if(disposed||panel.hidden||tabID)return;
+   const path=e.composedPath?.()||[e.target];
+   if(path.includes(panel)||path.includes(toolbar)||panel.contains(e.target)||toolbar?.contains(e.target)||path.some(node=>node?.closest?.('menupopup,popup,tooltip')))return;
+   run(()=>toggle(false,{restoreFocus:false}));
+  };
+  doc.addEventListener('mousedown',outsidePress,true);listeners.push([doc,'mousedown',outsidePress,true]);
+  // Presses in an embedded PDF do not bubble to this document. Focus entering
+  // an outside frame is the only window blur that dismisses: switching apps or
+  // opening a file picker must leave the panel alone.
+  let outsideFrameTimer=null;
+  const dismissOutsideFrame=()=>{
+   const active=doc.activeElement;
+   if(disposed||panel.hidden||tabID||doc.hasFocus?.()===false||!/^(iframe|browser)$/.test(active?.localName||'')||panel.contains(active))return false;
+   run(()=>toggle(false,{restoreFocus:false}));return true;
+  };
+  const outsideFrame=()=>{
+   if(outsideFrameTimer)win.clearTimeout(outsideFrameTimer);
+   outsideFrameTimer=win.setTimeout(()=>{
+    outsideFrameTimer=null;
+    dismissOutsideFrame();
+   },0);
+  };
+  win.addEventListener('blur',outsideFrame);listeners.push([win,'blur',outsideFrame]);
   /* A memo saves itself as it is typed, and the save is an item change that
      reloaded the panel: the field was rebuilt under the cursor a second after
      each pause, and a long list jumped back to the top. While the reader is
@@ -9847,17 +9874,19 @@
   const scheduleReload=()=>{if(disposed||panel.hidden)return;if(typing()){reloadPending=true;return;}reloadPending=false;if(reloadTimer)win.clearTimeout(reloadTimer);reloadTimer=win.setTimeout(reloadAgain,200);};
   panel.addEventListener('focusout',()=>{if(reloadPending)win.setTimeout(()=>{if(reloadPending&&!typing())scheduleReload();},0);});
   if(runtime.Z.Notifier){notifier=runtime.Z.Notifier.registerObserver({notify:(event,type,ids)=>{try{forgetAnnotations(event,type,ids);}catch(error){runtime.Z.logError?.(error);}scheduleReload();}},['item','item-tag','collection','tab'],'style-custom-workbench');}
-  const selectionTimer=win.setInterval(()=>{if(!disposed&&!win.closed&&!panel.hidden&&scopeContext()!==observedContext)run(load);},500);
+  // Moving straight between two frames does not blur their parent window a
+  // second time. Reuse the selection check to notice that focus transition.
+  const selectionTimer=win.setInterval(()=>{if(!disposed&&!win.closed&&!panel.hidden&&!dismissOutsideFrame()&&scopeContext()!==observedContext)run(load);},500);
   function destroy(){if(disposed)return;
    try{sweepJob?.controller.abort();}catch(_){}
    for(const controller of [...worksFetches]){try{controller.abort();}catch(_){}}worksFetches.clear();
-   graphResize?.disconnect?.();if(graphResizeTimer)win.clearTimeout(graphResizeTimer);
+   graphResize?.disconnect?.();if(graphResizeTimer)win.clearTimeout(graphResizeTimer);if(outsideFrameTimer)win.clearTimeout(outsideFrameTimer);
    if(tabID){const id=tabID;tabID=null;closingSelf=true;moveBack();try{win.Zotero_Tabs.close(id);}catch(_){}closingSelf=false;}
    // An edit typed a moment ago is still waiting out its timer. Closing the
    // panel must write it, not discard it.
    for(const entry of memoFields)Promise.resolve(entry.flush()).catch(error=>runtime.Z.logError?.(error));
    memoFields=[];
-   abortAround();dismissToast();if(readingTickTimer){win.clearTimeout(readingTickTimer);readingTickTimer=null;}disposed=true;LIVE_DRAFT_WINDOWS.delete(WINDOW_ID);stopMemoListener?.();win.clearInterval(selectionTimer);epoch++;loadEpoch++;aiEpoch++;if(draftTimer){win.clearTimeout(draftTimer);draftTimer=null;Promise.resolve(runtime.flush()).catch(error=>runtime.Z.logError?.(error));}if(reloadTimer)win.clearTimeout(reloadTimer);if(searchTimer){win.clearTimeout(searchTimer);searchTimer=null;}noteCache=null;if(notifier!=null)runtime.Z.Notifier.unregisterObserver(notifier);clear();for(const[target,event,fn]of listeners)target.removeEventListener(event,fn);toolbar?.remove();panel.remove();sheet.remove();jcrSheet.remove();}
+   abortAround();dismissToast();if(readingTickTimer){win.clearTimeout(readingTickTimer);readingTickTimer=null;}disposed=true;LIVE_DRAFT_WINDOWS.delete(WINDOW_ID);stopMemoListener?.();win.clearInterval(selectionTimer);epoch++;loadEpoch++;aiEpoch++;if(draftTimer){win.clearTimeout(draftTimer);draftTimer=null;Promise.resolve(runtime.flush()).catch(error=>runtime.Z.logError?.(error));}if(reloadTimer)win.clearTimeout(reloadTimer);if(searchTimer){win.clearTimeout(searchTimer);searchTimer=null;}noteCache=null;if(notifier!=null)runtime.Z.Notifier.unregisterObserver(notifier);clear();for(const[target,event,fn,capture]of listeners)target.removeEventListener(event,fn,capture||false);toolbar?.remove();panel.remove();sheet.remove();jcrSheet.remove();}
   const accent=runtime.pref('accentColor','#374151');if(/^#[a-f\d]{6}$/i.test(accent)&&!['#374151','#5654d8'].includes(accent.toLowerCase()))panel.style.setProperty('--sc-accent',accent);setPanelFontSize(Math.max(11,Math.min(20,Number(runtime.pref('panelFontSize',13))||13)));
   // Long background work reports here rather than through a modal, so the user
   // can keep reading while the columns fill in behind them.

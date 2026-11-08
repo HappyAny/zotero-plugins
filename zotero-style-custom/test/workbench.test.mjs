@@ -575,6 +575,63 @@ test('command finder supports keyboard navigation hidden-feature filtering and l
  key(f.body(),'k',{ctrlKey:true});key(finder,'Escape');assert.equal(f.bench.panel.hidden,false);assert.equal(f.doc.activeElement,f.body());key(f.body(),'Escape');assert.equal(f.bench.panel.hidden,true);assert.equal(f.doc.activeElement,origin);f.bench.destroy();
 });
 
+test('floating workbench dismisses outside without consuming the press or restoring old focus',async t=>{
+ const f=fixture();t.after(()=>f.bench.destroy());
+ const origin=f.doc.createElement('button'),outside=f.doc.createElement('button');f.doc.body.append(origin,outside);origin.focus();
+ await f.bench.show('explore');
+ const press=target=>{const e=new f.win.Event('mousedown',{bubbles:true,cancelable:true});target.dispatchEvent(e);return e;};
+ press(f.bench.panel.querySelector('.sc-body'));assert.equal(f.bench.panel.hidden,false,'inside presses stay open');
+ let delivered=0;outside.addEventListener('mousedown',()=>delivered++);
+ const focused=f.doc.activeElement;
+ assert.equal(press(outside).defaultPrevented,false);assert.equal(delivered,1);assert.equal(f.bench.panel.hidden,true);
+ assert.equal(f.doc.activeElement,focused,'dismissal does not focus the old opener');
+ outside.focus();await f.bench.show('explore');assert.equal(f.bench.panel.hidden,false,'can reopen');
+ press(outside);assert.equal(f.bench.panel.hidden,true);assert.deepEqual(f.errors,[]);
+});
+
+test('outside dismissal leaves the toolbar toggle and native popup choices in charge',async t=>{
+ const f=fixture();t.after(()=>f.bench.destroy());await f.bench.show('explore');
+ const toolbar=f.doc.getElementById('style-custom-workbench-button'),icon=f.doc.createElement('span');toolbar.append(icon);
+ icon.dispatchEvent(new f.win.Event('mousedown',{bubbles:true}));assert.equal(f.bench.panel.hidden,false);
+ toolbar.dispatchEvent(new f.win.Event('command'));await settle();assert.equal(f.bench.panel.hidden,true,'toolbar closes once');
+ toolbar.dispatchEvent(new f.win.Event('command'));await settle();assert.equal(f.bench.panel.hidden,false,'toolbar reopens once');
+ const popup=f.doc.createElement('menupopup'),choice=f.doc.createElement('menuitem');popup.append(choice);f.doc.documentElement.append(popup);
+ choice.dispatchEvent(new f.win.Event('mousedown',{bubbles:true}));assert.equal(f.bench.panel.hidden,false,'native popup choices do not dismiss');
+});
+
+test('docked workbench stays open on outside presses and floating restores dismissal',async t=>{
+ const f=fixture();t.after(()=>f.bench.destroy());let onClose;
+ f.win.Zotero_Tabs={add(spec){onClose=spec.onClose;const container=f.doc.createElement('div');f.doc.body.append(container);return {id:'tab-dismiss',container};},select(){},close(){onClose?.();}};
+ await f.bench.show('explore');assert.equal(f.bench.dock(),true);
+ f.doc.body.dispatchEvent(new f.win.Event('mousedown',{bubbles:true}));assert.equal(f.bench.panel.hidden,false);
+ f.bench.undock();f.doc.body.dispatchEvent(new f.win.Event('mousedown',{bubbles:true}));assert.equal(f.bench.panel.hidden,true);
+});
+
+test('outside dismissal keeps unsaved memo drafts through reopening',async t=>{
+ const f=fixture();t.after(()=>f.bench.destroy());f.runtime.cache.items[1]={remark:'Original memo'};
+ await f.bench.show('annotations');await settle();
+ const editor=f.body().querySelector('textarea.sc-paper-memo');assert.ok(editor);editor.value='Typed immediately before dismissing';editor.dispatchEvent(new f.win.Event('input',{bubbles:true}));
+ f.doc.body.dispatchEvent(new f.win.Event('mousedown',{bubbles:true}));assert.equal(f.bench.panel.hidden,true);
+ await f.bench.show('annotations');await settle();
+ assert.equal(f.body().querySelector('textarea.sc-paper-memo').value,'Typed immediately before dismissing');
+});
+
+test('only focus entering an outside frame dismisses and destroy removes capture listeners',async t=>{
+ const f=fixture();t.after(()=>f.bench.destroy());await f.bench.show('explore');
+ f.win.dispatchEvent(new f.win.Event('blur'));await new Promise(resolve=>setTimeout(resolve,10));assert.equal(f.bench.panel.hidden,false,'app switching does not dismiss');
+ const inside=f.doc.createElement('iframe');f.bench.panel.append(inside);inside.focus();f.win.dispatchEvent(new f.win.Event('blur'));await new Promise(resolve=>setTimeout(resolve,10));assert.equal(f.bench.panel.hidden,false,'an internal preview stays open');
+ const outside=f.doc.createElement('iframe');f.doc.body.append(outside);outside.focus();f.win.dispatchEvent(new f.win.Event('blur'));await new Promise(resolve=>setTimeout(resolve,10));assert.equal(f.bench.panel.hidden,true);
+ const removed=[],original=f.doc.removeEventListener.bind(f.doc);f.doc.removeEventListener=(...args)=>{removed.push(args);return original(...args);};
+ f.bench.destroy();assert.ok(removed.some(([event,,capture])=>event==='mousedown'&&capture===true));
+});
+
+test('frame-to-frame focus dismissal waits while the Zotero window is inactive',async t=>{
+ const f=fixture();t.after(()=>f.bench.destroy());await f.bench.show('explore');
+ const outside=f.doc.createElement('iframe');f.doc.body.append(outside);outside.focus();
+ f.doc.hasFocus=()=>false;await new Promise(resolve=>setTimeout(resolve,550));assert.equal(f.bench.panel.hidden,false);
+ f.doc.hasFocus=()=>true;await new Promise(resolve=>setTimeout(resolve,550));assert.equal(f.bench.panel.hidden,true,'the existing selection timer detects the frame transition without another window blur');
+});
+
 test('save buttons prevent duplicate pending notes and saving no longer opens the editor automatically',async()=>{
  const f=fixture(),pending=deferred();f.library.createNote=f.record('createNote',()=>pending.promise);await f.bench.show('notes');f.input('새 노트 내용','One note');const save=f.findButton('새 노트 저장');save.dispatchEvent(new f.win.Event('click',{bubbles:true}));save.dispatchEvent(new f.win.Event('click',{bubbles:true}));assert.equal(f.calls.filter(c=>c[0]==='createNote').length,1);assert.equal(save.getAttribute('aria-busy'),'true');assert.equal(save.disabled,true);
  pending.resolve('9');await settle();assert.equal(f.calls.some(c=>c[0]==='open'),false);await f.click('저장한 노트 열기');assert.deepEqual(f.calls.find(c=>c[0]==='open').slice(1),['9']);f.bench.destroy();

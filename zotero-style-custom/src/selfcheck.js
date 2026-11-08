@@ -885,6 +885,38 @@
       }
     }));
 
+    results.push(await attempt('the floating workbench dismisses on an outside press and reopens', async () => {
+      const bench = runtime.windows.get(win)?.workbench;
+      if (!bench) throw new Error('workbench not attached');
+      const doc = win.document, beforeTab = win.Zotero_Tabs?.selectedID;
+      const wasHidden = bench.panel.hidden, wasDocked = bench.docked(), beforeView = bench.state.tab;
+      const hadUI = Object.prototype.hasOwnProperty.call(runtime.cache, 'workbenchUI');
+      const beforeUI = runtime.cache.workbenchUI && {...runtime.cache.workbenchUI};
+      const active = doc.activeElement;
+      try {
+        await bench.show('explore');
+        if (bench.docked()) bench.undock();
+        const inside = new win.MouseEvent('mousedown', {bubbles:true, cancelable:true, button:0});
+        bench.panel.dispatchEvent(inside);
+        if (bench.panel.hidden) throw new Error('an inside press dismissed the panel');
+        const outside = new win.MouseEvent('mousedown', {bubbles:true, cancelable:true, button:0});
+        if (!doc.documentElement.dispatchEvent(outside) || outside.defaultPrevented) throw new Error('the outside press was cancelled');
+        if (!bench.panel.hidden || win.getComputedStyle(bench.panel).display !== 'none') throw new Error('the outside press did not hide the floating panel');
+        await bench.show('explore');
+        if (bench.docked()) bench.undock();
+        if (bench.panel.hidden) throw new Error('the panel did not reopen');
+        doc.documentElement.dispatchEvent(new win.MouseEvent('mousedown', {bubbles:true, cancelable:true, button:0}));
+        if (!bench.panel.hidden) throw new Error('a second outside press did not dismiss');
+        return 'inside press kept open; outside press hid without cancellation; reopened and dismissed again';
+      } finally {
+        await bench.toggle(false, {restoreFocus:false});
+        if (hadUI) runtime.cache.workbenchUI = beforeUI; else delete runtime.cache.workbenchUI;
+        if (!wasHidden) {await bench.show(beforeView); if (wasDocked && !bench.docked()) bench.dock();}
+        try {if (beforeTab) win.Zotero_Tabs.select(beforeTab);} catch (_) {}
+        try {if (active?.isConnected) active.focus();} catch (_) {}
+      }
+    }));
+
     results.push(await attempt('the item menu shows a sign on every verb', () => {
       const menu = win.document.getElementById('style-custom-itemmenu');
       if (!menu) throw new Error('menu not attached');
