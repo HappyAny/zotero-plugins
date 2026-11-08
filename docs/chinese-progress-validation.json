@@ -1,0 +1,122 @@
+{
+  "release": "chinese-ui-v3",
+  "artifact": {
+    "file": "style-custom-0.59.57.xpi",
+    "version": "0.59.57",
+    "sha256": "4132d56393e262637ae547b363d7296a9393655825babee392285c74b5a69e9b",
+    "bytes": 14094941
+  },
+  "scope": "Backfill stage labels, joined pending descriptions, and completion reports.",
+  "offline_tests": {
+    "exitCode": 0,
+    "files": 62,
+    "summary": [
+      "ℹ tests 2075",
+      "ℹ pass 2045",
+      "ℹ fail 0",
+      "ℹ skipped 30",
+      "ℹ duration_ms 136236.3751"
+    ],
+    "excluded": [
+      "bake.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "button": [
+      {
+        "stage": "files",
+        "status": "正在补齐 附件类型 23/825"
+      },
+      {
+        "stage": "works",
+        "status": "正在补齐 参考文献与作者机构 23/825"
+      },
+      {
+        "stage": "signals",
+        "status": "正在补齐 撤稿与开放获取状态 23/825"
+      },
+      {
+        "stage": "journals",
+        "status": "正在补齐 期刊指标 23/825"
+      },
+      {
+        "stage": "authors",
+        "status": "正在补齐 关注作者的新论文 23/825"
+      },
+      {
+        "stage": "patents",
+        "status": "正在补齐 关注作者的专利 23/825"
+      }
+    ],
+    "background": [
+      {
+        "stage": "files",
+        "status": "正在补齐 附件类型 23/825"
+      },
+      {
+        "stage": "works",
+        "status": "正在补齐 参考文献与作者机构 23/825"
+      },
+      {
+        "stage": "signals",
+        "status": "正在补齐 撤稿与开放获取状态 23/825"
+      },
+      {
+        "stage": "journals",
+        "status": "正在补齐 期刊指标 23/825"
+      },
+      {
+        "stage": "authors",
+        "status": "正在补齐 关注作者的新论文 23/825"
+      },
+      {
+        "stage": "patents",
+        "status": "正在补齐 关注作者的专利 23/825"
+      }
+    ],
+    "pending": "3 篇文献的附件尚未分类 · 825 篇尚未检查撤稿状态 · 7 种期刊暂无指标 · 2 位关注作者尚未检查",
+    "completion": "撤稿与开放获取状态：已检查 23 项 · 2 无记录 · 1失败\n已检查 2 位关注作者，暂无新论文"
+  },
+  "installed": {
+    "verified_utc": "2026-11-08T04:58:36.176695+00:00",
+    "version": "0.59.57",
+    "active": true,
+    "sha256": "4132d56393e262637ae547b363d7296a9393655825babee392285c74b5a69e9b",
+    "plugin_configuration_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "runtime_diagnostic_keys_updated": [
+      "extensions.style-custom.columnFitLast",
+      "extensions.zotpop.updateLastResult"
+    ],
+    "watched_authors_preserved": true,
+    "native": {
+      "when": "2026-11-08T04:57:22.418Z",
+      "passed": 56,
+      "failed": 2,
+      "progress": {
+        "locale": "zh-CN",
+        "stages": {
+          "files": "正在补齐 附件类型 23/825",
+          "works": "正在补齐 参考文献与作者机构 23/825",
+          "signals": "正在补齐 撤稿与开放获取状态 23/825",
+          "journals": "正在补齐 期刊指标 23/825",
+          "authors": "正在补齐 关注作者的新论文 23/825",
+          "patents": "正在补齐 关注作者的专利 23/825"
+        }
+      },
+      "failed_checks": [
+        "every column in the list takes the hover, not only the first",
+        "a second double-click on any column edge leaves the column where the first put it"
+      ]
+    },
+    "test_mode": "Built-in self-check in background Zotero; no live network, repair, or fill requests."
+  },
+  "limits": [
+    "The browser proof uses fictional library data and makes no network requests.",
+    "The native check uses the built-in self-check. The desktop control helper was unavailable.",
+    "No live backfill, repair, or AI calls were made by the added checks.",
+    "Unix executable fixtures are excluded on Windows; thirty tests are skipped."
+  ]
+}

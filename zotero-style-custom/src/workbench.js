@@ -316,17 +316,19 @@
    if(!noticeOpen){notice.hidden=true;return;}
    notice.hidden=false;notice.replaceChildren();
    const parts=[];
-   if(pending.files)parts.push(`종류 미판별 첨부 ${pending.files}편`);
-   if(pending.signals)parts.push(`철회 여부 미확인 ${pending.signals}편`);
-   if(pending.journals)parts.push(`지표 없는 저널 ${pending.journals}종`);
-   if(pending.authors)parts.push(`확인 안 한 관심 저자 ${pending.authors}명`);
-   if(unlinked.length)parts.push(`게재본 연결 안 됨 ${unlinked.length}편`);
-   node('span',parts.join(' · '),notice,{class:'sc-notice-text'});
+   if(pending.files)parts.push(T(`종류 미판별 첨부 ${pending.files}편`));
+   if(pending.signals)parts.push(T(`철회 여부 미확인 ${pending.signals}편`));
+   if(pending.journals)parts.push(T(`지표 없는 저널 ${pending.journals}종`));
+   if(pending.authors)parts.push(T(`확인 안 한 관심 저자 ${pending.authors}명`));
+   if(unlinked.length)parts.push(T(`게재본 연결 안 됨 ${unlinked.length}편`));
+   node('span',D(parts.join(' · ')),notice,{class:'sc-notice-text'});
    const act=node('div',null,notice,{class:'sc-notice-actions'});
    if(pending.files||pending.signals||pending.journals||pending.authors)button('지금 채우기',()=>run(async()=>{
     notice.hidden=true;
-    const report=await runtime.runBackfill({onProgress:({stage,done,total})=>
-     message(`${({signals:'철회·공개접근 신호',journals:'저널 지표',authors:'관심 저자 새 논문'})[stage]||stage} 채우는 중 ${done+1}/${total}`)});
+    const report=await runtime.runBackfill({onProgress:({stage,done,total})=>{
+     const label=({files:'첨부파일 종류',works:'인용 목록·소속',signals:'철회·공개접근 신호',journals:'저널 지표',authors:'관심 저자 새 논문',patents:'관심 저자 특허'})[stage]||stage;
+     message(F('{0} 채우는 중 {1}/{2}',T(label),done+1,total));
+    }});
     if(disposed)return;
     message(runtime.backfillSummary(report),!!report.budgetGone);
     await refreshNotice({force:true});

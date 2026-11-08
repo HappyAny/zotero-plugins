@@ -6625,7 +6625,10 @@ var CustomStyleRuntime = class CustomStyleRuntime {
 
   showBackfillProgress(win, stage, done, total) {
     const label = {files: '첨부파일 종류', works: '인용 목록·소속', signals: '철회·공개접근 신호', journals: '저널 지표', authors: '관심 저자 새 논문', patents: '관심 저자 특허'}[stage] || stage;
-    const text = `${label} 채우는 중 ${done + 1}/${total}`;
+    // The stage is interface text. Translate it before inserting it as a value.
+    const text = this.i18n?.format
+      ? this.i18n.format('{0} 채우는 중 {1}/{2}', [this.t(label), done + 1, total])
+      : `${label} 채우는 중 ${done + 1}/${total}`;
     for (const [target, state] of this.windows) {
       if (target.closed) continue;
       try { state?.workbench?.setStatus?.(text); } catch (error) { this.Z.logError(error); }
@@ -6633,37 +6636,38 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   }
 
   backfillSummary(report) {
+    const t = text => this.i18n?.t(text) ?? text;
     const lines = [];
     if (report.files) {
-      lines.push(`첨부파일: 본문 ${report.files.article} · 보충자료 ${report.files.supplementary}`
-        + (report.files.duplicate ? ` · 중복 ${report.files.duplicate}` : '')
-        + (report.files.foreign ? ` · 다른 논문 ${report.files.foreign}` : ''));
+      lines.push(t(`첨부파일: 본문 ${report.files.article} · 보충자료 ${report.files.supplementary}`)
+        + (report.files.duplicate ? t(` · 중복 ${report.files.duplicate}`) : '')
+        + (report.files.foreign ? t(` · 다른 논문 ${report.files.foreign}`) : ''));
     }
     if (report.works) {
-      lines.push(`인용 목록: ${report.works.found}편 · 참고문헌 ${report.works.references}건`
-        + ` · 기관 ${report.works.institutions}곳`
-        + (report.works.missing ? ` · OpenAlex에 없음 ${report.works.missing}` : '')
-        + (report.works.noDOI ? ` · DOI 없음 ${report.works.noDOI}` : ''));
+      lines.push(t(`인용 목록: ${report.works.found}편 · 참고문헌 ${report.works.references}건`)
+        + t(` · 기관 ${report.works.institutions}곳`)
+        + (report.works.missing ? t(` · OpenAlex에 없음 ${report.works.missing}`) : '')
+        + (report.works.noDOI ? t(` · DOI 없음 ${report.works.noDOI}`) : ''));
     }
     if (report.signals) {
-      lines.push(`철회·공개접근 신호: ${report.signals.ok}편 확인`
-        + (report.signals['not-found'] ? ` · ${report.signals['not-found']}편은 기록 없음` : '')
-        + (report.signals.error ? ` · ${report.signals.error}편 조회 실패` : ''));
+      lines.push(t(`철회·공개접근 신호: ${report.signals.ok}편 확인`)
+        + (report.signals['not-found'] ? t(` · ${report.signals['not-found']}편은 기록 없음`) : '')
+        + (report.signals.error ? t(` · ${report.signals.error}편 조회 실패`) : ''));
       if (report.signals.newRetracted || report.signals.newPublished) {
-        lines.push(`  새로 철회 ${report.signals.newRetracted || 0} · 새로 게재 ${report.signals.newPublished || 0}`);
+        lines.push(t(`  새로 철회 ${report.signals.newRetracted || 0} · 새로 게재 ${report.signals.newPublished || 0}`));
       }
       if (report.signals.partialOnly) {
-        lines.push(`  그중 ${report.signals.partialOnly}편은 철회 여부만 확인했습니다(공개접근 정보는 한도 복구 후 자동으로 채웁니다).`);
+        lines.push(t(`  그중 ${report.signals.partialOnly}편은 철회 여부만 확인했습니다(공개접근 정보는 한도 복구 후 자동으로 채웁니다).`));
       }
-    } else lines.push('철회·공개접근 신호: 더 확인할 문헌이 없습니다.');
-    if (report.journals) lines.push(`저널 지표: ${report.journals.found}종 확인 · ${report.journals.missing}종은 OpenAlex에도 없음`);
+    } else lines.push(t('철회·공개접근 신호: 더 확인할 문헌이 없습니다.'));
+    if (report.journals) lines.push(t(`저널 지표: ${report.journals.found}종 확인 · ${report.journals.missing}종은 OpenAlex에도 없음`));
     if (report.authors) {
-      lines.push(report.authors.withNews
+      lines.push(t(report.authors.withNews
         ? `관심 저자: ${report.authors.withNews}명이 새 논문 ${report.authors.works}편`
-        : `관심 저자: ${report.authors.authors}명 확인, 새 논문 없음`);
+        : `관심 저자: ${report.authors.authors}명 확인, 새 논문 없음`));
     }
     if (report.budgetGone) {
-      lines.push('', 'OpenAlex 하루 한도를 다 썼습니다. 한국 시간 오전 9시에 초기화되고, 다시 실행하면 남은 것부터 이어서 채웁니다.');
+      lines.push('', t('OpenAlex 하루 한도를 다 썼습니다. 한국 시간 오전 9시에 초기화되고, 다시 실행하면 남은 것부터 이어서 채웁니다.'));
     }
     return lines.join('\n');
   }

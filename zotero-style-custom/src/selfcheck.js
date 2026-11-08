@@ -979,6 +979,34 @@
         + ` · 표본 ${covered}/${samples.length}`;
     }));
 
+    results.push(await attempt('backfill progress translates every stage in the live panel', () => {
+      const panels = [...runtime.windows.values()].map(state => state?.workbench).filter(Boolean);
+      const saved = panels.map(bench => ({bench, status: bench.panel.querySelector('.sc-status')}))
+        .filter(row => row.status).map(row => ({...row, text: row.status.textContent, error: row.status.dataset.error}));
+      if (!saved.length) throw new Error('workbench status is unavailable');
+      const active = runtime.i18n.locale(), stages = ['files', 'works', 'signals', 'journals', 'authors', 'patents'];
+      const shown = {};
+      try {
+        for (const stage of stages) {
+          runtime.showBackfillProgress(win, stage, 22, 825);
+          shown[stage] = saved[0].status.textContent;
+          if (active !== 'ko-KR' && /[가-힣]/.test(shown[stage])) throw new Error(stage + ': untranslated progress');
+          if (!shown[stage].includes('23/825')) throw new Error(stage + ': progress count changed');
+          if (saved.some(row => row.status.textContent !== shown[stage])) throw new Error(stage + ': panels disagree');
+        }
+        if (active === 'zh-CN' && shown.signals !== '正在补齐 撤稿与开放获取状态 23/825') {
+          throw new Error('Chinese retraction progress does not match the expected text');
+        }
+        return JSON.stringify({locale: active, stages: shown});
+      } finally {
+        for (const row of saved) {
+          row.bench.setStatus(row.text);
+          if (row.error === undefined) delete row.status.dataset.error;
+          else row.status.dataset.error = row.error;
+        }
+      }
+    }));
+
     // And how much of the interface the table actually reaches, counted rather
     // than guessed: an untranslated string still reads in Korean, so coverage
     // is a number to improve, not a breakage.

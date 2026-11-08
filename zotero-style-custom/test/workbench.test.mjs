@@ -99,7 +99,7 @@ function fixture(initialCache,toolbar,{nativeJCR=false,catalog,locale}={}){
  Object.assign(reader,{moveTab:(...args)=>{calls.push(['moveTab',...args]);},closeOtherTabs:(...args)=>{calls.push(['closeOtherTabs',...args]);return {closed:1};},renameTabGroup:record('renameTabGroup'),updateTabGroup:record('updateTabGroup'),renameView:record('renameView'),updateView:record('updateView'),marginOptions:()=>({width:210,side:'right',textLimit:1500}),setMarginOptions:record('setMarginOptions'),resetAppearance:record('resetAppearance')});
  const assist={run:record('ai','Generated result'),cancel:()=>calls.push(['cancelAI'])};
  const model={...Model,deleteBoard:(cache,id)=>{calls.push(['deleteBoard',id]);cache.testDeleted=cache.boards.find(b=>b.id===id);cache.boards=cache.boards.filter(b=>b.id!==id);return cache.testDeleted;},restoreBoard:cache=>{calls.push(['restoreBoard']);const board=cache.testDeleted;if(board){cache.boards.push(board);delete cache.testDeleted;}return board;}};
- if(locale){const i18n=require('../src/i18n.js');i18n.load(require('../src/strings.js').en);i18n.use(locale);runtime.i18n=i18n;}
+ if(locale){const i18n=require('../src/i18n.js');i18n.load(require('../src/strings.js'));i18n.use(locale);runtime.i18n=i18n;}
  const bench=Workbench.attach(win,{runtime,library,reader,model,assist});
  const body=()=>bench.panel.querySelector('.sc-body');
  // An icon button carries its name in the tooltip and the accessible label,
@@ -2204,6 +2204,41 @@ test('the panel says what has never been filled in behind a small header button,
  assert.match(f.bench.panel.querySelector('.sc-status').textContent,/채우기 완료/);
  f.bench.destroy();
 });
+
+for(const locale of ['zh-CN','en-US','ko-KR']){
+ test(`backfill progress localizes every stage through the button and background runtime (${locale})`,async t=>{
+  const f=fixture(undefined,undefined,{locale}),i18n=f.runtime.i18n,pending=deferred();
+  t.after(async()=>{pending.resolve({budgetGone:false});await settle();f.bench.destroy();i18n.use('ko-KR');});
+  let progress;
+  f.runtime.backfillPending=async()=>({signals:825,journals:7,authors:2,files:3});
+  f.runtime.runBackfill=options=>{progress=options.onProgress;return pending.promise;};
+  f.runtime.backfillSummary=()=>i18n.t('채우기 완료');
+  await f.bench.show('explore');
+  await f.click(f.bench.panel.querySelector('.sc-notice-toggle').textContent);
+  const notice=f.bench.panel.querySelector('.sc-notice-text').textContent;
+  for(const count of ['825','7','2','3'])assert.ok(notice.includes(count),`pending count: ${count}`);
+  if(locale!=='ko-KR')assert.doesNotMatch(notice,/[가-힣]/,'joined pending descriptions');
+  await f.click(i18n.t('지금 채우기'));
+  assert.equal(typeof progress,'function');
+  const labels={
+   'zh-CN':['附件类型','参考文献与作者机构','撤稿与开放获取状态','期刊指标','关注作者的新论文','关注作者的专利'],
+   'en-US':['Attachment kinds','References and affiliations','Retraction and open-access signals','Journal metrics','New work by followed authors','Patents of followed authors'],
+   'ko-KR':['첨부파일 종류','인용 목록·소속','철회·공개접근 신호','저널 지표','관심 저자 새 논문','관심 저자 특허']
+  }[locale];
+  const stages=['files','works','signals','journals','authors','patents'];
+  const runtime={i18n,t:value=>i18n.t(value),Z:{logError:error=>f.errors.push(error)},
+   windows:new Map([[f.win,{workbench:f.bench}],[{closed:true},{workbench:{setStatus(){throw new Error('closed window');}}}]])};
+  for(const [index,stage]of stages.entries()){
+   const expected=locale==='zh-CN'?`正在补齐 ${labels[index]} 23/825`
+    :locale==='en-US'?`Filling ${labels[index]} 23/825`:`${labels[index]} 채우는 중 23/825`;
+   progress({stage,done:22,total:825});
+   assert.equal(f.bench.panel.querySelector('.sc-status').textContent,expected,`button: ${stage}`);
+   require('../src/runtime.js').prototype.showBackfillProgress.call(runtime,f.win,stage,22,825);
+   assert.equal(f.bench.panel.querySelector('.sc-status').textContent,expected,`background: ${stage}`);
+  }
+  assert.deepEqual(f.errors,[]);
+ });
+}
 
 test('nothing left to fill means nothing to say', async () => {
  const f=fixture();

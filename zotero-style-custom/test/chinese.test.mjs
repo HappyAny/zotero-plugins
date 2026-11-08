@@ -7,6 +7,29 @@ const Schema=require('../src/settings-schema.js');
 const Runtime=require('../src/runtime.js');
 const PaperTranslate=require('../src/paper-translate.js');
 
+test('backfill completion localizes each line and optional result before joining them',()=>{
+ I18N.load(Strings);
+ const report={
+  files:{article:13,supplementary:4,duplicate:2,foreign:1},
+  works:{found:17,references:51,institutions:9,missing:3,noDOI:2},
+  signals:{ok:23,'not-found':2,error:1,newRetracted:1,newPublished:4,partialOnly:7},
+  journals:{found:11,missing:3},authors:{authors:2,withNews:1,works:5},budgetGone:true
+ };
+ try{
+  for(const locale of ['zh-CN','en-US']){
+   I18N.use(locale);
+   const host={i18n:I18N};
+   const summary=Runtime.prototype.backfillSummary.call(host,report);
+   assert.doesNotMatch(summary,/[가-힣]/,locale);
+   for(const n of [13,51,23,7,11,5])assert.ok(summary.includes(String(n)),`${locale}: count ${n}`);
+   if(locale==='zh-CN')assert.match(summary,/撤稿与开放获取状态：已检查 23 项/);
+   assert.equal(I18N.t(summary),summary,'displaying a completed summary keeps it unchanged');
+   const empty=Runtime.prototype.backfillSummary.call(host,{authors:{authors:2,withNews:0,works:0}});
+   assert.doesNotMatch(empty,/[가-힣]/,`${locale}: no pending papers`);
+  }
+ }finally{I18N.use('ko-KR');}
+});
+
 test('all Chinese messages preserve the Korean interpolation contract', () => {
  assert.ok(Object.keys(Strings.zh).length>=2964);
  assert.deepEqual(Object.keys(Strings.zh).sort(),Object.keys(Strings.en).sort());

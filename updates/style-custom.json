@@ -3,6 +3,16 @@
     "style-custom@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.59.57",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v3/style-custom-0.59.57.xpi",
+          "update_hash": "sha256:4132d56393e262637ae547b363d7296a9393655825babee392285c74b5a69e9b",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0"
+            }
+          }
+        },
+        {
           "version": "0.59.56",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v2/style-custom-0.59.56.xpi",
           "update_hash": "sha256:c9b8f1af46259d2b1baaf308ba145c5890cfb87be7cf96e73557d3e57fbaa978",
