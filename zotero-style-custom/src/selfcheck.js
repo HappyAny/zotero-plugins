@@ -1007,6 +1007,97 @@
       }
     }));
 
+    results.push(await attempt('the citation-key field keeps its natural height', async () => {
+      const doc = win.document;
+      const findRow = () => doc.querySelector('#zotero-item-details #zotero-editpane-info-box .meta-row[data-custom-row-id$="better-bibtex-citation-key"]')
+        || doc.querySelector('#zotero-item-details #zotero-editpane-info-box label[data-l10n-id="better-bibtex_item-pane_info_citation-key_label"]')?.closest('.meta-row')
+        || doc.querySelector('#zotero-item-details #zotero-editpane-info-box editable-text[fieldname="citationKey"]')?.closest('.meta-row');
+      const pane = win.ZoteroPane, selected = pane?.getSelectedItems?.() || [];
+      const collection = pane?.collectionsView?.getRow(pane.collectionsView.selection.focused)?.id;
+      const tab = win.Zotero_Tabs?.selectedID;
+      const itemPane = doc.getElementById('zotero-item-pane');
+      const paneStyle = itemPane?.getAttribute('style');
+      let changedSelection = false, openedSection = null, infoTable = null, tableStyle = null;
+      try {
+        win.Zotero_Tabs?.select('zotero-pane', false);
+        if (itemPane) {
+          for (const key of ['width', 'min-width', 'max-width']) itemPane.style.setProperty(key, '640px', 'important');
+          itemPane.style.setProperty('flex', '0 0 640px', 'important');
+        }
+        if ((!findRow() || pane?.itemPane?.mode !== 'item') && pane?.selectItem) {
+          let candidate = selected.find(item => runtime.isRegular(item));
+          for (let i = 0; !candidate && i < (pane.itemsView?.rowCount || 0); i++) {
+            const item = pane.itemsView.getRow(i)?.ref;
+            if (item && runtime.isRegular(item)) candidate = item;
+          }
+          candidate ||= all[0];
+          if (candidate) {
+            changedSelection = true;
+            await pane.selectItem(candidate.id, {inLibraryRoot: true, noWindowRestore: true});
+          }
+        }
+        const info = doc.querySelector('#zotero-item-details #zotero-editpane-info-box');
+        const section = info?.querySelector('collapsible-section');
+        if (section && !section.open) { openedSection = section; section.open = true; }
+        infoTable = info?.querySelector('#info-table');
+        if (infoTable) {
+          tableStyle = infoTable.getAttribute('style');
+          infoTable.style.setProperty('width', '640px', 'important');
+          infoTable.style.setProperty('grid-template-columns', 'max-content minmax(320px, 1fr)', 'important');
+        }
+        await info?.render?.();
+        await new Promise(resolve => win.setTimeout(resolve, 150));
+        const row = findRow();
+        const field = row?.querySelector('editable-text');
+        if (!field) return JSON.stringify({available: false, reason: 'No citation-key row is rendered.',
+          paneExists: !!doc.getElementById('zotero-item-pane'), selected: pane?.getSelectedItems?.().length || 0,
+          mode: pane?.itemPane?.mode,
+          customRows: doc.querySelectorAll('.meta-row[data-custom-row-id]').length});
+        const before = field.getAttribute('value'), input = field.querySelector('textarea, input');
+        const inputBefore = input?.value;
+        runtime.fixItemPaneRows(doc);
+        const bounds = (input || field).getBoundingClientRect(), style = win.getComputedStyle(input || field);
+        if (!bounds.width || !bounds.height) return JSON.stringify({available: false, reason: 'The citation-key row is hidden.'});
+        if (bounds.width < 120) throw new Error('The metadata pane is too narrow for a normal-width check: ' + JSON.stringify({
+          width: bounds.width, pane: itemPane?.getBoundingClientRect().width, table: infoTable?.getBoundingClientRect().width,
+          columns: infoTable && win.getComputedStyle(infoTable).gridTemplateColumns,
+          fieldStyle: field.getAttribute('style'), inputStyle: input?.getAttribute('style')}));
+        const measure = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+        measure.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden;white-space:pre-wrap;overflow-wrap:anywhere;';
+        for (const key of ['font', 'lineHeight', 'letterSpacing', 'padding', 'border', 'boxSizing']) measure.style[key] = style[key];
+        measure.style.width = bounds.width + 'px';
+        measure.textContent = inputBefore || before || ' ';
+        doc.documentElement.append(measure);
+        let natural;
+        try { natural = measure.getBoundingClientRect().height; }
+        finally { measure.remove(); }
+        const line = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.35;
+        const result = {available: true, height: bounds.height, naturalHeight: natural, width: bounds.width,
+          paneWidth: itemPane?.getBoundingClientRect().width,
+          tableWidth: infoTable?.getBoundingClientRect().width,
+          inlineMinimum: row.style.minHeight, valuePreserved: field.getAttribute('value') === before && input?.value === inputBefore};
+        if (!result.valuePreserved) throw new Error('The citation key changed during the layout check');
+        if (bounds.height > natural + line + 4) throw new Error('Citation-key field is taller than its text: ' + JSON.stringify(result));
+        return JSON.stringify(result);
+      } finally {
+        if (infoTable?.isConnected) {
+          if (tableStyle === null) infoTable.removeAttribute('style');
+          else infoTable.setAttribute('style', tableStyle);
+        }
+        if (itemPane) {
+          if (paneStyle === null) itemPane.removeAttribute('style');
+          else itemPane.setAttribute('style', paneStyle);
+        }
+        if (openedSection?.isConnected) openedSection.open = false;
+        if (changedSelection) {
+          if (collection) await pane.collectionsView.selectByID(collection);
+          if (selected.length) await pane.selectItems(selected.map(item => item.id), {noWindowRestore: true, noTabSwitch: true});
+          else pane.itemsView?.selection?.clearSelection();
+        }
+        if (tab) win.Zotero_Tabs?.select(tab, false);
+      }
+    }));
+
     // And how much of the interface the table actually reaches, counted rather
     // than guessed: an untranslated string still reads in Korean, so coverage
     // is a number to improve, not a breakage.

@@ -2353,11 +2353,11 @@ test('the IF cell tooltip carries the official JCR quartile and category rank wh
 
 test('a tall Extra field gets a row as tall as itself, and the row is given back on unload', async () => {
   const {parseHTML} = await import('linkedom');
-  const {document} = parseHTML('<html><body><div id="zotero-item-pane"><div class="meta-row" id="r1"><span class="label">Extra</span><editable-text multiline="true" class="value"></editable-text></div><div class="meta-row" id="r2"><span class="label">Added</span><span class="value">x</span></div></div></body></html>');
+  const {document} = parseHTML('<html><body><div id="zotero-item-pane"><div class="meta-row" id="r1"><span class="label">Extra</span><editable-text fieldname="extra" multiline="true" class="value"></editable-text></div><div class="meta-row" id="r2"><span class="label">Added</span><span class="value">x</span></div></div></body></html>');
   const rows = {r1: 111, r2: 22}, values = {r1: 124, r2: 22};
   for (const row of document.querySelectorAll('.meta-row')) {
-    row.getBoundingClientRect = () => ({height: rows[row.id]});
-    row.querySelector('.value').getBoundingClientRect = () => ({height: values[row.id]});
+    row.getBoundingClientRect = () => ({height: Math.max(rows[row.id],parseFloat(row.style.minHeight)||0)});
+    row.querySelector('.value').getBoundingClientRect = () => ({height: Math.max(values[row.id],parseFloat(row.style.minHeight)||0)});
   }
   const {plugin} = fixture();
   assert.equal(plugin.fixItemPaneRows(document), 1);
@@ -2366,6 +2366,22 @@ test('a tall Extra field gets a row as tall as itself, and the row is given back
   values.r1 = 40; rows.r1 = 111;
   plugin.fixItemPaneRows(document);
   assert.equal(document.getElementById('r1').style.minHeight, '', 'a value that shrank releases the row');
+});
+
+test('the Extra overlap repair leaves citation keys and other plugin rows under native sizing',async()=>{
+ const {parseHTML}=await import('linkedom');
+ const {document}=parseHTML('<html><body><div id="zotero-item-pane"><div class="meta-row" data-custom-row-id="better-bibtex-citation-key"><div class="meta-label">Citation Key</div><div class="meta-data"><editable-text class="value custom-row-value" value="authorTitle2024"></editable-text></div></div><div class="meta-row" data-custom-row-id="title-translation" style="min-height:28px"><div class="meta-data"><editable-text class="value custom-row-value" multiline="true" value="译名"></editable-text></div></div></div></body></html>');
+ const {plugin}=fixture(),rows=[...document.querySelectorAll('.meta-row')];
+ for(const row of rows){
+  row.getBoundingClientRect=()=>({height:24});
+  row.querySelector('editable-text').getBoundingClientRect=()=>({height:1200});
+ }
+ const before=rows.map(row=>row.getAttribute('style'));
+ assert.equal(plugin.fixItemPaneRows(document),0);
+ assert.deepEqual(rows.map(row=>row.getAttribute('style')),before,'a transient field height is not frozen into a row');
+ plugin.restoreItemPaneRows(document);
+ assert.deepEqual(rows.map(row=>row.getAttribute('style')),before,'unload preserves another plugin\'s minimum height');
+ assert.equal(rows[0].querySelector('editable-text').getAttribute('value'),'authorTitle2024');
 });
 
 test('quitting Zotero leaves the columns registered, so their saved widths and order survive', async () => {

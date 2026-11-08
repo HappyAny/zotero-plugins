@@ -2018,20 +2018,41 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.paintHighlights(win,state);
     for(const n of [...state.titleNodes])if(!n.isConnected)state.titleNodes.delete(n);
   }
-  /* A long Extra field -- a TLDR and a citation line -- renders taller than the
-     row Zotero measured for it, and the rows below draw over its last lines. The
-     row is given the height its value actually needs. Measured from the DOM the
-     bug showed: value 124px, row 111px, next row starting 11px too early. */
+  /* Older Zotero layouts can overlap a long Extra field. Only that native field
+     needs this repair. Measuring every .value also catches plugin fields such
+     as Better BibTeX's citation key and can freeze a transient layout height.
+     Release our previous minimum before measuring, so grid stretching cannot
+     keep an old height alive after the content shrinks. */
   fixItemPaneRows(doc) {
+    this.restoreItemPaneRows(doc);
     let fixed = 0;
     for (const row of doc.querySelectorAll('#zotero-item-pane .meta-row')) {
-      const value = row.querySelector('editable-text[multiline], .value');
+      const value = row.querySelector('editable-text[fieldname="extra"][multiline]');
       if (!value) continue;
       const need = value.getBoundingClientRect?.().height || 0, have = row.getBoundingClientRect?.().height || 0;
-      if (need > have + 1) { row.style.minHeight = Math.ceil(need) + 'px'; fixed++; }
-      else if (row.style.minHeight && need + 1 < have) row.style.removeProperty('min-height');
+      if (need > have + 1) {
+        this.itemPaneRowHeights ||= new WeakMap();
+        const previous = row.style.getPropertyValue('min-height');
+        const priority = typeof row.style.getPropertyPriority === 'function' ? row.style.getPropertyPriority('min-height') : '';
+        const applied = Math.ceil(need) + 'px';
+        this.itemPaneRowHeights.set(row, {previous, priority, applied});
+        row.style.setProperty('min-height', applied);
+        row.setAttribute('data-style-custom-row-height', 'extra');
+        fixed++;
+      }
     }
     return fixed;
+  }
+  restoreItemPaneRows(doc) {
+    for (const row of doc.querySelectorAll('#zotero-item-pane .meta-row[data-style-custom-row-height]')) {
+      const owned = this.itemPaneRowHeights?.get(row);
+      if (owned && row.style.getPropertyValue('min-height') === owned.applied) {
+        if (owned.previous) row.style.setProperty('min-height', owned.previous, owned.priority);
+        else row.style.removeProperty('min-height');
+      }
+      this.itemPaneRowHeights?.delete(row);
+      row.removeAttribute('data-style-custom-row-height');
+    }
   }
   watchItemPane(win, state) {
     const pane = win.document.getElementById('zotero-item-pane');
@@ -8358,7 +8379,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     cleanup(()=>state.workbench?.destroy());cleanup(()=>state.readerCleanup?.());
     cleanup(()=>state.itemPaneObserver?.disconnect());
     cleanup(()=>state.columnDragCleanup?.());cleanup(()=>state.rollCleanup?.());cleanup(()=>state.cellsCleanup?.());
-    for(const row of win.document.querySelectorAll('#zotero-item-pane .meta-row[style*="min-height"]'))cleanup(()=>row.style.removeProperty('min-height'));
+    cleanup(()=>this.restoreItemPaneRows(win.document));
     for(const node of state.titleNodes||[])cleanup(()=>node.remove());
     for(const[cell,position]of state.titlePositions||[])cleanup(()=>{if(cell.style.position==='relative'){if(position)cell.style.position=position;else cell.style.removeProperty('position');}});
     for(const[node,weight]of state.titleWeights||[])cleanup(()=>{if(node.style.fontWeight==='700')node.style.fontWeight=weight;});

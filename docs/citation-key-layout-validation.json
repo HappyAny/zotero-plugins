@@ -1,0 +1,111 @@
+{
+  "release": "citation-key-layout-v1",
+  "artifact": {
+    "file": "style-custom-0.59.58.xpi",
+    "version": "0.59.58",
+    "sha256": "43946b6c8fcf61a679211b12db7e0c529bbd834b8e6e8193829aff5d9a8f1900",
+    "bytes": 14096772
+  },
+  "scope": "Native metadata row sizing and Better BibTeX citation-key compatibility.",
+  "offline_tests": {
+    "exitCode": 0,
+    "files": 62,
+    "summary": [
+      "ℹ tests 2076",
+      "ℹ pass 2046",
+      "ℹ fail 0",
+      "ℹ skipped 30",
+      "ℹ duration_ms 141560.9591"
+    ],
+    "excluded": [
+      "bake.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "final_native_helper_tests": {
+    "passed": 18,
+    "failed": 0
+  },
+  "browser": {
+    "errors": [],
+    "layoutSource": "CSS and editable-text markup from installed Zotero 10.0.8; fictional paper data.",
+    "trigger": "A temporary mismatch between field and row height, simulated with inline sizes.",
+    "legacy": {
+      "transient": {
+        "row": 24,
+        "field": 1200
+      },
+      "changed": 1,
+      "row": 1200,
+      "field": 1200,
+      "minHeight": "1200px"
+    },
+    "fixed": {
+      "changed": 0,
+      "row": 29.59375,
+      "field": 29.59375,
+      "minHeight": "",
+      "valuePreserved": true
+    },
+    "widths": [
+      {
+        "width": 620,
+        "height": 29.59375
+      },
+      {
+        "width": 400,
+        "height": 51.1875
+      },
+      {
+        "width": 280,
+        "height": 72.78125
+      }
+    ],
+    "extra": {
+      "expanded": "124px",
+      "released": "20px",
+      "restored": "20px"
+    }
+  },
+  "installed": {
+    "verified_utc": "2026-11-08T06:52:53.630780+00:00",
+    "version": "0.59.58",
+    "active": true,
+    "sha256": "43946b6c8fcf61a679211b12db7e0c529bbd834b8e6e8193829aff5d9a8f1900",
+    "plugin_configuration_preserved": true,
+    "better_bibtex_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "native": {
+      "when": "2026-11-08T06:42:21.143Z",
+      "passed": 57,
+      "failed": 2,
+      "citation_key": {
+        "height_verified": false,
+        "background_check_passed": false,
+        "reason": "The metadata pane is too narrow for a normal-width check",
+        "background_diagnostics": {
+          "width": 9.133331298828125,
+          "pane": 640,
+          "table": 640,
+          "columns": "0px 632px",
+          "fieldStyle": "--line-height: 2ex; text-align: left;",
+          "inputStyle": null
+        }
+      },
+      "failed_checks": [
+        "every column in the list takes the hover, not only the first",
+        "the citation-key field keeps its natural height"
+      ]
+    },
+    "test_mode": "Built-in self-check in background Zotero. The visible desktop control pipe was unavailable.",
+    "visible_window_height_verified": false
+  },
+  "limits": [
+    "The browser positive control simulates a temporary field/row height mismatch; it does not reproduce the complete native event sequence.",
+    "The native check temporarily selects an existing paper when required and uses a 640px metadata pane. It restores the selection, collection, tab, open section, and original pane/table styles after measurement. It does not edit the citation key.",
+    "The native height check did not pass: the background input remained 9.13px wide. This result does not verify the visible field height. Both official desktop-control interfaces reported an unavailable native pipe.",
+    "The native checks use the built-in self-check. No manual desktop click test ran.",
+    "No live AI, backfill, or repair request was made by the added checks.",
+    "Unix executable fixtures are excluded on Windows; thirty tests are skipped."
+  ]
+}

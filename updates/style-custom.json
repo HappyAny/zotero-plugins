@@ -3,6 +3,16 @@
     "style-custom@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.59.58",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/citation-key-layout-v1/style-custom-0.59.58.xpi",
+          "update_hash": "sha256:43946b6c8fcf61a679211b12db7e0c529bbd834b8e6e8193829aff5d9a8f1900",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0"
+            }
+          }
+        },
+        {
           "version": "0.59.57",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/chinese-ui-v3/style-custom-0.59.57.xpi",
           "update_hash": "sha256:4132d56393e262637ae547b363d7296a9393655825babee392285c74b5a69e9b",
