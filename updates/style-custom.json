@@ -3,6 +3,16 @@
     "style-custom@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.59.60",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/language-switch-v1/style-custom-0.59.60.xpi",
+          "update_hash": "sha256:d7ce30f9acb0070459f5923eb25b5e5d91dabba4fe8733ec5d1aaef693689ef5",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0"
+            }
+          }
+        },
+        {
           "version": "0.59.59",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/workbench-dismiss-v1/style-custom-0.59.59.xpi",
           "update_hash": "sha256:1a2526e561123f227a6aae511f1dc9e0253ef18f2b31efa0e03cc29ba79bcfa2",

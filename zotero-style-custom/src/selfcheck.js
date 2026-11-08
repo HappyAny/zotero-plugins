@@ -917,6 +917,48 @@
       }
     }));
 
+    results.push(await attempt('both plugins save English and Chinese from their preference controls', async () => {
+      const doc = win.document, plugin = runtime.Z.ZotPoP;
+      if (!plugin?.localizePrefs || !plugin?.rootURI) throw new Error('ZotPoP preferences are unavailable');
+      if (doc.getElementById('style-custom-settings-root') || doc.getElementById('zotpop-preferences')) throw new Error('a preferences container already exists in the main window');
+      const beforeStyle = runtime.getSetting('language');
+      const beforePop = runtime.Z.Prefs.get('extensions.zotpop.language', true);
+      const container = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      container.style.cssText = 'position:fixed;left:-20000px;top:0;width:800px;visibility:hidden';
+      const host = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');host.id = 'style-custom-settings-root';container.appendChild(host);doc.documentElement.appendChild(container);
+      let pane;
+      try {
+        const scope = {}, services = runtime.Services || win.Services || globalThis.Services;
+        scope.globalThis = scope;
+        services.scriptloader.loadSubScript(runtime.rootURI + 'src/settings.js', scope);
+        pane = scope.CustomStyleSettings.mount({document:doc, runtime});await pane.ready;
+        const languageRow = host.querySelector('[data-setting="language"]');
+        for (const value of ['zh-CN', 'en-US']) {
+          const choice = languageRow.querySelector('[role="radio"][data-value="' + value + '"]');
+          if (!choice || choice.disabled) throw new Error('language choice is unavailable: ' + value);
+          choice.dispatchEvent(new win.MouseEvent('click', {bubbles:true}));
+          for (let waited = 0; waited < 5000 && languageRow.getAttribute('aria-busy') === 'true'; waited += 50) await new Promise(resolve => win.setTimeout(resolve, 50));
+          if (runtime.getSetting('language') !== value || choice.getAttribute('aria-checked') !== 'true') throw new Error('Style Custom did not save ' + value);
+          if (host.querySelector('h2').textContent !== runtime.t('Style Custom 설정')) throw new Error('the open settings page kept its old language');
+        }
+        const xml = await runtime.Z.File.getResourceAsync(plugin.rootURI + 'content/preferences.xhtml');
+        const parser = new win.DOMParser();parser.forceEnableXULXBL();
+        const parsed = parser.parseFromString(xml, 'application/xml');
+        container.appendChild(doc.importNode(parsed.documentElement, true));plugin.localizePrefs(doc);
+        const select = doc.getElementById('zotpop-language');
+        for (const value of ['zh', 'en']) {
+          select.value = value;select.dispatchEvent(new win.Event('command', {bubbles:true}));
+          if (runtime.Z.Prefs.get('extensions.zotpop.language', true) !== value) throw new Error('ZotPoP did not save ' + value);
+          if (doc.getElementById('zotpop-preferences').querySelector('[data-i18n="prefTitle"]').textContent !== plugin.t('prefTitle')) throw new Error('ZotPoP preferences kept the old language');
+        }
+        return 'Style Custom language buttons and ZotPoP command events saved both languages and refreshed existing settings text';
+      } finally {
+        pane?.destroy();container.remove();plugin._prefDocs?.delete(doc);
+        if (runtime.getSetting('language') !== beforeStyle) await runtime.setSetting('language', beforeStyle);
+        if (beforePop === undefined) runtime.Z.Prefs.clear('extensions.zotpop.language', true);else runtime.Z.Prefs.set('extensions.zotpop.language', beforePop, true);
+      }
+    }));
+
     results.push(await attempt('the item menu shows a sign on every verb', () => {
       const menu = win.document.getElementById('style-custom-itemmenu');
       if (!menu) throw new Error('menu not attached');

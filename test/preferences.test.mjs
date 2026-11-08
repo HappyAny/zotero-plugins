@@ -7,9 +7,40 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import I18N from "../content/i18n.js";
+import vm from 'node:vm';
+import {parseHTML} from 'linkedom';
+import {uiHarness} from './helpers/search-ui-harness.mjs';
 
 const pane = readFileSync(new URL("../content/preferences.xhtml", import.meta.url), "utf8");
 const keys = attribute => [...pane.matchAll(new RegExp(`${attribute}="([^"]+)"`, "g"))].map(match => match[1]);
+
+function languageFixture() {
+ const {window,document}=parseHTML('<html><body>'+pane+'<p id="foreign" data-i18n="prefTitle">Another plugin</p></body></html>');
+ const prefs={'extensions.zotpop.language':'zh'},writes=[],events=[],errors=[];
+ const context=vm.createContext({Zotero:{locale:'en-US',ZotPoPI18N:I18N,Prefs:{get:key=>prefs[key],set:(key,value)=>{writes.push([key,value]);prefs[key]=value;}},getMainWindows:()=>[],logError:error=>errors.push(error)}});
+ vm.runInContext(readFileSync(new URL('../src/zotpop.js',import.meta.url),'utf8'),context);
+ const plugin=context.Zotero.ZotPoP;plugin.showJcrStatus=()=>{};plugin.updateStatusText=()=>'';
+ plugin._window={closed:false,CustomEvent:window.CustomEvent,dispatchEvent:event=>events.push(event.type)};
+ plugin.localizePrefs(document);
+ return {window,document,prefs,writes,events,errors,plugin,control:document.getElementById('zotpop-language')};
+}
+
+test('the real preference command persists language and refreshes only ZotPoP text immediately',()=>{
+ const f=languageFixture();assert.match(f.document.querySelector('[data-i18n="prefTitle"]').textContent,/查找论文/);
+ f.plugin.localizePrefs(f.document);f.control.value='en';f.control.dispatchEvent(new f.window.Event('command',{bubbles:true}));f.control.dispatchEvent(new f.window.Event('change',{bubbles:true}));
+ assert.equal(f.prefs['extensions.zotpop.language'],'en');assert.equal(f.writes.length,1,'command and change do not duplicate the write');
+ assert.match(f.document.querySelector('[data-i18n="prefTitle"]').textContent,/Find papers/);assert.equal(f.control.value,'en');assert.equal(f.document.getElementById('foreign').textContent,'Another plugin');
+ assert.deepEqual(f.events,['zotpop-language-changed']);assert.deepEqual(f.errors,[]);
+ for(const choice of ['zh','ko','auto']){f.control.value=choice;f.control.dispatchEvent(new f.window.Event('change'));assert.equal(f.prefs['extensions.zotpop.language'],choice);}
+ assert.match(f.document.querySelector('[data-i18n="prefTitle"]').textContent,/Find papers/);
+});
+
+test('preference notifications reload idle search pages and preserve active searches and imports',()=>{
+ const ui=uiHarness({prefs:{language:'en'}});ui.prefs.language='zh';ui.emitWindow('zotpop-language-changed');assert.equal(ui.reloads.length,1);
+ ui.emitWindow('zotpop-language-changed');assert.equal(ui.reloads.length,1,'already translated');
+ for(const flag of ['searching','importing']){ui.state[flag]=true;ui.prefs.language='en';ui.emitWindow('zotpop-language-changed');assert.equal(ui.reloads.length,1);assert.match(ui.get('status').textContent,/langAppliesLater/);ui.state[flag]=false;}
+ ui.emitWindow('zotpop-language-changed');assert.equal(ui.reloads.length,2);
+});
 
 test("every string the preferences pane asks for exists in both languages", () => {
 	const asked = [...keys("data-i18n"), ...keys("data-i18n-value"), ...keys("data-i18n-label")];

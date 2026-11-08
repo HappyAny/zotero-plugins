@@ -11,6 +11,8 @@ Zotero.ZotPoP = {
 	_tabID: null,
 	_loginWindow: null,
 	_prefPaneID: null,
+	_prefDocs: new Set(),
+	_languageObserver: null,
 
 	t(key, ...args) {
 		try {
@@ -60,6 +62,7 @@ Zotero.ZotPoP = {
 		catch (e) {
 			Zotero.logError(e);
 		}
+		if (Zotero.Prefs.registerObserver) this._languageObserver = Zotero.Prefs.registerObserver("extensions.zotpop.language", () => this.refreshLanguage(), true);
 		// A copy installed once from a file keeps itself current from the
 		// GitHub feed named in the manifest. See content/updater.js.
 		try { this.updater = await this.createUpdater(); if (this.updater) this.updater.start(); }
@@ -131,17 +134,50 @@ Zotero.ZotPoP = {
 	// Fill a preference pane: data-i18n (text), data-i18n-value / data-i18n-label (XUL attributes)
 	localizePrefs(doc) {
 		try {
-			for (let el of doc.querySelectorAll("[data-i18n]")) el.textContent = this.t(el.getAttribute("data-i18n"));
-			for (let el of doc.querySelectorAll("[data-i18n-value]")) el.setAttribute("value", this.t(el.getAttribute("data-i18n-value")));
-			for (let el of doc.querySelectorAll("[data-i18n-label]")) el.setAttribute("label", this.t(el.getAttribute("data-i18n-label")));
+			let pane = doc.getElementById("zotpop-preferences");
+			if (!pane) return;
+			if (!this._prefDocs.has(doc)) { this._prefDocs.add(doc); doc.defaultView?.addEventListener("unload", () => this._prefDocs.delete(doc), { once: true }); }
+			for (let el of pane.querySelectorAll("[data-i18n]")) el.textContent = this.t(el.getAttribute("data-i18n"));
+			for (let el of pane.querySelectorAll("[data-i18n-value]")) el.setAttribute("value", this.t(el.getAttribute("data-i18n-value")));
+			for (let el of pane.querySelectorAll("[data-i18n-label]")) el.setAttribute("label", this.t(el.getAttribute("data-i18n-label")));
+			let language = doc.getElementById("zotpop-language");
+			if (language) {
+				pane.dataset.language = Zotero.Prefs.get("extensions.zotpop.language", true) || "en";
+				language.value = pane.dataset.language;
+				if (!language._zotpopLanguageBound) {
+					language._zotpopLanguageBound = true;
+					let change = () => {
+						let choice = language.value;
+						if (!["en", "zh", "ko", "auto"].includes(choice) || pane.dataset.language === choice) return;
+						Zotero.Prefs.set("extensions.zotpop.language", choice, true);
+						if (this._languageObserver === null) this.refreshLanguage();
+					};
+					language.addEventListener("command", change); language.addEventListener("change", change);
+				}
+			}
 			let status = doc.getElementById("zotpop-update-status");
 			if (status) status.value = this.updateStatusText(this.updater ? this.updater.lastResult() : null);
-			for (let el of doc.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", this.t(el.getAttribute("data-i18n-aria")));
+			for (let el of pane.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", this.t(el.getAttribute("data-i18n-aria")));
 			this.showJcrStatus(doc);
 		}
 		catch (e) {
 			Zotero.logError(e);
 		}
+	},
+
+	refreshLanguage() {
+		for (let doc of this._prefDocs) {
+			if (doc.defaultView?.closed || !doc.getElementById("zotpop-preferences")) { this._prefDocs.delete(doc); continue; }
+			this.localizePrefs(doc);
+		}
+		let notify = win => { if (win && !win.closed) win.dispatchEvent(new win.CustomEvent("zotpop-language-changed")); };
+		for (let win of Zotero.getMainWindows?.() || []) {
+			try {
+				this.removeFromWindow(win); this.addToWindow(win);
+				if (this._tabID) notify(win.document.getElementById(this._tabID)?.querySelector("browser")?.contentWindow);
+			} catch (error) { Zotero.logError(error); }
+		}
+		try { notify(this._window); } catch (error) { Zotero.logError(error); }
 	},
 
 	// Scholar inside Zotero: the page that refused, in a window that shares
@@ -375,6 +411,8 @@ Zotero.ZotPoP = {
 	},
 
 	shutdown() {
+		if (this._languageObserver !== null) { try { Zotero.Prefs.unregisterObserver(this._languageObserver); } catch (error) { Zotero.logError(error); } this._languageObserver = null; }
+		this._prefDocs.clear();
 		try { this.updater?.stop(); } catch (e) {}
 		this.updater = null;
 		// The importer's Notifier observer lives on Zotero, not in a window: drop it before the windows are closed.

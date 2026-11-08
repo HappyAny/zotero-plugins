@@ -12,8 +12,8 @@
   // Every string the pane shows passes through the runtime's dictionary, so an
   // English-locale Zotero reads the pane in English; keys stay Korean.
   const t=text=>typeof text==='string'&&runtime.t?runtime.t(text):text;
-  const TEXT_ATTRS=new Set(['aria-label','placeholder','title']);
-  const node=(tag,text,parent,attrs={})=>{const element=doc.createElementNS(HTML,tag);if(text!==null)element.textContent=t(text);for(const [name,value]of Object.entries(attrs))element.setAttribute(name,TEXT_ATTRS.has(name)?String(t(value)):String(value));parent?.appendChild(element);return element;};
+  const TEXT_ATTRS=new Set(['aria-label','placeholder','title']),chrome=new Map();
+  const node=(tag,text,parent,attrs={})=>{const element=doc.createElementNS(HTML,tag),words={};if(text!==null){element.textContent=t(text);if(text)words.text=text;}for(const [name,value]of Object.entries(attrs)){element.setAttribute(name,TEXT_ATTRS.has(name)?String(t(value)):String(value));if(TEXT_ATTRS.has(name))words[name]=value;}if(Object.keys(words).length)chrome.set(element,words);parent?.appendChild(element);return element;};
   host.replaceChildren();
   const heading=node('div',null,host,{class:'scs-heading'});node('h2','Style Custom 설정',heading);node('p','항목별 설명을 확인하고 값을 적용하세요. 텍스트 입력은 적용을 눌러야 저장됩니다.',heading);
   const message=node('p','설정을 불러오는 중…',host,{role:'status','aria-live':'polite',class:'scs-message'});
@@ -32,11 +32,14 @@
   const FIRST=['language','openalexApiKey','aiEndpoint','deeplApiKey','citationEmail'];let refreshFirst=()=>{};
   const hints=()=>{try{return runtime.setupHints?.()||{};}catch(_){return {};}};
   const valueOf=state=>state.spec.type==='boolean'?state.input.checked:state.input.value;
-  function display(state,value){if(state.spec.type==='boolean')state.input.checked=!!value;else if(state.spec.type==='note')state.input.textContent=String(value??'');else state.input.value=String(value??'');}
+  function display(state,value){if(state.spec.type==='boolean')state.input.checked=!!value;else if(state.spec.type==='note')state.input.textContent=String(value??'');else state.input.value=String(value??'');syncChoices(state);}
+  function syncChoices(state){for(const button of state.choices||[]){const selected=button.dataset.value===state.input.value;button.setAttribute('aria-checked',String(selected));button.tabIndex=selected?0:-1;button.disabled=state.input.disabled;}}
+  function feedback(state,value){state.feedbackText=typeof value==='function'?value:()=>t(value);state.feedback.textContent=state.feedbackText();}
   function sync(state){
    if(FIRST.includes(state.spec.key)||state.spec.key==='aiModel')refreshFirst();
    const busy=state.pending||categories.get(state.spec.category)?.pending;
    state.input.disabled=!!busy||state.loading;
+   syncChoices(state);
    if(state.apply){state.apply.disabled=!!busy||state.loading||!state.dirty;state.apply.hidden=['boolean','select'].includes(state.spec.type)&&!state.error;}
    state.row.setAttribute('aria-busy',String(!!busy||state.loading));
    state.row.dataset.error=String(!!state.error);state.row.dataset.dirty=String(!!state.dirty);
@@ -66,7 +69,7 @@
     if(!need.hidden)need.textContent=t("'{0}'({1})도 켜야 동작합니다.").replace('{0}',t(partner.spec.label)).replace('{1}',t(categories.get(partner.spec.category)?.label||partner.spec.category));
    }
   }
-  function changed(state){state.revision++;state.dirty=state.spec.type==='boolean'?state.input.checked!==state.original:String(state.input.value)!==String(state.original??'');state.error=false;state.feedback.textContent=state.dirty?t('아직 적용하지 않았습니다.'):'';sync(state);}
+  function changed(state){state.revision++;state.dirty=state.spec.type==='boolean'?state.input.checked!==state.original:String(state.input.value)!==String(state.original??'');state.error=false;feedback(state,state.dirty?'아직 적용하지 않았습니다.':'');sync(state);}
   function parse(state){
    const spec=state.spec;
    if(spec.type==='boolean')return !!state.input.checked;
@@ -86,24 +89,23 @@
    try{
     const value=await runtime.getSetting(state.spec.key);if(destroyed)return;
     state.original=value===undefined?state.spec.default:value;
-    if(state.revision===expectedRevision&&(force||!state.dirty)){display(state,state.original);state.dirty=false;state.error=false;state.feedback.textContent='';}
-   }catch(error){if(!destroyed){state.error=true;state.feedback.textContent=t('값을 읽지 못했습니다: {0}').replace('{0}',t(String(error.message||error)));}}
+    if(state.revision===expectedRevision&&(force||!state.dirty)){display(state,state.original);state.dirty=false;state.error=false;feedback(state,'');}
+   }catch(error){if(!destroyed){state.error=true;feedback(state,()=>t('값을 읽지 못했습니다: {0}').replace('{0}',t(String(error.message||error))));}}
    finally{state.loading=false;if(!destroyed)sync(state);}
   }
   async function save(state){
    if(destroyed||state.pending||categories.get(state.spec.category)?.pending)return;
-   let value;try{value=parse(state);}catch(error){state.error=true;state.feedback.textContent=t(String(error.message||error));sync(state);return;}
-   const revision=state.revision;state.pending=true;state.feedback.textContent=t('적용하는 중…');sync(state);
+   let value;try{value=parse(state);}catch(error){state.error=true;feedback(state,String(error.message||error));sync(state);return;}
+   const revision=state.revision;state.pending=true;feedback(state,'적용하는 중…');sync(state);
    try{
     const result=await runtime.setSetting(state.spec.key,value);if(destroyed)return;const committed=['string','number','boolean'].includes(typeof result)?result:value;state.original=committed;
     if(state.revision===revision)display(state,committed);
     state.dirty=state.spec.type==='boolean'?state.input.checked!==committed:String(state.input.value)!==String(committed??'');state.error=false;
-    state.feedback.textContent=t(state.revision===revision||!state.dirty?'적용했습니다.':'이전 값을 적용했습니다. 새 입력은 아직 적용하지 않았습니다.');
+    feedback(state,()=>t(state.revision===revision||!state.dirty?'적용했습니다.':'이전 값을 적용했습니다. 새 입력은 아직 적용하지 않았습니다.'));
     // Zotero takes a column's name when it is registered: the list keeps the old language until the next start, and says so.
-    if(state.spec.key==='language'){state.chosen=true;refreshFirst();}
-    if(state.spec.key==='language')state.feedback.textContent+=' '+t('문헌 목록의 열 이름은 Zotero를 다시 시작하면 바뀝니다.')+' '+t('이 설정창은 다시 열면 새 언어로 보입니다.');
+    if(state.spec.key==='language'){state.chosen=true;feedback(state,()=>t('적용했습니다.')+' '+t('문헌 목록의 열 이름은 Zotero를 다시 시작하면 바뀝니다.'));await retranslate();notify('적용했습니다.');}
     await refreshStatus();
-   }catch(error){if(!destroyed){state.error=true;state.dirty=true;state.feedback.textContent=t('적용하지 못했습니다: {0}').replace('{0}',t(String(error.message||error)));}}
+   }catch(error){if(!destroyed){state.error=true;state.dirty=true;feedback(state,()=>t('적용하지 못했습니다: {0}').replace('{0}',t(String(error.message||error))));}}
    finally{state.pending=false;if(!destroyed)sync(state);}
   }
   async function reset(category){
@@ -147,7 +149,7 @@
    const id='scs-'+encodeURIComponent(spec.key),row=node('div',null,section,{class:'scs-setting','data-setting':spec.key,'data-type':spec.type});
    const state={spec,row,revision:0,original:spec.default,dirty:false,pending:false,loading:spec.type!=='action',error:false};
    const descriptionID=id+'-help',feedbackID=id+'-feedback';
-   const label=node('label',spec.label,row,{for:id,class:'scs-label'});const line=node('div',null,row,{class:'scs-value'});
+   const label=node('label',spec.label,row,{for:id,id:id+'-label',class:'scs-label'});const line=node('div',null,row,{class:'scs-value'});
    if(spec.type==='note'){
     /* Read-only: what the runtime found, not a value anybody sets. It still
        loads through hydrate, so it is current every time the pane opens. */
@@ -159,12 +161,24 @@
     if(spec.opens)state.input.setAttribute('data-opens',spec.opens);
     state.input.addEventListener('click',async()=>{if(state.pending||destroyed)return;state.pending=true;state.error=false;state.feedback.textContent=t('실행하는 중…');sync(state);try{const answer=await runtime.runSettingAction(spec.action);if(!destroyed){state.feedback.textContent=typeof answer==='string'&&answer?answer:t('실행했습니다.');await refreshStatus();}}catch(error){if(!destroyed){state.error=true;state.feedback.textContent=t('실행하지 못했습니다: ')+t(String(error.message||error));}}finally{state.pending=false;if(!destroyed)sync(state);}});
    }else{
-     if(spec.type==='select'){state.input=node('select',null,line,{id});for(const option of spec.options||[]){const entry=node('option',null,state.input,{value:option.value});entry.textContent=t(option.label);}}
+     if(spec.type==='select'){
+      state.input=node('select',null,line,{id});for(const option of spec.options||[])node('option',option.label,state.input,{value:option.value});
+      if(spec.key==='language'){
+       // In Zotero's chrome document the native popup can fail to open. Keep
+       // its value model and expose choices as ordinary HTML buttons instead.
+       state.input.hidden=true;state.input.tabIndex=-1;state.input.setAttribute('aria-hidden','true');
+       const group=node('div',null,line,{role:'radiogroup','aria-labelledby':id+'-label',class:'scs-language'});state.choices=[];
+       const choose=button=>{if(state.input.disabled)return;state.input.value=button.dataset.value;changed(state);void save(state);};
+       for(const option of spec.options||[]){const choice=node('button',option.label,group,{type:'button',role:'radio','data-value':option.value});choice.addEventListener('click',()=>choose(choice));state.choices.push(choice);}
+       group.addEventListener('keydown',event=>{if(state.input.disabled||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();const buttons=state.choices,index=Math.max(0,buttons.indexOf(doc.activeElement));const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(['ArrowLeft','ArrowUp'].includes(event.key)?-1:1)+buttons.length)%buttons.length;buttons[next].focus();choose(buttons[next]);});
+       label.addEventListener('click',()=>state.choices.find(button=>button.getAttribute('aria-checked')==='true')?.focus());
+      }
+     }
     else if(spec.type==='textarea'){state.input=node('textarea',null,line,{id,rows:spec.rows||4});}
     else if(['boolean','number','color','text','password','email','url'].includes(spec.type)){state.input=node('input',null,line,{id,type:secret(spec)?'password':spec.type==='boolean'?'checkbox':spec.type});}
     else throw new Error('Unsupported settings type: '+spec.type);
     if(secret(spec)){state.input.type='password';state.input.setAttribute('autocomplete','off');state.input.setAttribute('spellcheck','false');
-     const reveal=node('button','표시',line,{type:'button','aria-pressed':'false'});reveal.setAttribute('aria-label',t('{0} 표시').replace('{0}',t(spec.label)));
+     const reveal=state.reveal=node('button','표시',line,{type:'button','aria-pressed':'false'});reveal.setAttribute('aria-label',t('{0} 표시').replace('{0}',t(spec.label)));
      reveal.addEventListener('click',()=>{const show=state.input.type==='password';state.input.type=show?'text':'password';reveal.textContent=t(show?'가리기':'표시');reveal.setAttribute('aria-pressed',String(show));});}
     if(spec.unit)node('span',spec.unit,line,{class:'scs-unit'});
     for(const key of ['min','max','step'])if(spec[key]!==undefined)state.input.setAttribute(key,spec[key]);
@@ -174,14 +188,23 @@
    }
    state.input.setAttribute('aria-describedby',descriptionID+' '+feedbackID);
    // A number's range is said whether or not it has a description: it was the fallback only, so most number fields never showed it.
-   const range=spec.type==='number'?t('기본 {0} · 허용 {1}–{2}').replace('{0}',String(spec.default)).replace('{1}',spec.min??'∞').replace('{2}',spec.max??'∞')+(spec.step&&spec.step!==1&&spec.step!=='any'?' · '+t('{0} 단위').replace('{0}',String(spec.step)):''):'';
-   const helpText=[...[spec.description,spec.help].filter(Boolean).map(t),range].filter(Boolean).join(' ')
-    ||(spec.type==='note'?t('읽기 전용입니다. 값을 바꾸지 않습니다.')
-    :secret(spec)?t('비밀번호로 가려 표시합니다. 분류 기본값 복원으로 지워지지 않습니다.'):'');
-   const help=node('p',null,row,{id:descriptionID,class:'scs-help'});help.textContent=helpText;help.hidden=!helpText;
+   state.describe=()=>{const range=spec.type==='number'?t('기본 {0} · 허용 {1}–{2}').replace('{0}',String(spec.default)).replace('{1}',spec.min??'∞').replace('{2}',spec.max??'∞')+(spec.step&&spec.step!==1&&spec.step!=='any'?' · '+t('{0} 단위').replace('{0}',String(spec.step)):''):'';return [...[spec.description,spec.help].filter(Boolean).map(t),range].filter(Boolean).join(' ')||(spec.type==='note'?t('읽기 전용입니다. 값을 바꾸지 않습니다.'):secret(spec)?t('비밀번호로 가려 표시합니다. 분류 기본값 복원으로 지워지지 않습니다.'):'');};
+   const help=state.help=node('p',null,row,{id:descriptionID,class:'scs-help'});help.textContent=state.describe();help.hidden=!help.textContent;
    if(spec.requires){state.need=node('p','',row,{class:'scs-help scs-need'});state.need.hidden=true;}
    if(spec.key==='readerCustomForeground'){state.contrastNote=node('p','',row,{class:'scs-help scs-need'});state.contrastNote.hidden=true;}
    state.feedback=node('p','',row,{id:feedbackID,class:'scs-feedback',role:'status','aria-live':'polite'});states.set(spec.key,state);sync(state);
+  }
+  async function retranslate(){
+   for(const [element,words]of chrome){if(!element.isConnected)continue;for(const [name,value]of Object.entries(words))if(name==='text')element.textContent=t(value);else element.setAttribute(name,String(t(value)));}
+   for(const state of states.values()){
+    state.help.textContent=state.describe();state.help.hidden=!state.help.textContent;
+    if(state.apply)state.apply.setAttribute('aria-label',t('{0} 적용').replace('{0}',t(state.spec.label)));
+    if(state.reveal){state.reveal.textContent=t(state.input.type==='text'?'가리기':'표시');state.reveal.setAttribute('aria-label',t('{0} 표시').replace('{0}',t(state.spec.label)));}
+    if(state.feedbackText)state.feedback.textContent=state.feedbackText();syncChoices(state);
+   }
+   for(const section of categories.values()){section.reset.textContent=t(section.armed?'한 번 더 누르면 되돌립니다':'이 분류 기본값 복원');section.reset.setAttribute('aria-label',t('{0} 기본값 복원').replace('{0}',t(section.label)));}
+   syncNeeds();filter();refreshFirst();
+   await Promise.all([...states.values()].filter(state=>state.spec.type==='note').map(state=>hydrate(state)));
   }
   async function refreshStatus(){
    if(destroyed||statusPending)return;statusPending=true;
@@ -199,7 +222,7 @@
    const heading=node('strong','먼저 할 것',first);const blankNote=node('p','비우면 아래 기능이 꺼져 있습니다.',first,{class:'scs-help'});
    const list=node('div',null,first,{class:'scs-first-list'}),rows=new Map();
    const WHY={language:'Zotero가 한국어입니다 · 한국어를 고르면 패널이 한국어로 바뀝니다',openalexApiKey:'없으면 인용 수 열이 비어 있습니다',aiEndpoint:'AI 요약·대화 · 이 Mac에 AI 브리지(bridge/install.sh)를 설치하면 비워 둬도 됩니다',deeplApiKey:'논문 번역 · Translate for Zotero가 설치되어 있으면 비워 둬도 됩니다',citationEmail:'(선택) 빠른 대기열 · 주소가 서버에 남습니다'};
-   for(const key of FIRST){const state=states.get(key);if(!state)continue;const row=node('button',null,list,{type:'button','data-first':key});node('span',state.spec.label,row);node('span',WHY[key],row,{class:'scs-first-why'});row.addEventListener('click',()=>{selectCategory(state.spec.category);state.input.focus();});rows.set(key,row);}
+   for(const key of FIRST){const state=states.get(key);if(!state)continue;const row=node('button',null,list,{type:'button','data-first':key});node('span',state.spec.label,row);node('span',WHY[key],row,{class:'scs-first-why'});row.addEventListener('click',()=>{selectCategory(state.spec.category);(state.choices?.find(button=>button.getAttribute('aria-checked')==='true')||state.input).focus();});rows.set(key,row);}
    const found=node('p','',first,{class:'scs-help scs-first-found'});found.hidden=true;
    // aiEndpoint's row stays open until aiModel is filled too: AI stays off with either blank.
    refreshFirst=()=>{if(destroyed)return;const hint=hints();const ai=hint.ai||runtime?.assist?.status?.()||{};let open=0,keyOpen=0;

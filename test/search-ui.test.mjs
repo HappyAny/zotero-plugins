@@ -434,8 +434,8 @@ test("the search window's View menu has a Language group that saves the choice a
   assert.equal(ui.prefs.language, "auto");
   // A search in progress is not interrupted: the choice is saved and the window says it applies later.
   ui.state.searching = true;
-  Array.from(ui.viewMenuItems()).slice(at + 1)[0].run();
-  assert.equal(ui.prefs.language, "en");
+  Array.from(ui.viewMenuItems()).slice(at + 1)[1].run();
+  assert.equal(ui.prefs.language, "zh");
   assert.equal(ui.reloads.length, 2, "no reload while searching");
   assert.match(ui.get("status").textContent, /^langAppliesLater/);
   // The menu draws the caption as a caption, not as a dimmed item.

@@ -3,6 +3,16 @@
     "zotpop@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.58.6",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/language-switch-v1/zotpop-0.58.6.xpi",
+          "update_hash": "sha256:c8976aae2c4542a60d006e2bb8854d7040a42ef7411cca7265bf385069d2845d",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "6.999"
+            }
+          }
+        },
+        {
           "version": "0.58.5",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/zotpop-panes-v1/zotpop-0.58.5.xpi",
           "update_hash": "sha256:17a995f75d3e957cea5a501abed6ef4ff4391993e8953da0dbe6c73f6ddcb747",

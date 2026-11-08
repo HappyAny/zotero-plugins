@@ -1,4 +1,6 @@
 {
+  "Choosing a language updates this page and menu labels immediately. An idle search page reloads in the new language; an active search or add operation continues and uses the choice when reopened.": "选择语言后，本设置页和菜单会立即切换。空闲的搜索页会按新语言重新载入；正在进行的搜索或添加操作会继续运行，并在重新打开时使用所选语言。",
+  "Choosing a language updates this page and menu labels immediately. An idle search page reloads in the new language; a running search or import continues and uses the choice when reopened.": "选择语言后，本设置页和菜单会立即切换。空闲的搜索页会按新语言重新载入；正在进行的搜索或导入会继续运行，并在重新打开时使用所选语言。",
   "Resize author cards": "调整作者卡片区大小",
   "Resize metrics sidebar": "调整指标栏宽度",
   "Resize paper details": "调整论文详情区大小",

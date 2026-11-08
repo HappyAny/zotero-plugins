@@ -8,6 +8,32 @@ import Schema from '../src/settings-schema.js';
 const settle=async()=>{for(let n=0;n<6;n++)await new Promise(resolve=>setImmediate(resolve));};
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 
+test('language buttons update the current settings page without losing unsaved fields',async t=>{
+ const i18n=(await import('../src/i18n.js')).default,strings=(await import('../src/strings.js')).default;
+ i18n.load(strings);i18n.use('zh-CN');const f=fixture(Schema.schema);f.values.language='zh-CN';f.runtime.t=text=>i18n.t(text);
+ const noteKeys=new Set(Schema.schema.settings.filter(row=>row.type==='note').map(row=>row.key));f.runtime.getSetting=key=>noteKeys.has(key)?i18n.t('설정을 불러왔습니다.'):f.values[key];
+ f.runtime.setSetting=async(key,value)=>{f.calls.push(['set',key,value]);f.values[key]=value;if(key==='language')i18n.use(value,{locale:'en-US'});return value;};
+ const pane=f.mount();t.after(()=>{pane.destroy();i18n.use('ko-KR');});await pane.ready;
+ const draft=f.input('aiModel');draft.value='Keep this unsaved model';draft.dispatchEvent(new f.win.Event('input',{bubbles:true}));
+ pane.selectCategory('menus');const group=f.row('language').querySelector('[role=radiogroup]');
+ assert.equal(group.querySelectorAll('[role=radio]').length,4);assert.equal(f.input('language').hidden,true);
+ const pick=value=>group.querySelector('[data-value="'+value+'"]');pick('en-US').dispatchEvent(new f.win.Event('click',{bubbles:true}));await settle();
+ assert.equal(f.values.language,'en-US');assert.equal(f.doc.querySelector('h2').textContent,'Style Custom settings');assert.equal(pick('en-US').getAttribute('aria-checked'),'true');
+ assert.equal(f.input('aiModel'),draft);assert.equal(draft.value,'Keep this unsaved model');assert.equal(f.row('aiModel').dataset.dirty,'true');
+ assert.match(f.row('language').querySelector('.scs-help').textContent,/update immediately/);
+ for(const key of noteKeys)assert.equal(f.input(key)||f.row(key).querySelector('output')?.textContent,i18n.t('설정을 불러왔습니다.'));
+ pick('en-US').focus();group.dispatchEvent(Object.assign(new f.win.Event('keydown',{bubbles:true,cancelable:true}),{key:'ArrowRight'}));await settle();
+ assert.equal(f.values.language,'zh-CN');assert.match(f.doc.querySelector('h2').textContent,/设置/);assert.equal(draft.value,'Keep this unsaved model');
+ pick('auto').dispatchEvent(new f.win.Event('click',{bubbles:true}));await settle();assert.equal(f.values.language,'auto');assert.equal(f.doc.querySelector('h2').textContent,'Style Custom settings');
+});
+
+test('failed language changes keep the chosen value available for retry',async t=>{
+ const f=fixture(Schema.schema),pane=f.mount();t.after(()=>pane.destroy());await pane.ready;
+ f.runtime.setSetting=async()=>{throw Error('write refused');};pane.selectCategory('menus');
+ f.row('language').querySelector('[data-value="zh-CN"]').dispatchEvent(new f.win.Event('click',{bubbles:true}));await settle();
+ assert.equal(f.values.language,'en-US');assert.match(f.row('language').textContent,/write refused/);assert.equal(f.row('language').querySelector('[data-value="zh-CN"]').disabled,false);assert.equal(f.row('language').querySelector('.scs-value > button').hidden,false);
+});
+
 test('every actual settings row and language choice renders in English',async()=>{
  const i18n=(await import('../src/i18n.js')).default;
  const strings=(await import('../src/strings.js')).default;
@@ -113,10 +139,10 @@ test('the start-here block lists only the blank keys and sends each to its field
  assert.ok(!shown().includes('citationEmail'),'a filled key leaves the block');
  pane.destroy();
 });
-test('start here: a Korean Zotero with the language never chosen is offered 한국어 first; a detected bridge and Translate for Zotero are named, not asked for',async()=>{
+test('start here: a Korean Zotero with the language never chosen is offered 한국어 first; a detected bridge and Translate for Zotero are named, not asked for',async t=>{
  const f=fixture(Schema.schema);
  f.runtime.setupHints=()=>({suggestLanguage:'ko-KR',openalexInherited:true,translator:'pdftranslate',translatorLabel:'Translate for Zotero',ai:{available:true,source:'bridge',label:'Claude 계정 (이 Mac)'}});
- const pane=f.mount();await pane.ready;
+ const pane=f.mount();t.after(()=>pane.destroy());await pane.ready;
  const shown=()=>[...f.doc.querySelectorAll('.scs-first-list button')].filter(b=>!b.hidden).map(b=>b.dataset.first);
  assert.deepEqual(shown(),['language','citationEmail'],'language first; the AI, translation and OpenAlex rows are not asked for when found (the OpenAlex key typed into ZotPoP counts)');
  const found=f.doc.querySelector('.scs-first-found');
@@ -125,7 +151,8 @@ test('start here: a Korean Zotero with the language never chosen is offered 한�
  const row=f.doc.querySelector('[data-first="language"]');
  assert.match(row.textContent,/Zotero/);
  row.dispatchEvent(new f.win.Event('click',{bubbles:true}));await settle();
- assert.equal(f.doc.activeElement,f.input('language'),'the press lands on the language menu');
+ assert.equal(f.doc.activeElement.getAttribute('role'),'radio','the press lands on a visible language choice');
+ assert.equal(f.doc.activeElement.dataset.value,'en-US');
  // Choosing a language (either one) takes the row away.
  f.edit('language','ko-KR','change');await settle();
  assert.ok(!shown().includes('language'));
@@ -159,8 +186,8 @@ test('a switch that needs a partner says which, while the partner is off',async(
  assert.equal(need.hidden,true,'and goes once the partner is on');
  pane.destroy();
 });
-test('choosing a language says the item list keeps its column names until Zotero restarts',async()=>{
- const f=fixture(Schema.schema);const pane=f.mount();await pane.ready;
+test('choosing a language says the item list keeps its column names until Zotero restarts',async t=>{
+ const f=fixture(Schema.schema);const pane=f.mount();t.after(()=>pane.destroy());await pane.ready;
  const row=f.row('language');const select=row.querySelector('select');
  const other=[...select.querySelectorAll('option')].map(o=>o.getAttribute('value')).find(v=>v!==select.value);
  f.edit('language',other,'change');await settle();

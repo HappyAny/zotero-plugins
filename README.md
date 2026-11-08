@@ -2,7 +2,9 @@
 
 This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOONSUNG/zotero-plugins](https://github.com/JAEYOONSUNG/zotero-plugins).
 It adds Simplified Chinese to ZotPoP and Style Custom. It also keeps the English labels, assistant close fix, and independent column resizing.
-Download ZotPoP from the [resizable panes release](https://github.com/HappyAny/zotero-plugins/releases/tag/zotpop-panes-v1) and Style Custom from the [floating workbench update](https://github.com/HappyAny/zotero-plugins/releases/tag/workbench-dismiss-v1).
+Download both plugins from the [language switching fix](https://github.com/HappyAny/zotero-plugins/releases/tag/language-switch-v1).
+
+ZotPoP 0.58.6 applies a preference language choice to the open settings page and menu labels, and reloads an idle search page in that language. A running search or import continues. Style Custom 0.59.60 uses visible language buttons and translates the existing settings controls immediately, preserving unsaved fields. See the [language switching validation](docs/language-switch-validation.json).
 
 ZotPoP 0.58.5 adds visible resize grips below the author cards, beside the metrics sidebar, and above the paper details/PDF preview. Drag a grip or use its arrow keys. Double-click or press Enter to reset that pane. Sizes persist between sessions and are bounded to keep the results table usable. See the [pane resizing validation](docs/zotpop-panes-validation.json).
 
@@ -28,8 +30,8 @@ Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–
 
 | Plugin | What it does | Latest |
 |---|---|---|
-| **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.5.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/zotpop-panes-v1/zotpop-0.58.5.xpi) |
-| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.59.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/workbench-dismiss-v1/style-custom-0.59.59.xpi) |
+| **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.6.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/language-switch-v1/zotpop-0.58.6.xpi) |
+| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.60.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/language-switch-v1/style-custom-0.59.60.xpi) |
 
 ![The Zotero item list with Style Custom's columns: impact factor, citation count with a bar, reading status, the journal in its own colour, rating, reading time, file kinds, and the corresponding institution with its tier and flag](docs/images/library-columns.png)
 
@@ -161,7 +163,7 @@ Settings → Style Custom, in eleven categories (Columns, Views and panels, Read
 
 ### Self-check
 
-Runs only when `extensions.style-custom.selfCheck` is set (it then clears itself): up to 70 checks, 63 by default, against the real library; the report is written to `<Zotero data folder>/style-custom-selfcheck.json`. No window is opened. One of them lays out every tab of the panel in Zotero itself, at the panel's real size and in both densities, and lists anything that overflows its box, wraps where it should not or overlaps other text in `style-custom-layout.json`.
+Runs only when `extensions.style-custom.selfCheck` is set (it then clears itself): up to 71 checks, 64 by default, against the real library; the report is written to `<Zotero data folder>/style-custom-selfcheck.json`. No window is opened. One of them lays out every tab of the panel in Zotero itself, at the panel's real size and in both densities, and lists anything that overflows its box, wraps where it should not or overlaps other text in `style-custom-layout.json`.
 
 ---
 

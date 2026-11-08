@@ -13,6 +13,7 @@ import Signals from "../../content/signals.js";
 import Related from "../../content/related.js";
 import Tip from "../../content/tooltip.js";
 import Reactions from "../../content/reactions.js";
+import I18N from "../../content/i18n.js";
 
 export const paper = (key, extra = {}) => ({
 	key, title: key, citations: 1, year: 2026, authors: [], ...extra
@@ -147,12 +148,12 @@ export function uiHarness({ sort = "relevance", search, request, refreshLibraryF
 		paper("popular", { title: "Broad review", citations: 10000, year: 2020 })];
 	const context = vm.createContext({
 		AbortController, setTimeout, clearTimeout, ...globals,
-		window: { getSelection: () => selection.current, location: { reload() { reloads.push(1); } }, addEventListener(name, fn) { events.set(name, fn); winEvents.addEventListener(name, fn); }, openDialog, arguments: mainWindow ? [{ mainWindow }] : undefined },
+		window: { getSelection: () => selection.current, location: { reload() { reloads.push(1); context.harness?.noteReloaded?.(); } }, addEventListener(name, fn) { events.set(name, fn); winEvents.addEventListener(name, fn); }, openDialog, arguments: mainWindow ? [{ mainWindow }] : undefined },
 		document,
 		Zotero: { Prefs: { get: key => { let k = key.replace("extensions.zotpop.", ""); return k in prefs ? prefs[k] : true; }, set: (key, value) => { prefs[key.replace("extensions.zotpop.", "")] = value; } }, debug() {}, logError: e => errors.push(e), launchURL, Utilities: { Internal: { copyTextToClipboard: text => copied.push(String(text)) } },
 			Libraries: { userLibraryID: 1 },
 			HTTP: { request: request || (() => { throw new Error("Unexpected HTTP request"); }) }, ...zotero },
-		ZotPoPI18N: { make: () => (key, ...args) => key === "csvHead" ? ["head"] : [key, ...args].join("|") },
+		ZotPoPI18N: { resolveLocale: I18N.resolveLocale, make: () => (key, ...args) => key === "csvHead" ? ["head"] : [key, ...args].join("|") },
 		ZotPoPSources: { SOURCES: { openalex: { label: "OpenAlex" } }, POP_SOURCES: Sources.POP_SOURCES, normalizeDOI: Sources.normalizeDOI, filterRecords: (records, query) => Sources.filterRecords ? Sources.filterRecords(records, query) : records,
 			search: search || (async (_source, query) => query.sort === "citations" ? [...apiRecords].reverse() : [...apiRecords]), ...sources },
 		ZotPoPPoPBridge: popBridge,
@@ -185,7 +186,7 @@ export function uiHarness({ sort = "relevance", search, request, refreshLibraryF
 		const originalRenderDetail = renderDetail;
 		renderMetrics = renderDetail = () => {};
 		cacheIO = setupStorage();
-		globalThis.harness = { refreshLibraryFlags, saveCSV, tipContent, journalMark, state, runSearch, render, showInLibrary, http, stopOperation, onKeyDown, clearAll, clearFilter, syncFilterClear, openPreview, closePreview, togglePreview, syncPreview, viewerOfPreview, paintPreview, previewRecord, buildRow, rowSignature, setRowStatus, onDocumentScroll, restoreCachedSearch, cancelCacheRestore,
+		globalThis.harness = { noteReloaded:()=>{uiLocale=ZotPoPI18N.resolveLocale(PREF('language')||'en',Zotero.locale);reloadingLocale=null;}, refreshLibraryFlags, saveCSV, tipContent, journalMark, state, runSearch, render, showInLibrary, http, stopOperation, onKeyDown, clearAll, clearFilter, syncFilterClear, openPreview, closePreview, togglePreview, syncPreview, viewerOfPreview, paintPreview, previewRecord, buildRow, rowSignature, setRowStatus, onDocumentScroll, restoreCachedSearch, cancelCacheRestore,
 			openHistoryEntry, openHistoryMenu, closeHistoryMenu, sortValue, matchesFilter, csvText, popOriginalJSON, displaySearchResults, checkCitations, readQuery, populateSearchSources, sourceHint, savePrefs, saveQuery, restoreQuery, setupColumnOrder, setupColumnResize, applyColumnWidths, restoreLayout, normalizeColumnOrder,
 			wireEvents, setupSplitters, clampPanes, syncDetailSplitter, importRecords, openToolbarMenu, closeToolbarMenu, onToolbarMenuKey, viewMenuItems, setLanguage, languageChoice, renderVersions, renderSignals, followAuthor, heldVersion, revealRecord, buildResultContext, applyLocalFacet, setFacet, updateCounts, applyColumnView, saveLayout, originalRenderDetail, runAuthorAction, showAuthorHistory, switchSearchMode, switchAuthorProvider, renderAuthorProfiles, authorQuery, authorInputChanged, restoreAuthorPreferences, saveAuthorPreferences, originalRenderMetrics,
 			yearBins, filterSpec, addRule, openFilterPop, closeFilterPop, syncFilterUI, clearAllFilters, affLineParts, shortInstitution, renderAuthors, addVenueChip, removeVenueChip, setVenueChips, refreshVenueSuggestions, onVenueKey, wireVenueBox, ensureJournalCatalog, citeCardBody, renderCiteStrip,

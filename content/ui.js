@@ -1975,11 +1975,17 @@
 	function setLanguage(choice) {
 		if (!["en", "ko", "zh", "auto"].includes(choice) || choice === languageChoice()) return;
 		PREF("language", choice);
+		applyLanguagePreference();
+	}
+	let reloadingLocale = null;
+	function applyLanguagePreference() {
+		let locale = ZotPoPI18N.resolveLocale(PREF("language") || "en", Zotero.locale);
+		if (locale === uiLocale || locale === reloadingLocale) return;
 		// Everything the window says is made from the language at open, so it is opened again in the new one.
 		// The last search comes back from the history. A search or an import in progress is not interrupted:
 		// the choice is kept and applies the next time the window opens.
 		if (state.searching || state.importing) { setStatus(t("langAppliesLater")); return; }
-		try { window.location.reload(); } catch (e) { setStatus(t("langAppliesLater")); }
+		try { reloadingLocale = locale; window.location.reload(); } catch (e) { reloadingLocale = null; setStatus(t("langAppliesLater")); }
 	}
 	function viewMenuItems() {
 		let language = languageChoice();
@@ -6607,4 +6613,5 @@
 	// Registered after init, so it runs after init on the same event.
 	window.addEventListener("load", applyPrefill);
 	window.addEventListener("zotpop-prefill", applyPrefill);
+	window.addEventListener("zotpop-language-changed", applyLanguagePreference);
 })();

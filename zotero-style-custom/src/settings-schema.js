@@ -65,7 +65,7 @@
       "keepOnReset": true,
       "category": "menus",
       "label": "Language / 언어",
-      "help": "기본값은 영어입니다. 한국어를 고르면 패널이 한국어로 바뀝니다. Zotero 언어 따르기는 Zotero가 한국어일 때만 한국어를 씁니다. 패널은 바로 바뀌고, 문헌 목록의 열 이름은 Zotero를 다시 시작하면 바뀝니다.",
+      "help": "기본값은 영어입니다. 영어·간체 중국어·한국어 또는 Zotero 언어 따르기를 선택하세요. 설정창과 패널은 바로 바뀝니다.",
       "type": "select",
       "literal": true,
       "default": "en-US",

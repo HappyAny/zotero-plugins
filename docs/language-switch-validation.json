@@ -1,0 +1,159 @@
+{
+  "release": "language-switch-v1",
+  "artifacts": [
+    {
+      "name": "ZotPoP",
+      "file": "zotpop-0.58.6.xpi",
+      "version": "0.58.6",
+      "bytes": 3936125,
+      "sha256": "c8976aae2c4542a60d006e2bb8854d7040a42ef7411cca7265bf385069d2845d"
+    },
+    {
+      "name": "Style Custom",
+      "file": "style-custom-0.59.60.xpi",
+      "version": "0.59.60",
+      "bytes": 14099478,
+      "sha256": "d7ce30f9acb0070459f5923eb25b5e5d91dabba4fe8733ec5d1aaef693689ef5"
+    }
+  ],
+  "scope": "Persist interface language choices and update open preference pages. Keep unsaved values, author tracking, and existing plugin configuration.",
+  "offline_tests": {
+    "root": {
+      "suite": "root",
+      "files": 61,
+      "exitCode": 0,
+      "summary": [
+        "ℹ tests 874",
+        "ℹ pass 874",
+        "ℹ fail 0",
+        "ℹ skipped 0",
+        "ℹ duration_ms 76777.9681"
+      ],
+      "excluded": [
+        "pop-bridge.test.mjs: Unix executable fixtures on Windows"
+      ]
+    },
+    "style": {
+      "suite": "style",
+      "files": 62,
+      "exitCode": 0,
+      "summary": [
+        "ℹ tests 2084",
+        "ℹ pass 2054",
+        "ℹ fail 0",
+        "ℹ skipped 30",
+        "ℹ duration_ms 135944.2255"
+      ],
+      "excluded": [
+        "bake.test.mjs: Unix executable fixtures on Windows"
+      ]
+    }
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "checks": [
+      {
+        "name": "Chinese settings initially visible",
+        "pass": true
+      },
+      {
+        "name": "four visible language buttons replace the popup",
+        "pass": true
+      },
+      {
+        "name": "English selection persists and updates the same page",
+        "pass": true
+      },
+      {
+        "name": "help text and navigation switch to English",
+        "pass": true
+      },
+      {
+        "name": "unsaved model and secret inputs are preserved without writes",
+        "pass": true
+      },
+      {
+        "name": "user title remains unmodified",
+        "pass": true
+      },
+      {
+        "name": "keyboard switches back to Chinese",
+        "pass": true
+      },
+      {
+        "name": "Korean is selectable",
+        "pass": true
+      },
+      {
+        "name": "Follow Zotero resolves an English app",
+        "pass": true
+      },
+      {
+        "name": "ZotPoP initially displays Chinese",
+        "pass": true
+      },
+      {
+        "name": "ZotPoP immediately displays English after selecting it",
+        "pass": true
+      },
+      {
+        "name": "ZotPoP persists language and notifies its open search view",
+        "pass": true
+      },
+      {
+        "name": "other plugins text is left alone",
+        "pass": true
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-08T15:31:31.165698+00:00",
+    "artifacts": [
+      {
+        "name": "ZotPoP",
+        "version": "0.58.6",
+        "old_version": "0.58.5",
+        "sha256": "c8976aae2c4542a60d006e2bb8854d7040a42ef7411cca7265bf385069d2845d",
+        "active": true
+      },
+      {
+        "name": "Style Custom",
+        "version": "0.59.60",
+        "old_version": "0.59.59",
+        "sha256": "d7ce30f9acb0070459f5923eb25b5e5d91dabba4fe8733ec5d1aaef693689ef5",
+        "active": true
+      }
+    ],
+    "languages": {
+      "ZotPoP": "en",
+      "Style Custom": "en-US"
+    },
+    "other_plugin_configuration_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "watched_authors_preserved": true,
+    "native": {
+      "when": "2026-11-08T15:30:31.388Z",
+      "passed": 59,
+      "failed": 2,
+      "language_controls": {
+        "name": "both plugins save English and Chinese from their preference controls",
+        "pass": true,
+        "detail": "Style Custom language buttons and ZotPoP command events saved both languages and refreshed existing settings text"
+      },
+      "failed_checks": [
+        "every column in the list takes the hover, not only the first",
+        "the citation-key field keeps its natural height"
+      ]
+    },
+    "manual_desktop_test_performed": false
+  },
+  "limits": [
+    "The browser fixture uses the actual settings modules with in-memory settings. It converts ZotPoP XUL controls to HTML for Chromium.",
+    "The installed Zotero check uses the actual XUL preference control and native HTML buttons via built-in synthetic events, with both languages restored after checking.",
+    "No manual desktop clicks were tested because the desktop-control pipe was unavailable.",
+    "An active ZotPoP search or add operation keeps running. Its language choice is applied when the search page reopens.",
+    "Other native check failures are retained by name in the installed evidence.",
+    "Unix executable fixture files are excluded on Windows. Thirty Style Custom tests are skipped."
+  ]
+}

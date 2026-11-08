@@ -1,4 +1,5 @@
 {
+ "기본값은 영어입니다. 영어·간체 중국어·한국어 또는 Zotero 언어 따르기를 선택하세요. 설정창과 패널은 바로 바뀝니다.": "The default is English. Choose English, Simplified Chinese, Korean, or Follow Zotero. The settings page and panels update immediately.",
  "\n{0}개는 색인을 만든 뒤에도 본문을 읽지 못했습니다(스캔 PDF일 수 있습니다).": "\n{0} still had no readable text after indexing (they may be scanned PDFs).",
  "\n대상 문헌을 찾지 못한 노트 {0}개": "\n{0} notes whose item could not be found",
  "\n본문이 없던 {0}개는 Zotero가 먼저 본문을 읽어 두었습니다.": "\nZotero read the text of {0} of them first, because it had none.",
@@ -728,7 +729,6 @@
  "기본값으로 되돌렸습니다.": "Back at the defaults.",
  "기본값으로 되돌리지 못했습니다: ": "Could not restore the default: ",
  "기본값은 영어입니다. 패널은 바로 바뀌고, 문헌 목록의 열 이름과 오른쪽 클릭 메뉴는 Zotero를 다시 시작하면 바뀝니다.": "English is the default. The panel changes at once; item list column names and the right-click menu change when Zotero restarts.",
- "기본값은 영어입니다. 한국어를 고르면 패널이 한국어로 바뀝니다. Zotero 언어 따르기는 Zotero가 한국어일 때만 한국어를 씁니다. 패널은 바로 바뀌고, 문헌 목록의 열 이름은 Zotero를 다시 시작하면 바뀝니다.": "English is the default. Select Simplified Chinese or Korean, or follow Zotero. Restart Zotero to update column names.",
  "기존 태그 경로": "Existing tag path",
  "기존 태그 경로와 새 태그 경로를 모두 입력하세요.": "Enter both the old and the new tag path.",
  "기준 {0}편 중 참고문헌 기록 {1}편": "{1} of {0} read papers have reference lists",
@@ -1915,7 +1915,6 @@
  "이 색·문헌 조건에 맞는 주석이 없습니다. 위 표나 색에서 다른 칸을 고르거나 필터를 해제하세요.": "No annotation matches this colour and paper. Pick another cell or colour above, or clear the filter.",
  "이 색의 주석이 없습니다. 색 필터가 켜져 있습니다.": "No annotations in this colour. A colour filter is on.",
  "이 서재에서 이 저널의 문헌": "This journal\\u2019s papers in this library",
- "이 설정창은 다시 열면 새 언어로 보입니다.": "Reopen this settings window to see it in the new language.",
  "이 설치본에는 업데이트 주소가 없습니다. GitHub 배포 목록에서 받은 파일로 다시 설치하세요.": "This copy has no update address. Install it again from the file in the GitHub release list.",
  "이 수를 넘는 주석은 「더 보기」를 누를 때 이어서 그립니다. 주석이 수백 개인 서재에서 탭이 빨리 열립니다.": "Anything past this is drawn when you press Show more. It is what makes the tab open quickly in a library with hundreds of annotations.",
  "이 순서로 정렬": "Sort by this",

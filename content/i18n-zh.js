@@ -515,7 +515,7 @@ return {strings:{
 			prefLangEn: "英语",
 			prefLangKo: "韩语",
 			prefLangAuto: "跟随 Zotero 语言",
-			prefLangNote: "默认使用英语。选择语言后，会按所选语言重新打开搜索窗口，也可从“视图 → 语言”切换。工具菜单入口和工具栏提示需重启 Zotero 后更新。",
+			prefLangNote: "选择语言后，本设置页和菜单会立即切换。空闲的搜索页会按新语言重新载入；正在进行的搜索或添加操作会继续运行，并在重新打开时使用所选语言。",
 			langAppliesLater: "语言已保存。它会在下次打开搜索窗口时应用。",
 			prefEmail: "联系邮箱（用于 Crossref 优先请求队列，也会随请求发送给 OpenAlex、PubMed 和 Unpaywall）：",
 			prefS2: "Semantic Scholar API 密钥（可选，可缓解请求频率限制）：",
