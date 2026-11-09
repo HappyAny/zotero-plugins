@@ -292,7 +292,8 @@ input[type=checkbox] { accent-color: var(--pill); }
 
 /* ---------------------------------------------------------------- layout */
 #main { display: flex; flex: 1 1 auto; min-height: 0; }
-#metrics { width: 250px; flex: 0 0 auto; padding: 16px; overflow: auto; }
+#left-sidebar { width: 250px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+#metrics { flex: 1 1 0; min-height: min(96px, 20%); padding: 16px; overflow: auto; }
 #results { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
 .splitter-v, .splitter-h { display: flex; align-items: center; justify-content: center; background: transparent; touch-action: none; user-select: none; }
 .splitter-v { flex: 0 0 12px; cursor: col-resize; }
@@ -759,35 +760,31 @@ summary::marker { content: ""; }
 .d-tr-title-out, .d-tr-text { word-break: keep-all; overflow-wrap: anywhere; }
 .d-tr-text { white-space: pre-wrap; }
 
-/* ---------------------------------------------------------------- bottom bars */
-#import-bar { display: grid; grid-template-columns: minmax(180px, 240px) minmax(120px, max-content) minmax(120px, 1fr) auto; align-items: center; gap: 8px 12px; padding: 8px 12px; flex: none; }
-.import-destination { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.import-destination > select, .import-destination > .sel { flex: 1; width: 0; min-width: 0; max-width: 256px; }
-.import-target-label { flex: none; color: var(--muted); }
-.import-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.import-actions > * { flex: none; }
-.import-opts-toggle { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; color: var(--muted); }
-.import-opts-toggle::after { margin-left: 8px; }
-#import-opts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border); }
+/* ---------------------------------------------------------------- compact add card below the metrics */
+#import-bar { display: flex; flex-direction: column; gap: 8px; padding: 8px; flex: 0 1 auto; min-height: 0; max-height: 100%; overflow: auto; margin-top: auto; }
+.import-destination { display: flex; align-items: center; gap: 4px; min-width: 0; flex: none; }
+.import-destination > select, .import-destination > .sel { flex: 1; width: 0; min-width: 0; }
+.import-destination .sel-btn { padding-inline: 8px; }
+.import-target-label { flex: none; color: var(--muted); font-size: 11px; }
+.import-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; flex: none; min-width: 0; }
+.import-actions > * { max-width: 100%; }
+.import-actions > #import-btn { flex: 1 0 100%; width: 100%; min-height: 32px; height: auto; padding: 4px 8px; white-space: normal; }
+.import-actions > #import-btn span { min-width: 0; overflow-wrap: anywhere; }
+.import-actions > #selected-only { height: auto; min-height: 26px; padding: 4px 8px; font-size: 11px; line-height: 16px; white-space: normal; }
+.import-opts-toggle { flex: none; justify-content: space-between; min-width: 0; max-width: 100%; padding-inline: 8px; color: var(--muted); font-size: 11px; }
+.import-opts-toggle > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+.import-opts-toggle::after { flex: none; margin-left: 0; }
+#import-opts { display: flex; flex-direction: column; gap: 4px; flex: 0 1 auto; min-height: 36px; max-height: 220px; overflow: auto; padding-top: 4px; border-top: 1px solid var(--border); }
 label.cb { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px 0 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); white-space: nowrap; cursor: pointer; }
-/* Status uses spare room on wide windows, then a full row before the options disclosure. */
-#statusbar { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); font-size: 11px; line-height: 16px; background: transparent; }
-#status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#import-opts .cb { flex: none; height: auto; min-height: 28px; padding: 4px 8px; border-radius: 8px; white-space: normal; font-size: 11px; line-height: 16px; }
+#import-opts input { flex: none; }
+#import-opts .cb span { min-width: 0; overflow-wrap: anywhere; }
+/* Long progress and error messages remain readable without widening the sidebar. */
+#statusbar { display: flex; flex-direction: column; align-items: stretch; gap: 4px; flex: none; min-width: 0; color: var(--muted); font-size: 11px; line-height: 16px; background: transparent; }
+#status { min-width: 0; max-height: 48px; overflow: auto; overflow-wrap: anywhere; white-space: normal; }
 #statusbar.err #status { color: var(--err); }
 #statusbar.warn #status { color: var(--warn); }
-#progress { flex: none; width: 96px; }
-@media (max-width: 1439px) {
-	#import-bar { grid-template-columns: minmax(180px, 240px) minmax(120px, 1fr) auto; }
-	.import-actions { grid-column: 3; grid-row: 1; }
-	#statusbar { grid-column: 1 / -1; grid-row: 2; }
-}
-@media (max-width: 760px) {
-	#import-bar { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
-	.import-destination { grid-column: 1; grid-row: 1; }
-	.import-opts-toggle { grid-column: 1; grid-row: 2; text-align: start; }
-	.import-actions { grid-column: 2; grid-row: 1 / 3; flex-wrap: wrap; max-width: 280px; }
-	#statusbar { grid-row: 3; }
-}
+#progress { flex: none; width: 100%; }
 
 /* ---------------------------------------------------------------- menus: in-page, soft grey hover */
 .ctxmenu {

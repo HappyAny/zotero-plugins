@@ -3,6 +3,16 @@
     "zotpop@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.58.8",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/sidebar-add-v1/zotpop-0.58.8.xpi",
+          "update_hash": "sha256:2bf7660c5fb1c27dba38bf478d9b69f9a61b52243e2685e809caa1898e77c027",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "6.999"
+            }
+          }
+        },
+        {
           "version": "0.58.7",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/detail-hint-v1/zotpop-0.58.7.xpi",
           "update_hash": "sha256:ac6ef13f41bf2595edf4ce2e4b1f87824822124c0585a3d316f0d5ca52ad5e49",

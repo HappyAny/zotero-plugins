@@ -1,0 +1,1103 @@
+{
+  "release": "sidebar-add-v1",
+  "artifact": {
+    "file": "zotpop-0.58.8.xpi",
+    "version": "0.58.8",
+    "sha256": "2bf7660c5fb1c27dba38bf478d9b69f9a61b52243e2685e809caa1898e77c027",
+    "bytes": 3936946
+  },
+  "scope": "Move destination, add options, status, and add actions into a compact card below the metrics; resize both sidebar cards together and keep add controls available with metrics hidden.",
+  "offline_tests": {
+    "suite": "root",
+    "files": 61,
+    "exitCode": 0,
+    "summary": [
+      "ℹ tests 877",
+      "ℹ pass 877",
+      "ℹ fail 0",
+      "ℹ skipped 0",
+      "ℹ duration_ms 81304.655"
+    ],
+    "excluded": [
+      "pop-bridge.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "checks": [
+      {
+        "name": "the empty hint has a visible accessible close button",
+        "pass": true
+      },
+      {
+        "name": "the add card is below the metrics in the sidebar",
+        "pass": true
+      },
+      {
+        "name": "the add card is compact and anchored at the bottom",
+        "pass": true
+      },
+      {
+        "name": "the results use the full available main height",
+        "pass": true
+      },
+      {
+        "name": "the destination menu opens outside the scroll card and inside the window",
+        "pass": true
+      },
+      {
+        "name": "the destination can still be changed from the compact card",
+        "pass": true
+      },
+      {
+        "name": "closing the hint returns its space to the results",
+        "pass": true
+      },
+      {
+        "name": "the list keeps keyboard focus",
+        "pass": true
+      },
+      {
+        "name": "closing the hint keeps paper details enabled",
+        "pass": true
+      },
+      {
+        "name": "paper details and their resize grip remain available",
+        "pass": true
+      },
+      {
+        "name": "returning to no paper keeps the hint dismissed",
+        "pass": true
+      },
+      {
+        "name": "dismissal survives a new page",
+        "pass": true
+      },
+      {
+        "name": "the hint can be restored",
+        "pass": true
+      },
+      {
+        "name": "the close button also works from the keyboard",
+        "pass": true
+      },
+      {
+        "name": "sidebar controls remain contained and separate at 2048",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows beside the add card at 2048",
+        "pass": true
+      },
+      {
+        "name": "sidebar controls remain contained and separate at 1600",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows beside the add card at 1600",
+        "pass": true
+      },
+      {
+        "name": "sidebar controls remain contained and separate at 1280",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows beside the add card at 1280",
+        "pass": true
+      },
+      {
+        "name": "sidebar controls remain contained and separate at 1000",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows beside the add card at 1000",
+        "pass": true
+      },
+      {
+        "name": "sidebar controls remain contained and separate at 800",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows beside the add card at 800",
+        "pass": true
+      },
+      {
+        "name": "sidebar controls remain contained and separate at 640",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows beside the add card at 640",
+        "pass": true
+      },
+      {
+        "name": "dragging resizes the metrics and add card together",
+        "pass": true
+      },
+      {
+        "name": "the saved sidebar width restores",
+        "pass": true
+      },
+      {
+        "name": "hiding metrics keeps the add controls and resize grip available",
+        "pass": true
+      },
+      {
+        "name": "keyboard resizing works with metrics hidden",
+        "pass": true
+      },
+      {
+        "name": "reset restores the compact sidebar width",
+        "pass": true
+      },
+      {
+        "name": "long names, option summaries, status and progress remain contained",
+        "pass": true
+      },
+      {
+        "name": "the full option summary remains available to the hover card",
+        "pass": true
+      },
+      {
+        "name": "expanded options leave actions usable",
+        "pass": true
+      },
+      {
+        "name": "opening options takes height from metrics and preserves result height",
+        "pass": true
+      },
+      {
+        "name": "expanded options keep a readable metrics area",
+        "pass": true
+      },
+      {
+        "name": "long status text has its own scroll area",
+        "pass": true
+      },
+      {
+        "name": "the minimum sidebar width contains controls horizontally",
+        "pass": true
+      },
+      {
+        "name": "options can be scrolled and changed at minimum width",
+        "pass": true
+      },
+      {
+        "name": "the add action can be scrolled fully into a short narrow sidebar",
+        "pass": true
+      },
+      {
+        "name": "localized hint closes in zh",
+        "pass": true
+      },
+      {
+        "name": "localized add controls fit in zh",
+        "pass": true
+      },
+      {
+        "name": "localized hint closes in ko",
+        "pass": true
+      },
+      {
+        "name": "localized add controls fit in ko",
+        "pass": true
+      },
+      {
+        "name": "no script errors or network requests occurred",
+        "pass": true
+      }
+    ],
+    "measurements": [
+      {
+        "stage": "initial-sidebar",
+        "footer": {
+          "x": 16,
+          "y": 906,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 196
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 396,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 706
+        },
+        "metrics": {
+          "x": 16,
+          "y": 396,
+          "right": 266,
+          "bottom": 898,
+          "width": 250,
+          "height": 502
+        },
+        "main": {
+          "x": 16,
+          "y": 396,
+          "right": 2032,
+          "bottom": 1102,
+          "width": 2016,
+          "height": 706
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 915,
+            "right": 257,
+            "bottom": 947,
+            "width": 194.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 955,
+            "right": 257,
+            "bottom": 987,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 995,
+            "right": 257,
+            "bottom": 1027,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1035,
+            "right": 91,
+            "bottom": 1055,
+            "width": 66,
+            "height": 20
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 257,
+            "bottom": 1093,
+            "width": 232,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 278,
+          "y": 1060,
+          "right": 2032,
+          "bottom": 1102,
+          "width": 1754,
+          "height": 42
+        },
+        "table": {
+          "x": 278,
+          "y": 436,
+          "right": 2032,
+          "bottom": 1052,
+          "width": 1754,
+          "height": 616
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-2048",
+        "footer": {
+          "x": 16,
+          "y": 900,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 202
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 396,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 706
+        },
+        "metrics": {
+          "x": 16,
+          "y": 396,
+          "right": 266,
+          "bottom": 892,
+          "width": 250,
+          "height": 496
+        },
+        "main": {
+          "x": 16,
+          "y": 396,
+          "right": 2032,
+          "bottom": 1102,
+          "width": 2016,
+          "height": 706
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 909,
+            "right": 257,
+            "bottom": 941,
+            "width": 194.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 949,
+            "right": 257,
+            "bottom": 981,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 989,
+            "right": 257,
+            "bottom": 1021,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1032,
+            "right": 103.203125,
+            "bottom": 1052,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 143.359375,
+            "y": 1029,
+            "right": 257,
+            "bottom": 1055,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 257,
+            "bottom": 1093,
+            "width": 232,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 436,
+          "right": 2032,
+          "bottom": 1102,
+          "width": 1754,
+          "height": 666
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-1600",
+        "footer": {
+          "x": 16,
+          "y": 900,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 202
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 396,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 706
+        },
+        "metrics": {
+          "x": 16,
+          "y": 396,
+          "right": 266,
+          "bottom": 892,
+          "width": 250,
+          "height": 496
+        },
+        "main": {
+          "x": 16,
+          "y": 396,
+          "right": 1584,
+          "bottom": 1102,
+          "width": 1568,
+          "height": 706
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 909,
+            "right": 257,
+            "bottom": 941,
+            "width": 194.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 949,
+            "right": 257,
+            "bottom": 981,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 989,
+            "right": 257,
+            "bottom": 1021,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1032,
+            "right": 103.203125,
+            "bottom": 1052,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 143.359375,
+            "y": 1029,
+            "right": 257,
+            "bottom": 1055,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 257,
+            "bottom": 1093,
+            "width": 232,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 436,
+          "right": 1584,
+          "bottom": 1102,
+          "width": 1306,
+          "height": 666
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-1280",
+        "footer": {
+          "x": 16,
+          "y": 900,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 202
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 440,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 662
+        },
+        "metrics": {
+          "x": 16,
+          "y": 440,
+          "right": 266,
+          "bottom": 892,
+          "width": 250,
+          "height": 452
+        },
+        "main": {
+          "x": 16,
+          "y": 440,
+          "right": 1264,
+          "bottom": 1102,
+          "width": 1248,
+          "height": 662
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 909,
+            "right": 257,
+            "bottom": 941,
+            "width": 194.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 949,
+            "right": 257,
+            "bottom": 981,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 989,
+            "right": 257,
+            "bottom": 1021,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1032,
+            "right": 103.203125,
+            "bottom": 1052,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 143.359375,
+            "y": 1029,
+            "right": 257,
+            "bottom": 1055,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 257,
+            "bottom": 1093,
+            "width": 232,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 520,
+          "right": 1264,
+          "bottom": 1102,
+          "width": 986,
+          "height": 582
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-1000",
+        "footer": {
+          "x": 16,
+          "y": 900,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 202
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 440,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 662
+        },
+        "metrics": {
+          "x": 16,
+          "y": 440,
+          "right": 266,
+          "bottom": 892,
+          "width": 250,
+          "height": 452
+        },
+        "main": {
+          "x": 16,
+          "y": 440,
+          "right": 984,
+          "bottom": 1102,
+          "width": 968,
+          "height": 662
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 909,
+            "right": 257,
+            "bottom": 941,
+            "width": 194.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 949,
+            "right": 257,
+            "bottom": 981,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 989,
+            "right": 257,
+            "bottom": 1021,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1032,
+            "right": 103.203125,
+            "bottom": 1052,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 143.359375,
+            "y": 1029,
+            "right": 257,
+            "bottom": 1055,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 257,
+            "bottom": 1093,
+            "width": 232,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 520,
+          "right": 984,
+          "bottom": 1102,
+          "width": 706,
+          "height": 582
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-800",
+        "footer": {
+          "x": 16,
+          "y": 900,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 202
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 462,
+          "right": 266,
+          "bottom": 1102,
+          "width": 250,
+          "height": 640
+        },
+        "metrics": {
+          "x": 16,
+          "y": 462,
+          "right": 266,
+          "bottom": 892,
+          "width": 250,
+          "height": 430
+        },
+        "main": {
+          "x": 16,
+          "y": 462,
+          "right": 784,
+          "bottom": 1102,
+          "width": 768,
+          "height": 640
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 909,
+            "right": 257,
+            "bottom": 941,
+            "width": 194.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 949,
+            "right": 257,
+            "bottom": 981,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 989,
+            "right": 257,
+            "bottom": 1021,
+            "width": 232,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1032,
+            "right": 103.203125,
+            "bottom": 1052,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 143.359375,
+            "y": 1029,
+            "right": 257,
+            "bottom": 1055,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 257,
+            "bottom": 1093,
+            "width": 232,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 542,
+          "right": 784,
+          "bottom": 1102,
+          "width": 506,
+          "height": 560
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-640",
+        "footer": {
+          "x": 16,
+          "y": 900,
+          "right": 252,
+          "bottom": 1102,
+          "width": 236,
+          "height": 202
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 506,
+          "right": 252,
+          "bottom": 1102,
+          "width": 236,
+          "height": 596
+        },
+        "metrics": {
+          "x": 16,
+          "y": 506,
+          "right": 252,
+          "bottom": 892,
+          "width": 236,
+          "height": 386
+        },
+        "main": {
+          "x": 16,
+          "y": 506,
+          "right": 624,
+          "bottom": 1102,
+          "width": 608,
+          "height": 596
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 909,
+            "right": 243,
+            "bottom": 941,
+            "width": 180.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 949,
+            "right": 243,
+            "bottom": 981,
+            "width": 218,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 989,
+            "right": 243,
+            "bottom": 1021,
+            "width": 218,
+            "height": 32
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 1032,
+            "right": 103.203125,
+            "bottom": 1052,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 129.359375,
+            "y": 1029,
+            "right": 243,
+            "bottom": 1055,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 1061,
+            "right": 243,
+            "bottom": 1093,
+            "width": 218,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 264,
+          "y": 622,
+          "right": 624,
+          "bottom": 1102,
+          "width": 360,
+          "height": 480
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "minimum-sidebar",
+        "footer": {
+          "x": 16,
+          "y": 546.796875,
+          "right": 156,
+          "bottom": 846,
+          "width": 140,
+          "height": 299.203125
+        },
+        "sidebar": {
+          "x": 16,
+          "y": 462,
+          "right": 156,
+          "bottom": 846,
+          "width": 140,
+          "height": 384
+        },
+        "metrics": {
+          "x": 16,
+          "y": 462,
+          "right": 156,
+          "bottom": 538.796875,
+          "width": 140,
+          "height": 76.796875
+        },
+        "main": {
+          "x": 16,
+          "y": 462,
+          "right": 784,
+          "bottom": 846,
+          "width": 768,
+          "height": 384
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 62.25,
+            "y": 555.796875,
+            "right": 147,
+            "bottom": 587.796875,
+            "width": 84.75,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 25,
+            "y": 595.796875,
+            "right": 147,
+            "bottom": 627.796875,
+            "width": 122,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 25,
+            "y": 679.796875,
+            "right": 147,
+            "bottom": 742.796875,
+            "width": 122,
+            "height": 63
+          },
+          {
+            "id": "selected-count",
+            "x": 25,
+            "y": 750.796875,
+            "right": 103.203125,
+            "bottom": 770.796875,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 25,
+            "y": 776.796875,
+            "right": 138.640625,
+            "bottom": 802.796875,
+            "width": 113.640625,
+            "height": 26
+          },
+          {
+            "id": "import-btn",
+            "x": 25,
+            "y": 808.796875,
+            "right": 147,
+            "bottom": 854.796875,
+            "width": 122,
+            "height": 46
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 168,
+          "y": 542,
+          "right": 784,
+          "bottom": 846,
+          "width": 616,
+          "height": 304
+        },
+        "contained": false,
+        "tableMinimum": 228
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-09T02:48:13.115671+00:00",
+    "version": "0.58.8",
+    "active": true,
+    "sha256": "2bf7660c5fb1c27dba38bf478d9b69f9a61b52243e2685e809caa1898e77c027",
+    "plugin_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "other_plugin_versions_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "manual_desktop_test_performed": false,
+    "interaction_verification": "Unit tests with the production renderer and handlers; headless Chrome with the actual search markup, stylesheet, layout and select functions. Native Zotero clicks were not tested."
+  },
+  "limits": [
+    "Interaction and geometry checks use offline fixtures. Native Zotero clicks were not tested.",
+    "The browser fixture uses fictional papers and researchers and the actual search markup, stylesheet, layout, and select functions.",
+    "Production search controllers, add behavior, and sidebar width persistence are covered by unit fixtures.",
+    "The Windows offline test run excludes pop-bridge.test.mjs because its Unix executable fixtures are incompatible.",
+    "Style Custom remains at 0.59.60. Its code and package were not changed."
+  ]
+}

@@ -2041,7 +2041,7 @@
 		// Sizes saved on a large screen are clamped to this window, so a wide
 		// sidebar or a tall detail pane cannot swallow the table on a laptop.
 		let w = parseInt(PREF("metricsWidth"), 10);
-		if (w >= 140) $("metrics").style.width = Math.min(w, metricsCap()) + "px";
+		if (w >= 140) $("left-sidebar").style.width = Math.min(w, metricsCap()) + "px";
 		let h = parseInt(PREF("detailHeight"), 10);
 		// A manual height is an actual size, including for a short abstract or PDF.
 		// Without one, keep the compact content-sized default.
@@ -2062,7 +2062,8 @@
 	}
 	function saveLayout() {
 		try {
-			if (!$("metrics").hidden) PREF("metricsWidth", $("metrics").offsetWidth);
+			let sidebarWidth = $("left-sidebar").offsetWidth;
+			if (sidebarWidth > 0) PREF("metricsWidth", sidebarWidth);
 			// offsetHeight is 0 for a hidden pane; saving that brings it back as a dead strip
 			// Nor the one-line hint it folds to while nothing is chosen.
 			if (!$("detail").hidden && !$("detail").hasAttribute("data-empty")) PREF("detailHeight", parseInt($("detail").style.getPropertyValue("--detail-height"), 10) || 0);
@@ -2099,14 +2100,14 @@
 		el.setAttribute("data-sized", ""); el.style.setProperty("--detail-height", h + "px");
 	}
 	function syncPaneGrips() {
-		for (let [id, value, min, max] of [["vsplit", $("metrics").offsetWidth, 140, metricsCap()], ["hsplit", $("detail").offsetHeight, 60, detailCap()], ["asplit", $("author-profiles").offsetHeight, 48, authorsCap()]]) {
+		for (let [id, value, min, max] of [["vsplit", $("left-sidebar").offsetWidth, 140, metricsCap()], ["hsplit", $("detail").offsetHeight, 60, detailCap()], ["asplit", $("author-profiles").offsetHeight, 48, authorsCap()]]) {
 			let handle = $(id); if (!handle) continue;
 			handle.setAttribute("aria-valuemin", min); handle.setAttribute("aria-valuemax", Math.round(max)); handle.setAttribute("aria-valuenow", Math.round(value || min));
 		}
 	}
 	function clampPanes() {
-		let metrics = $("metrics"), authors = $("author-profiles"), detail = $("detail");
-		if (!metrics.hidden) metrics.style.width = Math.round(Math.max(140, Math.min(metricsCap(), metrics.offsetWidth || 250))) + "px";
+		let sidebar = $("left-sidebar"), authors = $("author-profiles"), detail = $("detail");
+		sidebar.style.width = Math.round(Math.max(140, Math.min(metricsCap(), sidebar.offsetWidth || 250))) + "px";
 		if (!$("author-panel").hidden && authors.children.length) {
 			authors.style.setProperty("--authors-cap", authorsCap() + "px");
 			if (authors.hasAttribute("data-sized")) setAuthorsHeight(parseInt(authors.style.getPropertyValue("--authors-height"), 10));
@@ -2117,7 +2118,8 @@
 	}
 	function setMetricsVisible(on) {
 		$("metrics").hidden = !on;
-		$("vsplit").hidden = !on;
+		// The add card and its resize grip remain available when metrics are hidden.
+		$("vsplit").hidden = false;
 	}
 	function toggleMetrics() { setMetricsVisible($("metrics").hidden); saveLayout(); }
 	/* A hidden detail pane asks the network for nothing (a PubMed abstract, the references behind "cites n of
@@ -2155,8 +2157,8 @@
 
 	function setupSplitters() {
 		let panes = [
-			{ id: "vsplit", axis: "x", sign: 1, size: () => $("metrics").offsetWidth || 250,
-				set: value => { $("metrics").style.width = Math.round(Math.max(140, Math.min(metricsCap(), value))) + "px"; }, reset: () => { $("metrics").style.width = Math.min(250, metricsCap()) + "px"; } },
+			{ id: "vsplit", axis: "x", sign: 1, size: () => $("left-sidebar").offsetWidth || 250,
+				set: value => { $("left-sidebar").style.width = Math.round(Math.max(140, Math.min(metricsCap(), value))) + "px"; }, reset: () => { $("left-sidebar").style.width = Math.min(250, metricsCap()) + "px"; } },
 			{ id: "asplit", axis: "y", sign: 1, size: () => $("author-profiles").offsetHeight || 192, set: setAuthorsHeight,
 				reset: () => { $("author-profiles").removeAttribute("data-sized"); $("author-profiles").style.removeProperty("--authors-height"); PREF("authorProfilesHeight", 0); } },
 			{ id: "hsplit", axis: "y", sign: -1, size: () => $("detail").offsetHeight || 60, set: setDetailHeight,
@@ -4364,9 +4366,8 @@
 		paintRows();
 	}
 
-	// The footer has one layout in both states: where to add, the options as one line (opened by hand
-	// into a row of its own) and, at the right, the count and the add button. Choosing rows changes
-	// the numbers and the button, never the shape.
+	// The compact add card stays below the metrics. Options expand inside the card;
+	// selecting rows updates the count and action without taking height from the results.
 	function syncImportBar() {
 		let toggle = $("import-opts-toggle"), box = $("import-opts"); if (!toggle || !box) return;
 		let open = Boolean(state.optsOpen);
@@ -4375,10 +4376,11 @@
 		toggle.hidden = false;
 		toggle.setAttribute("aria-expanded", String(open));
 		let parts = [["opt-pdf", "optPdfShort"], ["opt-skip", "optSkipShort"], ["opt-fillpdf", "optFillPdfShort"], ["opt-extra", "optExtraShort"], ["opt-trnote", "optTrNoteShort"], ["opt-queue", "optQueueShort"]].filter(([id]) => $(id).checked && (id !== "opt-queue" || queueApi())).map(([, key]) => t(key));
-		toggle.textContent = open ? t("optsHide") : t("optsSummary", parts.length ? parts : [t("optsSummaryNone")]);
+		let label = toggle.querySelector("span");
+		if (!label) { label = document.createElement("span"); toggle.appendChild(label); }
+		label.textContent = open ? t("optsHide") : t("optsSummary", parts.length ? parts : [t("optsSummaryNone")]);
 		tip(toggle, toggle.textContent);
-		// Opening options or wrapping the actions changes the footer height.
-		// Rebalance the resizable panes before they can cover the add controls.
+		// Keep saved pane sizes within the current window after controls change.
 		clampPanes();
 	}
 

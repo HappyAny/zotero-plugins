@@ -175,35 +175,63 @@
 	<div id="banner" class="banner" hidden="hidden"><span id="banner-text"></span><span class="spacer"></span><button id="banner-action" type="button" class="primary" hidden="hidden"></button><button id="banner-close" type="button" class="banner-close" data-i18n-title="bannerClose" data-i18n-aria="bannerClose">×</button></div>
 
 	<div id="main">
-		<aside id="metrics" class="glass">
-			<h3 data-i18n="metricsTitle"></h3>
-			<div id="metrics-years" class="metrics-years" hidden="hidden"></div>
-			<div id="metrics-trend" class="metrics-trend" hidden="hidden"></div>
-			<div id="metrics-person" class="metrics-person" hidden="hidden"></div>
-			<p id="metrics-hint" class="metrics-hint" data-i18n="metricsHint"></p>
-			<div id="metrics-scholar" class="metrics-scholar" hidden="hidden"></div>
-			<div id="metrics-calc" class="metrics-calc" hidden="hidden"></div>
-			<table id="metrics-table" hidden="hidden">
-				<tr><td data-i18n="mYears"></td><td id="m-years">–</td></tr>
-				<tr><td data-i18n="mCitationYears"></td><td id="m-cyears">–</td></tr>
-				<tr><td data-i18n="mPapers"></td><td id="m-papers">–</td></tr>
-				<tr><td data-i18n="mCitations"></td><td id="m-citations">–</td></tr>
-				<tr><td data-i18n="mCitesPerYear"></td><td id="m-cpy">–</td></tr>
-				<tr><td data-i18n="mCitesPerPaper"></td><td id="m-cpp">–</td></tr>
-				<tr><td data-i18n="mCitesPerAuthor"></td><td id="m-cpa">–</td></tr>
-				<tr><td data-i18n="mPapersPerAuthor"></td><td id="m-ppa">–</td></tr>
-				<tr><td data-i18n="mAuthorsPerPaper"></td><td id="m-app">–</td></tr>
-				<tr class="hl"><td>h-index</td><td id="m-h">–</td></tr>
-				<tr class="hl"><td>g-index</td><td id="m-g">–</td></tr>
-				<tr><td>hI,norm</td><td id="m-hinorm">–</td></tr>
-				<tr><td>hI,annual</td><td id="m-hiannual">–</td></tr>
-				<tr><td>hA-index</td><td id="m-ha">–</td></tr>
-			</table>
-			<div id="metrics-explain" class="metrics-explain" hidden="hidden"></div>
-			<div id="metrics-notes" class="metrics-notes"></div>
-		</aside>
+		<div id="left-sidebar">
+			<aside id="metrics" class="glass">
+				<h3 data-i18n="metricsTitle"></h3>
+				<div id="metrics-years" class="metrics-years" hidden="hidden"></div>
+				<div id="metrics-trend" class="metrics-trend" hidden="hidden"></div>
+				<div id="metrics-person" class="metrics-person" hidden="hidden"></div>
+				<p id="metrics-hint" class="metrics-hint" data-i18n="metricsHint"></p>
+				<div id="metrics-scholar" class="metrics-scholar" hidden="hidden"></div>
+				<div id="metrics-calc" class="metrics-calc" hidden="hidden"></div>
+				<table id="metrics-table" hidden="hidden">
+					<tr><td data-i18n="mYears"></td><td id="m-years">–</td></tr>
+					<tr><td data-i18n="mCitationYears"></td><td id="m-cyears">–</td></tr>
+					<tr><td data-i18n="mPapers"></td><td id="m-papers">–</td></tr>
+					<tr><td data-i18n="mCitations"></td><td id="m-citations">–</td></tr>
+					<tr><td data-i18n="mCitesPerYear"></td><td id="m-cpy">–</td></tr>
+					<tr><td data-i18n="mCitesPerPaper"></td><td id="m-cpp">–</td></tr>
+					<tr><td data-i18n="mCitesPerAuthor"></td><td id="m-cpa">–</td></tr>
+					<tr><td data-i18n="mPapersPerAuthor"></td><td id="m-ppa">–</td></tr>
+					<tr><td data-i18n="mAuthorsPerPaper"></td><td id="m-app">–</td></tr>
+					<tr class="hl"><td>h-index</td><td id="m-h">–</td></tr>
+					<tr class="hl"><td>g-index</td><td id="m-g">–</td></tr>
+					<tr><td>hI,norm</td><td id="m-hinorm">–</td></tr>
+					<tr><td>hI,annual</td><td id="m-hiannual">–</td></tr>
+					<tr><td>hA-index</td><td id="m-ha">–</td></tr>
+				</table>
+				<div id="metrics-explain" class="metrics-explain" hidden="hidden"></div>
+				<div id="metrics-notes" class="metrics-notes"></div>
+			</aside>
 
-		<div id="vsplit" class="splitter-v" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="metrics" data-i18n-aria="resizeMetrics" data-i18n-title="resizeMetricsTip"></div>
+			<div id="import-bar" class="glass">
+				<div class="import-destination">
+					<label for="target" class="import-target-label" data-i18n="addTo"></label>
+					<select id="target"></select>
+				</div>
+				<button id="import-opts-toggle" type="button" class="ghost import-opts-toggle" aria-expanded="false" aria-controls="import-opts"></button>
+				<div id="import-opts" class="import-opts" hidden="hidden">
+					<label class="cb"><input id="opt-pdf" type="checkbox" checked="checked"/> <span data-i18n="optPdf"></span></label>
+					<label class="cb"><input id="opt-skip" type="checkbox" checked="checked"/> <span data-i18n="optSkip"></span></label>
+					<label class="cb"><input id="opt-fillpdf" type="checkbox"/> <span data-i18n="optFillPdf"></span></label>
+					<label class="cb"><input id="opt-extra" type="checkbox" checked="checked"/> <span data-i18n="optExtra"></span></label>
+					<label class="cb" id="opt-queue-wrap" hidden="hidden"><input id="opt-queue" type="checkbox"/> <span data-i18n="optQueue"></span></label>
+					<label class="cb" id="opt-trnote-wrap"><input id="opt-trnote" type="checkbox"/> <span data-i18n="optTrNote"></span></label>
+				</div>
+				<div id="statusbar">
+					<span id="status" role="status" aria-live="polite"></span>
+					<span id="sr-alert" class="sr-only" role="alert" aria-live="assertive"></span>
+					<progress id="progress" max="100" value="0" hidden="hidden" data-i18n-aria="progressLabel"></progress>
+				</div>
+				<div class="import-actions">
+					<span id="selected-count"></span>
+					<button id="selected-only" type="button" aria-pressed="false" hidden="hidden"></button>
+					<button id="import-btn" type="button" class="primary icon-text" disabled="disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-plus"/></svg><span data-i18n="importBtn"></span></button>
+				</div>
+			</div>
+		</div>
+
+		<div id="vsplit" class="splitter-v" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="left-sidebar" data-i18n-aria="resizeMetrics" data-i18n-title="resizeMetricsTip"></div>
 
 		<section id="results">
 			<div class="toolbar glass">
@@ -329,32 +357,6 @@
 				</div>
 			</div>
 		</section>
-	</div>
-
-	<div id="import-bar" class="glass">
-		<div class="import-destination">
-			<label for="target" class="import-target-label" data-i18n="addTo"></label>
-			<select id="target"></select>
-		</div>
-		<button id="import-opts-toggle" type="button" class="ghost import-opts-toggle" aria-expanded="false" aria-controls="import-opts"></button>
-		<div id="statusbar">
-			<span id="status" role="status" aria-live="polite"></span>
-			<span id="sr-alert" class="sr-only" role="alert" aria-live="assertive"></span>
-			<progress id="progress" max="100" value="0" hidden="hidden" data-i18n-aria="progressLabel"></progress>
-		</div>
-		<div class="import-actions">
-			<span id="selected-count"></span>
-			<button id="selected-only" type="button" aria-pressed="false" hidden="hidden"></button>
-			<button id="import-btn" type="button" class="primary icon-text" disabled="disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-plus"/></svg><span data-i18n="importBtn"></span></button>
-		</div>
-		<span id="import-opts" class="import-opts" hidden="hidden">
-			<label class="cb"><input id="opt-pdf" type="checkbox" checked="checked"/> <span data-i18n="optPdf"></span></label>
-			<label class="cb"><input id="opt-skip" type="checkbox" checked="checked"/> <span data-i18n="optSkip"></span></label>
-			<label class="cb"><input id="opt-fillpdf" type="checkbox"/> <span data-i18n="optFillPdf"></span></label>
-			<label class="cb"><input id="opt-extra" type="checkbox" checked="checked"/> <span data-i18n="optExtra"></span></label>
-			<label class="cb" id="opt-queue-wrap" hidden="hidden"><input id="opt-queue" type="checkbox"/> <span data-i18n="optQueue"></span></label>
-			<label class="cb" id="opt-trnote-wrap"><input id="opt-trnote" type="checkbox"/> <span data-i18n="optTrNote"></span></label>
-		</span>
 	</div>
 
 	<div id="filter-pop" class="filter-pop" role="dialog" aria-modal="false" aria-labelledby="filter-pop-title" hidden="hidden"></div>

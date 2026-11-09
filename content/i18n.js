@@ -148,9 +148,9 @@ var ZotPoPI18N = (function () {
 			previewRetry: "Retry",
 
 			metricsTitle: "Citation metrics",
-			resizeAuthors: "Resize author cards", resizeMetrics: "Resize metrics sidebar", resizeDetail: "Resize paper details",
+			resizeAuthors: "Resize author cards", resizeMetrics: "Resize sidebar", resizeDetail: "Resize paper details",
 			resizeAuthorsTip: "Drag up or down to resize author cards. Use arrow keys to adjust; double-click or press Enter to reset.",
-			resizeMetricsTip: "Drag left or right to resize the metrics sidebar. Use arrow keys to adjust; double-click or press Enter to reset.",
+			resizeMetricsTip: "Drag left or right to resize the sidebar. Use arrow keys to adjust; double-click or press Enter to reset.",
 			resizeDetailTip: "Drag up or down to resize paper details and PDF preview. Use arrow keys to adjust; double-click or press Enter to reset.",
 			mYears: "Publication years",
 			mCitationYears: "Citation years",
@@ -882,9 +882,9 @@ var ZotPoPI18N = (function () {
 			previewRetry: "다시 시도",
 
 			metricsTitle: "인용 지표",
-			resizeAuthors: "저자 카드 크기 조절", resizeMetrics: "지표 사이드바 크기 조절", resizeDetail: "논문 상세 크기 조절",
+			resizeAuthors: "저자 카드 크기 조절", resizeMetrics: "사이드바 너비 조절", resizeDetail: "논문 상세 크기 조절",
 			resizeAuthorsTip: "위아래로 드래그하여 저자 카드 높이를 조절합니다. 방향키로 조절하고 두 번 클릭하거나 Enter를 눌러 초기화합니다.",
-			resizeMetricsTip: "좌우로 드래그하여 지표 사이드바 너비를 조절합니다. 방향키로 조절하고 두 번 클릭하거나 Enter를 눌러 초기화합니다.",
+			resizeMetricsTip: "좌우로 드래그하여 사이드바 너비를 조절합니다. 방향키로 조절하고 두 번 클릭하거나 Enter를 눌러 초기화합니다.",
 			resizeDetailTip: "위아래로 드래그하여 논문 상세와 PDF 미리보기 높이를 조절합니다. 방향키로 조절하고 두 번 클릭하거나 Enter를 눌러 초기화합니다.",
 			mYears: "출판 연도",
 			mCitationYears: "인용 연수",

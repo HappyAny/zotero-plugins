@@ -1,4 +1,6 @@
 {
+  "Resize sidebar": "调整侧栏宽度",
+  "Drag left or right to resize the sidebar. Use arrow keys to adjust; double-click or press Enter to reset.": "左右拖动可调整侧栏宽度。方向键可微调；双击或按 Enter 恢复默认大小。",
   "Shortcut hint": "快捷键提示",
   "Show or hide the shortcut hint when Details is enabled and no paper is selected": "详情面板已启用且未选中文献时，显示或隐藏快捷键提示",
   "Hide shortcut hint": "隐藏快捷键提示",
