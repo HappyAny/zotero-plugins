@@ -516,6 +516,7 @@
 		}
 		for (let id of ["target", "opt-pdf", "opt-skip", "opt-extra", "opt-trnote", "opt-fillpdf", "opt-queue"]) $(id).addEventListener("change", () => syncImportBar());
 		$("import-opts-toggle")?.addEventListener("click", () => { state.optsOpen = !state.optsOpen; syncImportBar(); });
+		setupDetailHint();
 		// detail actions
 		// An owned paper's main action shows its library copy; any other adds it.
 		$("d-queue").addEventListener("click", () => queueDetail());
@@ -1995,7 +1996,8 @@
 			"-",
 			{ label: t("affLineToggle"), title: t("affLineTip"), check: state.affLine, run: () => { state.affLine = !state.affLine; saveLayout(); render(); } },
 			{ label: t("metricsToggle"), title: t("metricsTip"), check: !$("metrics").hidden, run: toggleMetrics },
-			{ label: t("detailToggle"), title: t("detailTip"), check: !$("detail").hidden, run: toggleDetail },
+			{ label: t("detailToggle"), title: t("detailTip"), check: detailShown, run: toggleDetail },
+			{ label: t("detailHintToggle"), title: t("detailHintTip"), check: PREF("detailHintHidden") !== true, run: () => setDetailHintVisible(PREF("detailHintHidden") === true) },
 			"-",
 			{ label: t("sortMenu"), title: t("sortMenuTip"), run: () => openSortMenu(false) },
 			{ label: t("keysMenu"), title: t("keysMenuTip"), run: () => openKeysHelp($("view-btn")) },
@@ -2046,7 +2048,7 @@
 		if (h >= 60) setDetailHeight(h);
 		let authors = parseInt(PREF("authorProfilesHeight"), 10);
 		if (authors >= 48) setAuthorsHeight(authors);
-		if (PREF("detailHidden") === true) setDetailVisible(false);
+		setDetailVisible(PREF("detailHidden") !== true);
 		if (PREF("metricsHidden") === true) setMetricsVisible(false);
 		// COL_VERSION guards against stale widths after the defaults change
 		let widthsVersion = PREF("colWidthsVersion");
@@ -2065,7 +2067,7 @@
 			// Nor the one-line hint it folds to while nothing is chosen.
 			if (!$("detail").hidden && !$("detail").hasAttribute("data-empty")) PREF("detailHeight", parseInt($("detail").style.getPropertyValue("--detail-height"), 10) || 0);
 			PREF("authorProfilesHeight", parseInt($("author-profiles").style.getPropertyValue("--authors-height"), 10) || 0);
-			PREF("detailHidden", $("detail").hidden === true);
+			PREF("detailHidden", !detailShown);
 			PREF("metricsHidden", $("metrics").hidden === true);
 			PREF("colWidths", JSON.stringify(state.colWidths));
 			PREF("colWidthsVersion", COL_VERSION);
@@ -2125,18 +2127,29 @@
 	function setDetailVisible(on) {
 		let was = detailShown;
 		detailShown = Boolean(on);
-		$("detail").hidden = !on;
 		syncDetailSplitter();
 		if (on && !was) renderDetail();
+	}
+	function setDetailHintVisible(on) {
+		PREF("detailHintHidden", !on);
+		syncDetailSplitter();
+	}
+	function setupDetailHint() {
+		$("detail-hint-close").addEventListener("click", () => {
+			setDetailHintVisible(false);
+			$("table-wrap").focus({ preventScroll: true });
+		});
 	}
 	// The grip belongs to a pane that has a height to drag: not a hidden one, not the one-line hint.
 	function syncDetailSplitter() {
 		let detail = $("detail"), grip = $("hsplit");
+		// Dismissing the empty hint does not turn off paper details or PDF preview.
+		detail.hidden = !detailShown || (detail.hasAttribute("data-empty") && PREF("detailHintHidden") === true);
 		if (grip) grip.hidden = detail.hidden || detail.hasAttribute("data-empty");
 		clampPanes();
 	}
 	function toggleDetail() {
-		setDetailVisible($("detail").hidden);
+		setDetailVisible(!detailShown);
 		saveLayout();
 	}
 
@@ -4363,6 +4376,10 @@
 		toggle.setAttribute("aria-expanded", String(open));
 		let parts = [["opt-pdf", "optPdfShort"], ["opt-skip", "optSkipShort"], ["opt-fillpdf", "optFillPdfShort"], ["opt-extra", "optExtraShort"], ["opt-trnote", "optTrNoteShort"], ["opt-queue", "optQueueShort"]].filter(([id]) => $(id).checked && (id !== "opt-queue" || queueApi())).map(([, key]) => t(key));
 		toggle.textContent = open ? t("optsHide") : t("optsSummary", parts.length ? parts : [t("optsSummaryNone")]);
+		tip(toggle, toggle.textContent);
+		// Opening options or wrapping the actions changes the footer height.
+		// Rebalance the resizable panes before they can cover the add controls.
+		clampPanes();
 	}
 
 	function updateCounts() {

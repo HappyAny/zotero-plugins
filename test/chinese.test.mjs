@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {parseHTML} from 'linkedom';
 import I18N from '../content/i18n.js';
 import Translate from '../content/translate.js';
 import {buildPreview} from '../scripts/search-preview.mjs';
@@ -66,7 +67,10 @@ test('the real search markup and controllers render Chinese without a network', 
  assert.doesNotMatch(out.results,/[가-힣]/);
  assert.equal(out.trace.columns.basic,'basic');
  assert.equal(out.trace.columns.all,'all');
- assert.equal(out.trace.menu.labels.length,11);
+ assert.equal(out.trace.menu.labels.length,12);
+ assert.ok(out.trace.menu.labels.includes('快捷键提示'));
+ const {document}=parseHTML(out.results);
+ assert.equal(document.getElementById('detail-hint-close').getAttribute('aria-label'),'隐藏快捷键提示');
  const sources=fs.readFileSync(new URL('../content/search.xhtml',import.meta.url),'utf8');
  assert.ok(sources.indexOf('content/i18n-zh.js')<sources.indexOf('content/i18n.js'));
 });

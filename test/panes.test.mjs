@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {uiHarness, mockElement} from './helpers/search-ui-harness.mjs';
+import {uiHarness, mockElement, paper} from './helpers/search-ui-harness.mjs';
 
 function fixture(prefs={}) {
 	 prefs.metricsHidden??=false;prefs.detailHidden??=false;
@@ -45,4 +45,36 @@ test('releasing outside the app cancels pane dragging and non-primary buttons do
  ui.get('vsplit').emit('mousedown',{button:0,clientX:10,clientY:10});ui.emitDocument('mousemove',{clientX:50,clientY:10});ui.emitWindow('blur');
  assert.equal(ui.get('vsplit').classList.contains('dragging'),false);assert.equal(ui.prefs.metricsWidth,290);
  ui.emitDocument('mousemove',{clientX:500,clientY:10});assert.equal(ui.get('metrics').offsetWidth,290,'no movement listener remains');
+});
+
+test('closing the empty hint preserves details, selection, saved sizes, and list focus',()=>{
+ const ui=fixture({detailHeight:180});ui.restoreLayout();ui.setupDetailHint();ui.originalRenderDetail();
+ ui.state.selected.add('kept');ui.get('detail-hint-close').emit('click');ui.saveLayout();
+ assert.equal(ui.get('detail').hidden,true);assert.equal(ui.get('hsplit').hidden,true);
+ assert.equal(ui.prefs.detailHintHidden,true);assert.equal(ui.prefs.detailHidden,false,'the actual detail feature stays enabled');
+ assert.equal(ui.prefs.detailHeight,180);assert.deepEqual([...ui.state.selected],['kept']);
+ assert.equal(mockElement.active,ui.get('table-wrap'),'arrows and Space return to the list');
+ assert.equal(ui.viewMenuItems().find(x=>x.label==='detailToggle').check,true);
+ assert.equal(ui.viewMenuItems().find(x=>x.label==='detailHintToggle').check,false);
+ // Use the production renderer, not a visibility-only stand-in.
+ ui.state.records=[paper('a',{title:'A chosen paper',abstract:'An abstract.'})];ui.state.detailKey='a';ui.originalRenderDetail();
+ assert.equal(ui.get('detail').hidden,false);assert.equal(ui.get('detail-body').hidden,false);assert.equal(ui.get('hsplit').hidden,false);
+ assert.equal(ui.get('d-title').textContent,'A chosen paper');assert.equal(ui.get('detail').style['--detail-height'],'180px');
+ ui.state.detailKey=null;ui.originalRenderDetail();assert.equal(ui.get('detail').hidden,true);
+ assert.deepEqual(ui.errors,[]);
+});
+
+test('hint dismissal survives reopening and View can restore it without changing the detail preference',()=>{
+ const prefs={detailHeight:160,detailHintHidden:true};const ui=fixture(prefs);ui.restoreLayout();ui.originalRenderDetail();
+ assert.equal(ui.get('detail').hidden,true);ui.saveLayout();assert.equal(prefs.detailHidden,false);
+ const reopened=fixture(prefs);reopened.restoreLayout();reopened.originalRenderDetail();
+ assert.equal(reopened.get('detail').hidden,true);
+ reopened.viewMenuItems().find(x=>x.label==='detailHintToggle').run();
+ assert.equal(reopened.get('detail').hidden,false);assert.equal(prefs.detailHintHidden,false);
+ assert.equal(reopened.get('hsplit').hidden,true,'an empty hint has no resize grip');
+ reopened.toggleDetail();assert.equal(reopened.get('detail').hidden,true);assert.equal(prefs.detailHidden,true);
+ reopened.setDetailHintVisible(false);reopened.setDetailHintVisible(true);
+ assert.equal(reopened.get('detail').hidden,true,'restoring the hint respects Details off');
+ reopened.toggleDetail();assert.equal(reopened.get('detail').hidden,false);assert.equal(prefs.detailHidden,false);
+ assert.equal(prefs.detailHeight,160);
 });

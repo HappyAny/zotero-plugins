@@ -1,0 +1,761 @@
+{
+  "release": "detail-hint-v1",
+  "artifact": {
+    "file": "zotpop-0.58.7.xpi",
+    "version": "0.58.7",
+    "sha256": "ac6ef13f41bf2595edf4ce2e4b1f87824822124c0585a3d316f0d5ca52ad5e49",
+    "bytes": 3936866
+  },
+  "scope": "Dismiss the empty detail shortcut hint independently of paper details, retain the choice between sessions, restore it from View, and compact and group the bottom add bar with responsive status placement.",
+  "offline_tests": {
+    "suite": "root",
+    "files": 61,
+    "exitCode": 0,
+    "summary": [
+      "ℹ tests 876",
+      "ℹ pass 876",
+      "ℹ fail 0",
+      "ℹ skipped 0",
+      "ℹ duration_ms 80703.8643"
+    ],
+    "excluded": [
+      "pop-bridge.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "checks": [
+      {
+        "name": "the empty hint has a visible accessible close button",
+        "pass": true
+      },
+      {
+        "name": "the hint and footer are compact",
+        "pass": true
+      },
+      {
+        "name": "closing the hint returns its space to the results",
+        "pass": true
+      },
+      {
+        "name": "the list keeps keyboard focus",
+        "pass": true
+      },
+      {
+        "name": "closing the hint keeps paper details enabled",
+        "pass": true
+      },
+      {
+        "name": "paper details and their resize grip remain available",
+        "pass": true
+      },
+      {
+        "name": "returning to no paper keeps the hint dismissed",
+        "pass": true
+      },
+      {
+        "name": "dismissal survives a new page",
+        "pass": true
+      },
+      {
+        "name": "the hint can be restored",
+        "pass": true
+      },
+      {
+        "name": "the close button also works from the keyboard",
+        "pass": true
+      },
+      {
+        "name": "footer controls remain contained and separate at 2048",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows without covering the footer at 2048",
+        "pass": true
+      },
+      {
+        "name": "footer controls remain contained and separate at 1600",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows without covering the footer at 1600",
+        "pass": true
+      },
+      {
+        "name": "footer controls remain contained and separate at 1280",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows without covering the footer at 1280",
+        "pass": true
+      },
+      {
+        "name": "footer controls remain contained and separate at 1000",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows without covering the footer at 1000",
+        "pass": true
+      },
+      {
+        "name": "footer controls remain contained and separate at 800",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows without covering the footer at 800",
+        "pass": true
+      },
+      {
+        "name": "footer controls remain contained and separate at 640",
+        "pass": true
+      },
+      {
+        "name": "results retain at least four rows without covering the footer at 640",
+        "pass": true
+      },
+      {
+        "name": "long names, option summaries, status and progress remain contained",
+        "pass": true
+      },
+      {
+        "name": "the full option summary remains available to the hover card",
+        "pass": true
+      },
+      {
+        "name": "expanded options leave actions usable",
+        "pass": true
+      },
+      {
+        "name": "expanded options retain the results minimum without covering the footer",
+        "pass": true
+      },
+      {
+        "name": "localized hint closes in zh",
+        "pass": true
+      },
+      {
+        "name": "localized hint closes in ko",
+        "pass": true
+      },
+      {
+        "name": "no script errors or network requests occurred",
+        "pass": true
+      }
+    ],
+    "measurements": [
+      {
+        "stage": "wide-hint",
+        "footer": {
+          "x": 16,
+          "y": 1052,
+          "right": 2032,
+          "bottom": 1102,
+          "width": 2016,
+          "height": 50
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1061,
+            "right": 269,
+            "bottom": 1093,
+            "width": 195.734375,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 281,
+            "y": 1061,
+            "right": 695.15625,
+            "bottom": 1093,
+            "width": 414.15625,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 707.15625,
+            "y": 1069,
+            "right": 1800.09375,
+            "bottom": 1085,
+            "width": 1092.9375,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 1812.09375,
+            "y": 1067,
+            "right": 1878.09375,
+            "bottom": 1087,
+            "width": 66,
+            "height": 20
+          },
+          {
+            "id": "import-btn",
+            "x": 1886.09375,
+            "y": 1061,
+            "right": 2019,
+            "bottom": 1093,
+            "width": 132.90625,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 278,
+          "y": 1002,
+          "right": 2032,
+          "bottom": 1044,
+          "width": 1754,
+          "height": 42
+        },
+        "table": {
+          "x": 278,
+          "y": 436,
+          "right": 2032,
+          "bottom": 994,
+          "width": 1754,
+          "height": 558
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-2048",
+        "footer": {
+          "x": 16,
+          "y": 1052,
+          "right": 2032,
+          "bottom": 1102,
+          "width": 2016,
+          "height": 50
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1061,
+            "right": 269,
+            "bottom": 1093,
+            "width": 195.734375,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 281,
+            "y": 1061,
+            "right": 695.15625,
+            "bottom": 1093,
+            "width": 414.15625,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 707.15625,
+            "y": 1069,
+            "right": 1620.09375,
+            "bottom": 1085,
+            "width": 912.9375,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 1632.09375,
+            "y": 1067,
+            "right": 1710.296875,
+            "bottom": 1087,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 1718.296875,
+            "y": 1061,
+            "right": 1856.640625,
+            "bottom": 1093,
+            "width": 138.34375,
+            "height": 32
+          },
+          {
+            "id": "import-btn",
+            "x": 1864.640625,
+            "y": 1061,
+            "right": 2019,
+            "bottom": 1093,
+            "width": 154.359375,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 436,
+          "right": 2032,
+          "bottom": 1044,
+          "width": 1754,
+          "height": 608
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-1600",
+        "footer": {
+          "x": 16,
+          "y": 1052,
+          "right": 1584,
+          "bottom": 1102,
+          "width": 1568,
+          "height": 50
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1061,
+            "right": 269,
+            "bottom": 1093,
+            "width": 195.734375,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 281,
+            "y": 1061,
+            "right": 695.15625,
+            "bottom": 1093,
+            "width": 414.15625,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 707.15625,
+            "y": 1069,
+            "right": 1172.09375,
+            "bottom": 1085,
+            "width": 464.9375,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 1184.09375,
+            "y": 1067,
+            "right": 1262.296875,
+            "bottom": 1087,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 1270.296875,
+            "y": 1061,
+            "right": 1408.640625,
+            "bottom": 1093,
+            "width": 138.34375,
+            "height": 32
+          },
+          {
+            "id": "import-btn",
+            "x": 1416.640625,
+            "y": 1061,
+            "right": 1571,
+            "bottom": 1093,
+            "width": 154.359375,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 436,
+          "right": 1584,
+          "bottom": 1044,
+          "width": 1306,
+          "height": 608
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-1280",
+        "footer": {
+          "x": 16,
+          "y": 1028,
+          "right": 1264,
+          "bottom": 1102,
+          "width": 1248,
+          "height": 74
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1037,
+            "right": 269,
+            "bottom": 1069,
+            "width": 195.734375,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 281,
+            "y": 1037,
+            "right": 852.09375,
+            "bottom": 1069,
+            "width": 571.09375,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 29,
+            "y": 1077,
+            "right": 1251,
+            "bottom": 1093,
+            "width": 1222,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 864.09375,
+            "y": 1043,
+            "right": 942.296875,
+            "bottom": 1063,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 950.296875,
+            "y": 1037,
+            "right": 1088.640625,
+            "bottom": 1069,
+            "width": 138.34375,
+            "height": 32
+          },
+          {
+            "id": "import-btn",
+            "x": 1096.640625,
+            "y": 1037,
+            "right": 1251,
+            "bottom": 1069,
+            "width": 154.359375,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 520,
+          "right": 1264,
+          "bottom": 1020,
+          "width": 986,
+          "height": 500
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-1000",
+        "footer": {
+          "x": 16,
+          "y": 1028,
+          "right": 984,
+          "bottom": 1102,
+          "width": 968,
+          "height": 74
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1037,
+            "right": 269,
+            "bottom": 1069,
+            "width": 195.734375,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 281,
+            "y": 1037,
+            "right": 572.09375,
+            "bottom": 1069,
+            "width": 291.09375,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 29,
+            "y": 1077,
+            "right": 971,
+            "bottom": 1093,
+            "width": 942,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 584.09375,
+            "y": 1043,
+            "right": 662.296875,
+            "bottom": 1063,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 670.296875,
+            "y": 1037,
+            "right": 808.640625,
+            "bottom": 1069,
+            "width": 138.34375,
+            "height": 32
+          },
+          {
+            "id": "import-btn",
+            "x": 816.640625,
+            "y": 1037,
+            "right": 971,
+            "bottom": 1069,
+            "width": 154.359375,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 520,
+          "right": 984,
+          "bottom": 1020,
+          "width": 706,
+          "height": 500
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-800",
+        "footer": {
+          "x": 16,
+          "y": 1028,
+          "right": 784,
+          "bottom": 1102,
+          "width": 768,
+          "height": 74
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1037,
+            "right": 240.09375,
+            "bottom": 1069,
+            "width": 166.828125,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 252.09375,
+            "y": 1037,
+            "right": 372.09375,
+            "bottom": 1069,
+            "width": 120,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 29,
+            "y": 1077,
+            "right": 771,
+            "bottom": 1093,
+            "width": 742,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 384.09375,
+            "y": 1043,
+            "right": 462.296875,
+            "bottom": 1063,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 470.296875,
+            "y": 1037,
+            "right": 608.640625,
+            "bottom": 1069,
+            "width": 138.34375,
+            "height": 32
+          },
+          {
+            "id": "import-btn",
+            "x": 616.640625,
+            "y": 1037,
+            "right": 771,
+            "bottom": 1069,
+            "width": 154.359375,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 278,
+          "y": 542,
+          "right": 784,
+          "bottom": 1020,
+          "width": 506,
+          "height": 478
+        },
+        "contained": true,
+        "tableMinimum": 228
+      },
+      {
+        "stage": "selected-640",
+        "footer": {
+          "x": 16,
+          "y": 992,
+          "right": 624,
+          "bottom": 1102,
+          "width": 608,
+          "height": 110
+        },
+        "controls": [
+          {
+            "id": "target-btn",
+            "x": 73.265625,
+            "y": 1002,
+            "right": 323,
+            "bottom": 1034,
+            "width": 249.734375,
+            "height": 32
+          },
+          {
+            "id": "import-opts-toggle",
+            "x": 29,
+            "y": 1040,
+            "right": 323,
+            "bottom": 1072,
+            "width": 294,
+            "height": 32
+          },
+          {
+            "id": "statusbar",
+            "x": 29,
+            "y": 1077,
+            "right": 611,
+            "bottom": 1093,
+            "width": 582,
+            "height": 16
+          },
+          {
+            "id": "selected-count",
+            "x": 386.453125,
+            "y": 1007,
+            "right": 464.65625,
+            "bottom": 1027,
+            "width": 78.203125,
+            "height": 20
+          },
+          {
+            "id": "selected-only",
+            "x": 472.65625,
+            "y": 1001,
+            "right": 611,
+            "bottom": 1033,
+            "width": 138.34375,
+            "height": 32
+          },
+          {
+            "id": "import-btn",
+            "x": 456.640625,
+            "y": 1041,
+            "right": 611,
+            "bottom": 1073,
+            "width": 154.359375,
+            "height": 32
+          }
+        ],
+        "overlap": false,
+        "hint": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "table": {
+          "x": 264,
+          "y": 622,
+          "right": 624,
+          "bottom": 984,
+          "width": 360,
+          "height": 362
+        },
+        "contained": true,
+        "tableMinimum": 228
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-09T00:57:51.886524+00:00",
+    "version": "0.58.7",
+    "active": true,
+    "sha256": "ac6ef13f41bf2595edf4ce2e4b1f87824822124c0585a3d316f0d5ca52ad5e49",
+    "plugin_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "other_plugin_versions_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "manual_desktop_test_performed": false,
+    "interaction_verification": "Unit tests with the production renderer and handlers; headless Chrome with the actual search markup, stylesheet, layout and select functions. Native Zotero clicks were not tested."
+  },
+  "limits": [
+    "Interaction and geometry checks use offline fixtures. Native Zotero clicks were not tested.",
+    "The browser fixture uses fictional papers and researchers and the actual search markup, stylesheet, layout, and select functions.",
+    "Production detail rendering, View restoration, and persistence are covered by unit fixtures.",
+    "The Windows offline test run excludes pop-bridge.test.mjs because its Unix executable fixtures are incompatible.",
+    "Style Custom remains at 0.59.60. Its code and package were not changed."
+  ]
+}

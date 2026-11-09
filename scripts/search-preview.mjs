@@ -934,11 +934,11 @@ export function checkPreview(out) {
 	const t = out.trace, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 	if (t.columns.basic !== "basic" || t.columns.all !== "all" || t.columns.back !== "basic") problems.push("column view did not switch basic/all/basic");
 	if (t.columns.statusAttr) problems.push("status column shown before any status");
-	if (!t.menu.open || t.menu.expanded !== "true" || t.menu.labels.length !== 11 || !same(t.menu.roles, ["menuitemradio", "menuitemradio", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitem", "menuitem", "menuitemradio", "menuitemradio", "menuitemradio", "menuitemradio"])) problems.push("the View menu should open with two radio items, three checkable items, Sort by, Keyboard shortcuts and the four language choices; got " + JSON.stringify(t.menu));
+	if (!t.menu.open || t.menu.expanded !== "true" || t.menu.labels.length !== 12 || !same(t.menu.roles, ["menuitemradio", "menuitemradio", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitem", "menuitem", "menuitemradio", "menuitemradio", "menuitemradio", "menuitemradio"])) problems.push("the View menu should open with two radio items, four checkable items, Sort by, Keyboard shortcuts and the four language choices; got " + JSON.stringify(t.menu));
 	if (!t.menu.closed || !t.menu.closedByOutsideClick) problems.push("a menu should close after a choice and on an outside click");
 	// The last four items are the language choices: the one the window runs in is checked
 	const langChecked = out.locale === "ko" ? ["false", "false", "true", "false"] : out.locale === "zh" ? ["false", "true", "false", "false"] : ["true", "false", "false", "false"];
-	if (!same(t.menu.reopened, ["false", "true", "true", "true", "true", null, null, ...langChecked])) problems.push("the reopened View menu should show Columns: all as chosen; got " + t.menu.reopened);
+	if (!same(t.menu.reopened, ["false", "true", "true", "true", "true", "true", null, null, ...langChecked])) problems.push("the reopened View menu should show Columns: all as chosen; got " + t.menu.reopened);
 	if (t.menu.export.length < 2) problems.push("the Export menu should offer copy and save");
 	if (!/전체 12 \/ 미보유 11 \/ 보유 1|All 12 \/ Not in library 11 \/ In library 1/.test(t.library.start)) problems.push("the library filter should start at 12 / 11 / 1; got " + t.library.start);
 	if (!/4 \/ .* 4 \/ .* 0$/.test(t.library.withFacet)) problems.push("the library counts should follow the author facet; got " + t.library.withFacet);

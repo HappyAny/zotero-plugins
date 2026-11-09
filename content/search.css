@@ -636,9 +636,11 @@ button.rx-item:hover:not(:disabled) { background: var(--row-hover); }
 #detail { height: auto; max-height: var(--detail-max, 340px); flex: 0 1 auto; min-height: 0; overflow: auto; padding: 16px; }
 #detail[data-sized]:not([data-empty]) { height: var(--detail-height); max-height: var(--detail-height); flex: 0 0 auto; }
 #hsplit[hidden] + #detail { margin-top: 8px; }
-#detail[data-empty] { height: auto; min-height: 0; padding: 8px 16px; overflow: hidden; flex: none; }
+#detail[data-empty] { height: auto; min-height: 0; padding: 4px 12px; overflow: hidden; flex: none; }
 .detail-empty { color: var(--muted); }
-#detail[data-empty] .detail-empty { display: flex; align-items: center; min-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#detail[data-empty] .detail-empty { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.detail-empty-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#detail-hint-close { flex: none; color: var(--muted); }
 /* one rhythm: 4px between the lines of a block, 8px after the title, 12px between blocks */
 #detail-body { display: flex; flex-direction: column; gap: 4px; }
 .detail-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 4px; }
@@ -758,19 +760,34 @@ summary::marker { content: ""; }
 .d-tr-text { white-space: pre-wrap; }
 
 /* ---------------------------------------------------------------- bottom bars */
-#import-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
-#import-bar .sel { min-width: 152px; max-width: 256px; }
-.import-target-label { color: var(--muted); }
-.import-opts-toggle { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: 100%; color: var(--muted); }
+#import-bar { display: grid; grid-template-columns: minmax(180px, 240px) minmax(120px, max-content) minmax(120px, 1fr) auto; align-items: center; gap: 8px 12px; padding: 8px 12px; flex: none; }
+.import-destination { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.import-destination > select, .import-destination > .sel { flex: 1; width: 0; min-width: 0; max-width: 256px; }
+.import-target-label { flex: none; color: var(--muted); }
+.import-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.import-actions > * { flex: none; }
+.import-opts-toggle { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; color: var(--muted); }
 .import-opts-toggle::after { margin-left: 8px; }
-#import-opts { order: 9; flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#import-opts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border); }
 label.cb { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px 0 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); white-space: nowrap; cursor: pointer; }
-/* what is happening, one muted line in the footer between the options and the count (it used to float under the footer) */
-#statusbar { display: flex; flex: 1 1 160px; align-items: center; gap: 8px; min-width: 0; padding: 0 8px; color: var(--muted); font-size: 11px; line-height: 16px; background: transparent; }
+/* Status uses spare room on wide windows, then a full row before the options disclosure. */
+#statusbar { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); font-size: 11px; line-height: 16px; background: transparent; }
 #status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #statusbar.err #status { color: var(--err); }
 #statusbar.warn #status { color: var(--warn); }
 #progress { flex: none; width: 96px; }
+@media (max-width: 1439px) {
+	#import-bar { grid-template-columns: minmax(180px, 240px) minmax(120px, 1fr) auto; }
+	.import-actions { grid-column: 3; grid-row: 1; }
+	#statusbar { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (max-width: 760px) {
+	#import-bar { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+	.import-destination { grid-column: 1; grid-row: 1; }
+	.import-opts-toggle { grid-column: 1; grid-row: 2; text-align: start; }
+	.import-actions { grid-column: 2; grid-row: 1 / 3; flex-wrap: wrap; max-width: 280px; }
+	#statusbar { grid-row: 3; }
+}
 
 /* ---------------------------------------------------------------- menus: in-page, soft grey hover */
 .ctxmenu {

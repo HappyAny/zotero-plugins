@@ -80,7 +80,7 @@ test("the toolbar menus open on a click, move with the arrows, run on Enter and 
 	btn.emit("click", { detail: 0 });
 	assert.equal(menu.hidden, false);
 	assert.equal(btn.getAttribute("aria-expanded"), "true");
-	assert.deepEqual(menuItems(ui).map(n => n.getAttribute("role")), ["menuitemradio", "menuitemradio", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitem", "menuitem", "menuitemradio", "menuitemradio", "menuitemradio", "menuitemradio"], "five view items, Sort by and Keyboard shortcuts, then four language choices");
+	assert.deepEqual(menuItems(ui).map(n => n.getAttribute("role")), ["menuitemradio", "menuitemradio", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitemcheckbox", "menuitem", "menuitem", "menuitemradio", "menuitemradio", "menuitemradio", "menuitemradio"], "six view items, Sort by and Keyboard shortcuts, then four language choices");
 	assert.equal(mockElement.active, menuItems(ui)[0], "opened from the keyboard, focus lands on the first item");
 	menu.emit("keydown", { key: "ArrowDown" });
 	assert.equal(mockElement.active, menuItems(ui)[1]);
@@ -110,7 +110,7 @@ test("the toolbar menus open on a click, move with the arrows, run on Enter and 
 	assert.equal(menu.hidden, false, "a disabled item leaves the menu open");
 	ui.get("view-btn").emit("click");
 	assert.equal(ui.get("d-more").getAttribute("aria-expanded"), "false");
-	assert.equal(menuItems(ui).length, 11);
+	assert.equal(menuItems(ui).length, 12);
 });
 
 test("the sort arrow is its own node beside the header's text and aria-sort follows it", async () => {
@@ -196,7 +196,7 @@ for (const scheme of ["light", "dark"]) {
 }
 
 test("both locales word the new controls, and the PDF and column tips say what is true", () => {
-	const keys = ["libFilterLabel", "libAll", "libNew", "libOwned", "libFilterTip", "exportMenu", "exportTip", "viewMenu", "viewTip", "detailToggle", "dShowLibrary", "dMore", "dMoreTip", "dFold", "statusLine", "verPublished", "verPreprint", "verOwned", "verNotOwned", "verShow", "verGone", "verEstimateTip", "verExplicitTip"];
+	const keys = ["libFilterLabel", "libAll", "libNew", "libOwned", "libFilterTip", "exportMenu", "exportTip", "viewMenu", "viewTip", "detailToggle", "detailHintToggle", "detailHintTip", "detailHintClose", "detailHintCloseTip", "dShowLibrary", "dMore", "dMoreTip", "dFold", "statusLine", "verPublished", "verPreprint", "verOwned", "verNotOwned", "verShow", "verGone", "verEstimateTip", "verExplicitTip"];
 	for (const locale of ["en", "ko"]) {
 		const t = I18N.make(locale);
 		for (const key of keys) assert.notEqual(t(key, 1), key, `${locale}: ${key}`);

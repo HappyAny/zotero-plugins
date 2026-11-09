@@ -264,7 +264,10 @@
 			</div>
 			<div id="hsplit" class="splitter-h" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="detail" data-i18n-aria="resizeDetail" data-i18n-title="resizeDetailTip"></div>
 			<div id="detail" class="glass">
-				<div id="detail-empty" class="detail-empty" data-i18n="detailEmpty"></div>
+				<div id="detail-empty" class="detail-empty">
+					<span class="detail-empty-text" data-i18n="detailEmpty"></span>
+					<button id="detail-hint-close" type="button" class="ghost icon-btn" data-i18n-title="detailHintCloseTip" data-i18n-aria="detailHintClose"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-close"/></svg></button>
+				</div>
 				<div id="detail-body" hidden="hidden">
 					<div class="detail-head">
 						<div id="d-title" class="d-title"></div>
@@ -329,17 +332,21 @@
 	</div>
 
 	<div id="import-bar" class="glass">
-		<label for="target" class="import-target-label" data-i18n="addTo"></label>
-		<select id="target"></select>
+		<div class="import-destination">
+			<label for="target" class="import-target-label" data-i18n="addTo"></label>
+			<select id="target"></select>
+		</div>
 		<button id="import-opts-toggle" type="button" class="ghost import-opts-toggle" aria-expanded="false" aria-controls="import-opts"></button>
 		<div id="statusbar">
 			<span id="status" role="status" aria-live="polite"></span>
 			<span id="sr-alert" class="sr-only" role="alert" aria-live="assertive"></span>
 			<progress id="progress" max="100" value="0" hidden="hidden" data-i18n-aria="progressLabel"></progress>
 		</div>
-		<span id="selected-count"></span>
-		<button id="selected-only" type="button" aria-pressed="false" hidden="hidden"></button>
-		<button id="import-btn" type="button" class="primary icon-text" disabled="disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-plus"/></svg><span data-i18n="importBtn"></span></button>
+		<div class="import-actions">
+			<span id="selected-count"></span>
+			<button id="selected-only" type="button" aria-pressed="false" hidden="hidden"></button>
+			<button id="import-btn" type="button" class="primary icon-text" disabled="disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-plus"/></svg><span data-i18n="importBtn"></span></button>
+		</div>
 		<span id="import-opts" class="import-opts" hidden="hidden">
 			<label class="cb"><input id="opt-pdf" type="checkbox" checked="checked"/> <span data-i18n="optPdf"></span></label>
 			<label class="cb"><input id="opt-skip" type="checkbox" checked="checked"/> <span data-i18n="optSkip"></span></label>
