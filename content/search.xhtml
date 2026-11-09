@@ -64,7 +64,7 @@
 <div id="app">
 	<nav class="search-modes" aria-label="Search mode">
 		<button id="mode-papers" type="button" aria-pressed="true" data-i18n="modePapers"></button>
-		<button id="mode-authors" type="button" aria-pressed="false" data-i18n="modeAuthors"></button>
+		<button id="mode-authors" type="button" aria-pressed="false" aria-expanded="false" aria-controls="author-panel" data-i18n="modeAuthors" data-i18n-title="authorPanelToggleTip"></button>
 	</nav>
 	<section id="author-panel" class="author-panel glass" hidden="hidden">
 		<form id="author-form" class="author-query" onsubmit="return false;">
@@ -245,7 +245,7 @@
 				<span id="facet-chip" class="facet-chip" hidden="hidden"><span id="facet-text"></span><button id="facet-clear" type="button" class="filter-clear" data-i18n-title="facetClear" data-i18n-aria="facetClear">×</button></span>
 				<span id="person-chip" class="facet-chip" hidden="hidden"><span id="person-text"></span><button id="person-clear" type="button" class="filter-clear" data-i18n-title="personClear" data-i18n-aria="personClear">×</button></span>
 				<span class="spacer"></span>
-				<button id="preview-btn" type="button" class="icon-text preview-action" data-i18n-title="previewTip" disabled="disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-pdf"/></svg><span data-i18n="previewAction"></span></button>
+				<button id="preview-btn" type="button" class="icon-text preview-action" data-i18n-title="previewTip" data-i18n-aria="previewAction" disabled="disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-pdf"/></svg><span id="preview-btn-label" data-i18n="previewAction"></span></button>
 				<button id="select-none" type="button" data-i18n-title="selNoneTip" class="icon-text"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-close"/></svg><span data-i18n="selNone"></span></button>
 				<span id="lib-filter" class="lib-filter" role="group" data-i18n-aria="libFilterLabel" data-i18n-title="libFilterTip">
 						<button id="lib-all" type="button" data-lib="all" aria-pressed="true"></button>
@@ -296,6 +296,7 @@
 					<span class="detail-empty-text" data-i18n="detailEmpty"></span>
 					<button id="detail-hint-close" type="button" class="ghost icon-btn" data-i18n-title="detailHintCloseTip" data-i18n-aria="detailHintClose"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-close"/></svg></button>
 				</div>
+				<button id="d-close" type="button" class="icon-btn" hidden="hidden" data-i18n-title="closeDetailsTip" data-i18n-aria="closeDetails"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="ic"><use href="#ic-close"/></svg></button>
 				<div id="detail-body" hidden="hidden">
 					<div class="detail-head">
 						<div id="d-title" class="d-title"></div>

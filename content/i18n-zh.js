@@ -8,6 +8,7 @@ return {strings:{
 			toolbarTip: "ZotPoP — 查找论文并将其添加到您的资料库",
 
 			searchMode: "搜索模式", modePapers: "论文检索", modeAuthors: "作者检索",
+			authorPanelToggleTip: "打开作者搜索。在此页面再次点击可折叠或展开搜索条件和作者卡片。",
 			authorProvider: "作者身份来源", authorScholarInput: "作者姓名或 Google Scholar 主页网址 / ID", authorOrcidInput: "ORCID iD、网址或姓名",
 			authorProviderCombined: "组合检索（OpenAlex + ORCID）", authorCombinedInput: "作者姓名、ORCID iD 或 OpenAlex ID",
 			authorCombinedHelp: "输入姓名可同时检索 OpenAlex 和 ORCID，同一人的记录会合并为一张卡片。输入 ORCID iD 或 OpenAlex ID（A123…）可直接定位指定作者。",
@@ -125,6 +126,9 @@ return {strings:{
 			previewPrev: "上一页",
 			previewNext: "下一页",
 			previewClose: "关闭预览",
+			previewCloseTip: "关闭预览和详情（P 或 Esc）",
+			closeDetails: "关闭详情",
+			closeDetailsTip: "关闭详情并返回结果列表（Esc）",
 			previewPageOf: (n, total) => `${groupDigits(n)} / ${total ? groupDigits(total) : "…"}`,
 			previewTitle: "PDF 预览",
 			previewOriginal: "打开原文",

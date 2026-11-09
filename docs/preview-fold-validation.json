@@ -1,0 +1,244 @@
+{
+  "release": "preview-fold-v1",
+  "artifact": {
+    "file": "zotpop-0.58.9.xpi",
+    "version": "0.58.9",
+    "sha256": "0ec8806eb13906f234742550e46dc6139c604981730a7730a8d3fa2b00e5e4b2",
+    "bytes": 3937799
+  },
+  "scope": "Close preview and details with a persistent cross, the toolbar toggle, P, or Esc; fold the active Author search fields and cards without cancelling work or clearing results, and retain the fold choice.",
+  "offline_tests": {
+    "suite": "root",
+    "files": 61,
+    "exitCode": 0,
+    "summary": [
+      "ℹ tests 879",
+      "ℹ pass 879",
+      "ℹ fail 0",
+      "ℹ skipped 0",
+      "ℹ duration_ms 81511.4254"
+    ],
+    "excluded": [
+      "pop-bridge.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "browser": {
+    "errors": [],
+    "networkRequests": [],
+    "checks": [
+      {
+        "name": "clicking Author search collapses its fields and cards",
+        "pass": true
+      },
+      {
+        "name": "collapsing authors gives their space to the results",
+        "pass": true
+      },
+      {
+        "name": "folding retains the author input, selection and active mode",
+        "pass": true
+      },
+      {
+        "name": "a second click restores the author fields and cards",
+        "pass": true
+      },
+      {
+        "name": "folding an active search does not abort it",
+        "pass": true
+      },
+      {
+        "name": "the saved collapsed state restores on a new page",
+        "pass": true
+      },
+      {
+        "name": "Preview opens the PDF pane with an accessible close cross",
+        "pass": true
+      },
+      {
+        "name": "the toolbar Preview action changes to Close preview",
+        "pass": true
+      },
+      {
+        "name": "the cross stays visible after scrolling details",
+        "pass": true
+      },
+      {
+        "name": "the cross collapses the whole detail pane and releases result space",
+        "pass": true
+      },
+      {
+        "name": "closing retains selection and puts focus back in the list",
+        "pass": true
+      },
+      {
+        "name": "the Close preview control also collapses details",
+        "pass": true
+      },
+      {
+        "name": "P can reopen preview from the focused list",
+        "pass": true
+      },
+      {
+        "name": "P can close the complete preview pane",
+        "pass": true
+      },
+      {
+        "name": "Escape closes the complete preview pane",
+        "pass": true
+      },
+      {
+        "name": "choosing another row reopens its normal details",
+        "pass": true
+      },
+      {
+        "name": "Preview can reopen a detail pane disabled from View",
+        "pass": true
+      },
+      {
+        "name": "saved detail height is retained",
+        "pass": true
+      },
+      {
+        "name": "the close cross remains within the detail pane at 1600",
+        "pass": true
+      },
+      {
+        "name": "the close cross remains within the detail pane at 1000",
+        "pass": true
+      },
+      {
+        "name": "the close cross remains within the detail pane at 760",
+        "pass": true
+      },
+      {
+        "name": "the close cross remains within the detail pane at 640",
+        "pass": true
+      },
+      {
+        "name": "the close cross remains usable at the minimum saved detail height",
+        "pass": true
+      },
+      {
+        "name": "the compact toolbar action keeps its accessible close label",
+        "pass": true
+      },
+      {
+        "name": "the close cross has the correct label in zh",
+        "pass": true
+      },
+      {
+        "name": "the localized close cross collapses details in zh",
+        "pass": true
+      },
+      {
+        "name": "the close cross has the correct label in ko",
+        "pass": true
+      },
+      {
+        "name": "the localized close cross collapses details in ko",
+        "pass": true
+      },
+      {
+        "name": "no script errors or network requests occurred",
+        "pass": true
+      }
+    ],
+    "measurements": [
+      {
+        "stage": "preview-1600",
+        "cross": {
+          "x": 1539,
+          "y": 837,
+          "right": 1571,
+          "bottom": 869,
+          "height": 32,
+          "width": 32
+        },
+        "detail": {
+          "x": 278,
+          "y": 816,
+          "right": 1584,
+          "bottom": 996,
+          "height": 180,
+          "width": 1306
+        }
+      },
+      {
+        "stage": "preview-1000",
+        "cross": {
+          "x": 939,
+          "y": 837,
+          "right": 971,
+          "bottom": 869,
+          "height": 32,
+          "width": 32
+        },
+        "detail": {
+          "x": 278,
+          "y": 816,
+          "right": 984,
+          "bottom": 996,
+          "height": 180,
+          "width": 706
+        }
+      },
+      {
+        "stage": "preview-760",
+        "cross": {
+          "x": 699,
+          "y": 837,
+          "right": 731,
+          "bottom": 869,
+          "height": 32,
+          "width": 32
+        },
+        "detail": {
+          "x": 278,
+          "y": 816,
+          "right": 744,
+          "bottom": 996,
+          "height": 180,
+          "width": 466
+        }
+      },
+      {
+        "stage": "preview-640",
+        "cross": {
+          "x": 579,
+          "y": 837,
+          "right": 611,
+          "bottom": 869,
+          "height": 32,
+          "width": 32
+        },
+        "detail": {
+          "x": 264,
+          "y": 816,
+          "right": 624,
+          "bottom": 996,
+          "height": 180,
+          "width": 360
+        }
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-09T03:20:02.499906+00:00",
+    "version": "0.58.9",
+    "active": true,
+    "sha256": "0ec8806eb13906f234742550e46dc6139c604981730a7730a8d3fa2b00e5e4b2",
+    "plugin_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "other_plugin_versions_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "manual_desktop_test_performed": false,
+    "interaction_verification": "Unit tests with the production renderer and handlers; headless Chrome with the actual search markup, stylesheet, layout and select functions. Native Zotero clicks were not tested."
+  },
+  "limits": [
+    "Interaction and geometry checks use offline fixtures. Native Zotero clicks were not tested.",
+    "The browser fixture uses fictional papers and the actual markup, styles, pane lifecycle, keyboard handler, and detail renderer. PDF and metadata services are mocked.",
+    "Production search controllers, add behavior, and sidebar width persistence are covered by unit fixtures.",
+    "The Windows offline test run excludes pop-bridge.test.mjs because its Unix executable fixtures are incompatible.",
+    "Style Custom remains at 0.59.60. Its code and package were not changed."
+  ]
+}

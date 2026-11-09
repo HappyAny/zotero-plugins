@@ -89,3 +89,41 @@ test('hint dismissal survives reopening and View can restore it without changing
  reopened.toggleDetail();assert.equal(reopened.get('detail').hidden,false);assert.equal(prefs.detailHidden,false);
  assert.equal(prefs.detailHeight,160);
 });
+
+test('preview close controls collapse the whole pane, retain selection, and allow reopening',async()=>{
+ const ui=uiHarness({prefs:{detailHeight:180},search:async()=>[paper('a',{title:'A paper'}),paper('b')]});
+ await ui.runSearch();ui.restoreLayout();ui.wireEvents();ui.state.focusKey='a';ui.state.selected.add('b');
+ for(const control of ['d-close','dp-close','preview-btn','escape']){
+  ui.openPreview(ui.state.records[0]);ui.originalRenderDetail();
+  assert.equal(ui.get('detail').hidden,false);assert.equal(ui.state.preview.on,true);
+  if(control==='escape')ui.onKeyDown({key:'Escape',preventDefault(){}});else ui.get(control).emit('click');
+  assert.equal(ui.get('detail').hidden,true,control+' closes the complete detail pane');
+  assert.equal(ui.state.preview.on,false);assert.equal(ui.state.detailKey,null);assert.equal(ui.state.focusKey,'a');
+  assert.deepEqual([...ui.state.selected],['b']);assert.equal(mockElement.active,ui.get('table-wrap'));
+  ui.saveLayout();assert.equal(ui.prefs.detailHidden,false,'temporary dismissal keeps Details enabled');
+  assert.equal(ui.prefs.detailHeight,180);assert.equal(ui.get('preview-btn-label').textContent,'previewAction');
+ }
+ ui.state.detailKey='b';ui.originalRenderDetail();assert.equal(ui.get('detail').hidden,false,'choosing another paper reopens details');
+ ui.setDetailVisible(false);ui.openPreview(ui.state.records[0]);ui.originalRenderDetail();
+ assert.equal(ui.get('detail').hidden,false,'the Preview action can reopen a hidden detail feature');
+ ui.closeDetail();assert.deepEqual(ui.errors,[]);
+});
+
+test('clicking the active Author search tab folds fields and cards without changing an active search or results',async()=>{
+ const ui=uiHarness();ui.wireEvents();await ui.onAuthorModeClick();
+ assert.equal(ui.searchMode(),'authors');assert.equal(ui.get('author-panel').hidden,false);
+ ui.state.records=[paper('saved')];ui.state.selected.add('saved');ui.get('author-input').value='Example researcher';
+ const controller=new AbortController();ui.state.searchController=controller;ui.state.searching=true;
+ ui.get('mode-authors').emit('click');
+ assert.equal(ui.get('author-panel').hidden,true);assert.equal(ui.get('mode-authors').getAttribute('aria-expanded'),'false');
+ assert.equal(ui.get('mode-authors').getAttribute('aria-pressed'),'true');assert.equal(controller.signal.aborted,false);
+ assert.equal(ui.state.records[0].key,'saved');assert.deepEqual([...ui.state.selected],['saved']);
+ assert.equal(ui.get('author-input').value,'Example researcher');assert.equal(ui.prefs.authorPanelCollapsed,true);
+ ui.get('mode-authors').emit('click');
+ assert.equal(ui.get('author-panel').hidden,false);assert.equal(ui.get('mode-authors').getAttribute('aria-expanded'),'true');
+ ui.state.searching=false;ui.setAuthorPanelCollapsed(true);
+ await ui.switchSearchMode('papers');await ui.onAuthorModeClick();
+ assert.equal(ui.get('author-panel').hidden,false,'entering Author search from another mode expands it');
+ assert.equal(ui.state.records[0].key,'saved');assert.deepEqual([...ui.state.selected],['saved']);
+ assert.deepEqual(ui.errors,[]);
+});

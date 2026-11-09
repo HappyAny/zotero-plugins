@@ -415,16 +415,16 @@
 		applySearchSurface();
 		sourceHint();
 		applyColumnWidths();
-		setDetailVisible(!$("detail").hidden);
+		setDetailVisible(detailShown);
 		setStatus(PREF("hintShown") ? t("ready") : t("welcome"));
 		render();
-		{ let field = $(searchSurface === "authors" ? "author-input" : "keywords"); field.focus(); if (field.value) field.select(); }
+		{ let field = $(searchSurface === "authors" ? ($("author-panel").hidden ? "mode-authors" : "author-input") : "keywords"); field.focus(); if (field.value) field.select?.(); }
 		loadCaches().finally(restoreCachedSearch);
 	}
 
 	function wireEvents() {
 		$("mode-papers").addEventListener("click", () => switchSearchMode("papers"));
-		$("mode-authors").addEventListener("click", () => switchSearchMode("authors"));
+		$("mode-authors").addEventListener("click", onAuthorModeClick);
 		$("cond-toggle").addEventListener("click", () => { state.condOpen = !state.condOpen; syncQueryCollapse(); });
 		// Reaching the toggle by keyboard opens the conditions, so Tab walks into the fields.
 		$("cond-toggle").addEventListener("focus", () => { let keyboard = false; try { keyboard = $("cond-toggle").matches(":focus-visible"); } catch (e) {} if (keyboard && !state.condOpen) { state.condOpen = true; syncQueryCollapse(); } });
@@ -498,7 +498,8 @@
 		$("preview-btn").addEventListener("click", () => togglePreview());
 		$("dp-prev").addEventListener("click", () => previewViewer?.goTo(previewViewer.page - 1));
 		$("dp-next").addEventListener("click", () => previewViewer?.goTo(previewViewer.page + 1));
-		$("dp-close").addEventListener("click", closePreview);
+		$("dp-close").addEventListener("click", closeDetail);
+		$("d-close").addEventListener("click", closeDetail);
 		$("dp-retry").addEventListener("click", () => previewViewer?.retry());
 		$("dp-original").addEventListener("click", () => { let u = state.preview.originalURL; if (u && ZotPoPPreview.safeURL(u)) Zotero.launchURL(u); });
 		$("import-btn").addEventListener("click", () => importRecords(state.records.filter(r => state.selected.has(r.key))));
@@ -766,7 +767,7 @@
 	}
 	function applySearchSurface() {
 		$("query-form").hidden = searchSurface === "authors";
-		$("author-panel").hidden = searchSurface !== "authors";
+		syncAuthorPanel();
 		$("mode-papers").setAttribute("aria-pressed", String(searchSurface === "papers"));
 		$("mode-authors").setAttribute("aria-pressed", String(searchSurface === "authors"));
 		sourceHint(); renderAuthorProfiles();
@@ -785,6 +786,7 @@
 		if (state.importing || !["papers", "authors"].includes(mode)) return;
 		cancelCacheRestore(); while (state.searching) await settleActiveSearch();
 		if (searchSurface !== mode) { saveSurfaceResults(); searchSurface = mode; restoreSurfaceResults(); }
+		if (mode === "authors") PREF("authorPanelCollapsed", false);
 		PREF("searchSurface", mode); applySearchSurface(); hideBanner(); setStatus(restStatus()); render();
 	}
 	async function switchAuthorProvider(provider) {
@@ -2121,14 +2123,30 @@
 		// The add card and its resize grip remain available when metrics are hidden.
 		$("vsplit").hidden = false;
 	}
+	function syncAuthorPanel() {
+		let expanded = searchSurface === "authors" && PREF("authorPanelCollapsed") !== true;
+		$("author-panel").hidden = !expanded;
+		$("mode-authors").setAttribute("aria-expanded", String(expanded));
+	}
+	function setAuthorPanelCollapsed(collapsed) {
+		PREF("authorPanelCollapsed", Boolean(collapsed));
+		syncAuthorPanel();
+		if (collapsed && $("author-panel").contains(document.activeElement)) $("mode-authors").focus({ preventScroll: true });
+		clampPanes();
+	}
+	function onAuthorModeClick() {
+		if (searchSurface !== "authors") return switchSearchMode("authors");
+		setAuthorPanelCollapsed(PREF("authorPanelCollapsed") !== true);
+	}
 	function toggleMetrics() { setMetricsVisible($("metrics").hidden); saveLayout(); }
 	/* A hidden detail pane asks the network for nothing (a PubMed abstract, the references behind "cites n of
 	   mine"): walking twenty rows with it folded away sent twenty requests nobody saw. Shown again, it draws
 	   the row it holds, and asks then. */
-	let detailShown = true;
+	let detailShown = true, detailDismissed = false;
 	function setDetailVisible(on) {
 		let was = detailShown;
 		detailShown = Boolean(on);
+		if (on) detailDismissed = false;
 		syncDetailSplitter();
 		if (on && !was) renderDetail();
 	}
@@ -2146,7 +2164,7 @@
 	function syncDetailSplitter() {
 		let detail = $("detail"), grip = $("hsplit");
 		// Dismissing the empty hint does not turn off paper details or PDF preview.
-		detail.hidden = !detailShown || (detail.hasAttribute("data-empty") && PREF("detailHintHidden") === true);
+		detail.hidden = !detailShown || detailDismissed || (detail.hasAttribute("data-empty") && PREF("detailHintHidden") === true);
 		if (grip) grip.hidden = detail.hidden || detail.hasAttribute("data-empty");
 		clampPanes();
 	}
@@ -5213,6 +5231,9 @@
 		$("d-pdfview").hidden = !on;
 		if (on) $("detail").setAttribute("data-preview", ""); else $("detail").removeAttribute("data-preview");
 		$("preview-btn").setAttribute("aria-pressed", String(Boolean(state.preview.on)));
+		$("preview-btn-label").textContent = t(state.preview.on ? "previewClose" : "previewAction");
+		$("preview-btn").setAttribute("aria-label", t(state.preview.on ? "previewClose" : "previewAction"));
+		tip($("preview-btn"), t(state.preview.on ? "previewCloseTip" : "previewTip"));
 		// A pending start for the same paper survives (openPreview() right after the row's own render must not
 		// strand it on "loading"); a button press runs it now. Only a row change or close cancels it.
 		if (on && state.preview.key === r.key) {
@@ -5246,18 +5267,29 @@
 		if (!record) return;
 		state.preview.on = true;
 		state.detailKey = record.key;
+		detailDismissed = false;
+		setDetailVisible(true);
 		syncPreview();
 		paintRows(); renderDetail();
 		$("detail").scrollIntoView?.({ block: "nearest" });
 	}
 	function closePreview() { state.preview.on = false; syncPreview(); }
-	function togglePreview() { if (state.preview.on) closePreview(); else openPreview(); }
+	function closeDetail() {
+		closePreview();
+		state.detailKey = null;
+		detailDismissed = true;
+		paintRows(); renderDetail(); syncDetailSplitter();
+		$("table-wrap").focus({ preventScroll: true });
+	}
+	function togglePreview() { if (state.preview.on) closeDetail(); else openPreview(); }
 	function detailRecord() { return state.records.find(r => r.key === state.detailKey) || null; }
 
 	function renderDetail() {
 		let r = detailRecord();
+		if (r) detailDismissed = false;
 		$("detail-empty").hidden = Boolean(r);
 		$("detail-body").hidden = !r;
+		$("d-close").hidden = !r;
 		// Nothing chosen: the pane folds to one hint row and gives the table its height back. The height
 		// the user set stays on the element and returns with the next choice.
 		if (r) $("detail").removeAttribute("data-empty"); else $("detail").setAttribute("data-empty", "");
@@ -6257,8 +6289,7 @@
 			}
 			if (document.activeElement === $("filter") && ($("filter").value || state.facet || state.yearRange)) { clearFilter(); return; }
 			if (document.activeElement === $("filter")) { $("table-wrap").focus(); return; }
-			if (state.preview.on) { closePreview(); return; }
-			if (state.detailKey) { state.detailKey = null; paintRows(); renderDetail(); return; }
+			if (state.preview.on || state.detailKey) { e.preventDefault?.(); closeDetail(); return; }
 			return;
 		}
 		if (mod && e.key.toLowerCase() === "f") { e.preventDefault(); $("filter").focus(); $("filter").select(); return; }

@@ -196,7 +196,7 @@ for (const scheme of ["light", "dark"]) {
 }
 
 test("both locales word the new controls, and the PDF and column tips say what is true", () => {
-	const keys = ["libFilterLabel", "libAll", "libNew", "libOwned", "libFilterTip", "exportMenu", "exportTip", "viewMenu", "viewTip", "detailToggle", "detailHintToggle", "detailHintTip", "detailHintClose", "detailHintCloseTip", "dShowLibrary", "dMore", "dMoreTip", "dFold", "statusLine", "verPublished", "verPreprint", "verOwned", "verNotOwned", "verShow", "verGone", "verEstimateTip", "verExplicitTip"];
+	const keys = ["libFilterLabel", "libAll", "libNew", "libOwned", "libFilterTip", "exportMenu", "exportTip", "viewMenu", "viewTip", "detailToggle", "detailHintToggle", "detailHintTip", "detailHintClose", "detailHintCloseTip", "closeDetails", "closeDetailsTip", "previewCloseTip", "authorPanelToggleTip", "dShowLibrary", "dMore", "dMoreTip", "dFold", "statusLine", "verPublished", "verPreprint", "verOwned", "verNotOwned", "verShow", "verGone", "verEstimateTip", "verExplicitTip"];
 	for (const locale of ["en", "ko"]) {
 		const t = I18N.make(locale);
 		for (const key of keys) assert.notEqual(t(key, 1), key, `${locale}: ${key}`);
