@@ -2,9 +2,37 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import fs from "node:fs";
+import Failures from '../src/failures.js';
 const require = createRequire(import.meta.url);
 const i18n = require("../src/i18n.js");
 const strings = require("../src/strings.js");
+
+test('dynamic error messages translate complete sentences and preserve inserted provider or library text',()=>{
+ i18n.load(strings);
+ try{
+  for(const locale of ['en-US','zh-CN']){
+   i18n.use(locale);
+   for(const code of [400,401,403,404,429,500,503]){
+    const result=i18n.t('AI 서비스 응답 오류: HTTP '+code);
+    assert.doesNotMatch(result,/[가-힣]/);assert.ok(result.includes('HTTP '+code));
+   }
+   const payload='학위논문 · 身体 · HTTP 400 · {0}';
+   const memo=i18n.t('메모는 저장했지만 노트로 옮기지 못했습니다: '+payload);
+   assert.ok(memo.endsWith(payload),'an inserted provider or library value stays verbatim');
+   if(locale==='zh-CN')assert.ok(memo.startsWith('简记已保存，但同步到子笔记失败：'));
+   for(const now of [new Date('2026-11-10T00:00:00Z'),new Date('2026-11-10T23:30:00Z')]){
+    for(const url of ['https://api.openalex.org/works','https://example.test/api','https://doi.org/10.5555/fixture']){
+     const message=i18n.t(Failures.describe({status:429,url,message:'Fixture'},{now,translate:i18n.t}));
+     assert.doesNotMatch(message,/[가-힣]/);assert.ok(message.includes('30')||message.includes('24'));
+    }
+   }
+   const unknown=i18n.t(Failures.describe({status:403,url:'https://example.test/api',message:'Fixture'},{translate:i18n.t}));
+   assert.doesNotMatch(unknown,/[가-힣]/);
+   assert.ok(unknown.startsWith(locale==='zh-CN'?'查询服务':'Lookup service'));
+  }
+  i18n.use('ko-KR');assert.equal(i18n.t('AI 서비스 응답 오류: HTTP 400'),'AI 서비스 응답 오류: HTTP 400');
+ }finally{i18n.load(strings.en);i18n.use('en-US');}
+});
 
 test("the Korean text is the key, so an untranslated string still reads", () => {
   /* Every string here was written in Korean at over a thousand call sites.

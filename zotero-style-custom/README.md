@@ -4,6 +4,8 @@ A research workbench for Zotero 9 and 10 (9.0–10.*; the manifest does not load
 
 The repository README has the illustrated tour: [../README.md](../README.md). This file is the reference for what the plugin records, where, and how it decides things.
 
+Version 0.59.61 fixes dynamic error localization. Reader chat and summary errors such as HTTP 400 use the interface language. Quota failures translate service labels and time remaining before composing the message. Column-registration and memo-to-note failures retain their details in a translated sentence. See the [error-localization validation](../docs/error-localization-validation.json).
+
 Version 0.59.60 replaces the language popup with visible buttons for English, Simplified Chinese, Korean, and Follow Zotero. A successful choice translates the existing settings page immediately, including descriptions and accessibility labels. Unsaved text and secret fields stay in place. See the [language switching validation](../docs/language-switch-validation.json).
 
 Version 0.59.59 dismisses the floating workbench on an outside press. The outside control still receives the press, and reopening restores memo drafts. The toolbar toggles once per press. Docked tabs, internal previews, native popup choices, and application switching keep the workbench open. Focus entering an outside PDF frame dismisses it; a direct transition between frames is detected within 500 ms. See the [dismissal validation](../docs/workbench-dismiss-validation.json).

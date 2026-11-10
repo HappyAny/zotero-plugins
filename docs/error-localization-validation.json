@@ -1,0 +1,156 @@
+{
+  "release": "error-localization-v1",
+  "artifact": {
+    "file": "style-custom-0.59.61.xpi",
+    "version": "0.59.61",
+    "sha256": "fdd99e46d3dd0799a3f2e1d6a9a07d04142325ad9931908d988788fe4c507583",
+    "bytes": 14100461
+  },
+  "scope": "Translate complete dynamic error sentences and localize service labels and durations before composing network failure text. Preserve HTTP status codes and inserted provider or library text.",
+  "offline_tests": {
+    "suite": "style",
+    "files": 62,
+    "exitCode": 0,
+    "summary": [
+      "ℹ tests 2086",
+      "ℹ pass 2056",
+      "ℹ fail 0",
+      "ℹ skipped 30",
+      "ℹ duration_ms 136568.5561"
+    ],
+    "excluded": [
+      "bake.test.mjs: Unix executable fixtures on Windows"
+    ]
+  },
+  "dynamic_error_audit": {
+    "cases": 230,
+    "missing": 0,
+    "scope": "Korean strings constructed in Error calls, plus service HTTP error rendering. Fixture placeholders only; no provider or library data."
+  },
+  "browser": {
+    "errors": [],
+    "externalRequests": [],
+    "checks": [
+      {
+        "name": "zh-CN chat HTTP 401 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "zh-CN chat HTTP 403 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "zh-CN chat HTTP 429 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "zh-CN chat HTTP 500 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "zh-CN chat HTTP 400 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "zh-CN keeps the question ready for retry",
+        "pass": true
+      },
+      {
+        "name": "zh-CN summary HTTP 400 uses the same localized sentence",
+        "pass": true
+      },
+      {
+        "name": "zh-CN keeps the summary retry control available",
+        "pass": true
+      },
+      {
+        "name": "en-US chat HTTP 401 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "en-US chat HTTP 403 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "en-US chat HTTP 429 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "en-US chat HTTP 500 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "en-US chat HTTP 400 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "en-US keeps the question ready for retry",
+        "pass": true
+      },
+      {
+        "name": "en-US summary HTTP 400 uses the same localized sentence",
+        "pass": true
+      },
+      {
+        "name": "en-US keeps the summary retry control available",
+        "pass": true
+      },
+      {
+        "name": "ko-KR chat HTTP 401 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "ko-KR chat HTTP 403 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "ko-KR chat HTTP 429 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "ko-KR chat HTTP 500 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "ko-KR chat HTTP 400 uses the full localized sentence",
+        "pass": true
+      },
+      {
+        "name": "ko-KR keeps the question ready for retry",
+        "pass": true
+      },
+      {
+        "name": "ko-KR summary HTTP 400 uses the same localized sentence",
+        "pass": true
+      },
+      {
+        "name": "ko-KR keeps the summary retry control available",
+        "pass": true
+      },
+      {
+        "name": "the real reader fixture made no external requests and had no script errors",
+        "pass": true
+      }
+    ]
+  },
+  "installed": {
+    "verified_utc": "2026-11-10T13:11:33.473747+00:00",
+    "version": "0.59.61",
+    "active": true,
+    "sha256": "fdd99e46d3dd0799a3f2e1d6a9a07d04142325ad9931908d988788fe4c507583",
+    "plugin_configuration_preserved": true,
+    "watched_authors_preserved": true,
+    "other_plugin_versions_preserved": true,
+    "plugin_enable_choices_preserved": true,
+    "manual_desktop_test_performed": false,
+    "interaction_verification": "Real reader-assistant modules and the production AI transport run against mocked HTTP failures in headless Chrome. No live AI service request or native Zotero click test was performed."
+  },
+  "limits": [
+    "The reader assistant and AI transport were tested with mocked HTTP failures. No live AI provider request was made.",
+    "Browser checks cover chat and summary errors in Chinese, English, and Korean. A native Zotero click test was not performed.",
+    "The audit uses fixture substitutions for errors built in source and a service/status/time matrix. It is not a proof that all possible UI states are translated.",
+    "Windows portable tests exclude bake.test.mjs because its Unix executable fixtures are incompatible. Thirty optional fixture checks were skipped.",
+    "HTTP 400 remains a provider request failure; this update changes its display language. It does not change the AI endpoint, model, key, or request body.",
+    "The ZotPoP package and its existing configuration were preserved."
+  ]
+}

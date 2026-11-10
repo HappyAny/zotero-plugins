@@ -350,7 +350,7 @@
   // A transport failure is not a sentence. The panel used to print the whole
   // OpenAlex URL with "failed with status code 429" on the end.
   const failures=root.CustomStyleFailures||{describe:error=>error?.message||String(error)};
-  const readable=error=>failures.describe(error)||String(error?.message||error||'');
+  const readable=error=>failures.describe(error,{translate:T})||String(error?.message||error||'');
   async function run(fn){try{return await fn();}catch(error){if(!disposed)message(readable(error),true);return null;}}
   /* A paper without a DOI whose title almost matched: the lookup stopped and
      asks instead of linking it. Yes writes the link (kept, so it is asked once),

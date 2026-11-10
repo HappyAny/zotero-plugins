@@ -266,7 +266,7 @@
   const T=(key,...values)=>t(key).replace(/\{(\d+)\}/g,(m,i)=>values[Number(i)]);
   const log=error=>{try{Z.logError?.(error);}catch(_){}};
   // A message this plugin wrote for its reader is shown as written; only transport errors go through the generic wording (whose 429 means a daily quota).
-  const describe=error=>{if(error&&error.own)return t(String(error.message));const fail=root.CustomStyleFailures;return t(fail?fail.describe(error):String(error&&error.message||error));};
+  const describe=error=>{if(error&&error.own)return t(String(error.message));const fail=root.CustomStyleFailures;return t(fail?fail.describe(error,{translate:t}):String(error&&error.message||error));};
   const paperText=()=>root.StyleCustomPaperText||RA.fallbackPaperText;
   const sessions=new Map();let stopped=false,cssPromise=null,sequence=0,probing=0,guard=null;
   // Readers a live self-check opened for itself: sync() leaves them alone, so no ordinary session (one that may save) is made.

@@ -4,6 +4,8 @@ This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOO
 It adds Simplified Chinese to ZotPoP and Style Custom. It also keeps the English labels, assistant close fix, and independent column resizing.
 Download each plugin from the links in the table below.
 
+Style Custom 0.59.61 translates complete dynamic error messages in reader chat, summaries, and shared network failures. HTTP codes and inserted provider or library text remain intact. Quota messages translate service labels and durations before composing the sentence. See the [error-localization validation](docs/error-localization-validation.json).
+
 ZotPoP 0.58.9 keeps a visible close cross at the top of paper details. The cross, Close preview, the Preview toggle, P, and Esc collapse the preview and detail pane. Selecting a paper or pressing Preview opens it again. Click the active Author search tab to fold or expand its fields and author cards without cancelling a search or clearing results. The fold choice persists between sessions. See the [preview and author-fold validation](docs/preview-fold-validation.json).
 
 ZotPoP 0.58.8 moves Add to, add options, status, and the add action into a compact card below the metrics. The results use the full right-hand height. The sidebar resize grip adjusts both cards and remains available when metrics are hidden. Options scroll inside the add card in short or narrow layouts. See the [sidebar add-card validation](docs/sidebar-add-validation.json).
@@ -37,7 +39,7 @@ Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–
 | Plugin | What it does | Latest |
 |---|---|---|
 | **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.9.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/preview-fold-v1/zotpop-0.58.9.xpi) |
-| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.60.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/language-switch-v1/style-custom-0.59.60.xpi) |
+| **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.61.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/error-localization-v1/style-custom-0.59.61.xpi) |
 
 ![The Zotero item list with Style Custom's columns: impact factor, citation count with a bar, reading status, the journal in its own colour, rating, reading time, file kinds, and the corresponding institution with its tier and flag](docs/images/library-columns.png)
 

@@ -300,6 +300,24 @@ test('a failed question puts the text back and leaves no half message',async()=>
  f.stop();
 });
 
+test('real AI HTTP failures render localized chat and summary errors without changing the question',async()=>{
+ const question='请解释这段正文。保留题名里的 학위논문。';
+ for(const [locale,send,make,expected]of [['zh-CN','发送','生成摘要','AI 服务响应错误：HTTP 400'],['en-US','Send','Make summary','The AI service returned an error: HTTP 400']]){
+  const f=fixture({locale});
+  try{
+   await f.open();f.aiReplies.push(()=>({status:400,response:{error:{message:'Fixture request rejected'}}}));
+   f.panel().querySelector('.sc-ra-input').textContent=question;f.press(f.byText(send));await settle(25);
+   const chatError=f.panel().querySelector('.sc-ra-chat .sc-ra-note:last-child').textContent;
+   assert.equal(chatError,expected);assert.doesNotMatch(chatError,/[가-힣]/);
+   assert.equal(f.panel().querySelector('.sc-ra-input').textContent,question);
+   assert.equal(f.panel().querySelectorAll('.sc-ra-msg').length,0);
+   f.aiReplies.push(()=>({status:400,response:{}}));f.press(f.byText(make));await settle(25);
+   assert.equal(f.panel().querySelector('.sc-ra-summary .sc-ra-error').textContent,expected);
+   assert.equal(f.byText(make).hidden,false,'the failed request can be retried');
+  }finally{f.stop();I18N.use('en-US');}
+ }
+});
+
 test('Enter sends, Shift+Enter does not, and the Enter that confirms a Korean composition does not',async()=>{
  const f=fixture();await f.open();
  const input=f.panel().querySelector('.sc-ra-input');

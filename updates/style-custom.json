@@ -3,6 +3,16 @@
     "style-custom@sungjaeyoon.dev": {
       "updates": [
         {
+          "version": "0.59.61",
+          "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/error-localization-v1/style-custom-0.59.61.xpi",
+          "update_hash": "sha256:fdd99e46d3dd0799a3f2e1d6a9a07d04142325ad9931908d988788fe4c507583",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "9.0"
+            }
+          }
+        },
+        {
           "version": "0.59.60",
           "update_link": "https://github.com/HappyAny/zotero-plugins/releases/download/language-switch-v1/style-custom-0.59.60.xpi",
           "update_hash": "sha256:d7ce30f9acb0070459f5923eb25b5e5d91dabba4fe8733ec5d1aaef693689ef5",
