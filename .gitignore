@@ -11,3 +11,9 @@ content/journal-registry.json
 # Zotero data directory (zotpop/journals/), never in this repository or the archive.
 content/jcr-2025-data.js
 content/journal-registry.json
+
+# Local verification and generated DOI Fix packages
+__pycache__/
+*.pyc
+doi-fix-custom/evidence/
+doi-fix-custom/source/*.xpi

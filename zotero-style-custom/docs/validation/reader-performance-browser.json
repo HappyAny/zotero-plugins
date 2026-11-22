@@ -1,0 +1,78 @@
+{
+  "scope": "60 repeated idle sync calls in a headless browser using production panel modules and an offline document fixture. No real PDF rendering or live Zotero interaction.",
+  "errors": [],
+  "externalRequests": [],
+  "cases": {
+    "before": {
+      "geometryReads": 780,
+      "styleWrites": 720,
+      "diagnosticWrites": 60,
+      "columnBeside": true,
+      "cycles": 60
+    },
+    "after": {
+      "geometryReads": 0,
+      "styleWrites": 0,
+      "diagnosticWrites": 0,
+      "columnBeside": true,
+      "cycles": 60
+    }
+  },
+  "checks": [
+    {
+      "name": "before keeps the panel beside the document",
+      "pass": true
+    },
+    {
+      "name": "after keeps the panel beside the document",
+      "pass": true
+    },
+    {
+      "name": "container replacement is repaired without a periodic tick",
+      "pass": true
+    },
+    {
+      "name": "native style reset is repaired without a periodic tick",
+      "pass": true
+    },
+    {
+      "name": "a narrow reader folds the panel and preserves document space",
+      "pass": true
+    },
+    {
+      "name": "restoring the window width restores the expanded panel",
+      "pass": true
+    },
+    {
+      "name": "baseline reproduces repeated geometry reads",
+      "pass": true
+    },
+    {
+      "name": "baseline reproduces repeated diagnostic writes",
+      "pass": true
+    },
+    {
+      "name": "unchanged sync does not measure geometry",
+      "pass": true
+    },
+    {
+      "name": "unchanged sync does not write styles",
+      "pass": true
+    },
+    {
+      "name": "unchanged sync does not write diagnostics",
+      "pass": true
+    },
+    {
+      "name": "no external requests or browser script errors",
+      "pass": true
+    }
+  ],
+  "narrow": {
+    "collapsed": "true",
+    "viewRight": 398,
+    "panelLeft": 398,
+    "panelWidth": 52,
+    "viewWidth": 398
+  }
+}

@@ -42,6 +42,42 @@ function fixture(){
  const Z={Notifier:{listeners:new Map(),registerObserver(ref){const id=this.listeners.size+1;this.listeners.set(id,ref);return id;},unregisterObserver(id){this.listeners.delete(id);}},getMainWindow:()=>win,Items:{get:id=>items.get(id),getByLibraryAndKeyAsync:async(lib,key)=>[...items.values()].find(i=>i.libraryID===lib&&i.key===key)},Reader:{_registeredListeners:[],registerEventListener(type,handler,pluginID){this._registeredListeners.push({type,handler,pluginID});},_unregisterEventListenerByPluginID(id){this._registeredListeners=this._registeredListeners.filter(l=>l.pluginID!==id);},_readers:[reader],getByTabID:id=>id==='reader1'?reader:null,async open(id,location,options){opened.push({id,location,options});win.Zotero_Tabs._tabs.push({id:'new'+id,type:'reader',title:'New',data:{itemID:id}});}},logError:e=>errors.push(e)};
  return {win,core,reader,page,pages,doc,timers,items,opened,navigations,calls,columns,runtime,Z,errors,service:tools.create({Zotero:Z,runtime}),tick(){for(const fn of timers.values())fn();}};
 }
+
+test('reader events are coalesced and the recovery clock runs every 30 seconds',()=>{
+ const f=fixture(),pending=new Map(),delays=[];let next=0,syncs=0;
+ f.reader.tabID='reader1';
+ f.core._primaryView._iframeWindow.PDFViewerApplication={eventBus:{on(){},off(){}}};
+ f.win.setTimeout=(fn,ms)=>{pending.set(++next,{fn,ms});return next;};f.win.clearTimeout=id=>pending.delete(id);
+ const interval=f.win.setInterval;f.win.setInterval=(fn,ms)=>{delays.push(ms);return interval(fn);};
+ f.runtime.readerAssist={sync(){syncs++;},releaseWindow(){}};
+ f.service.attach(f.win);assert.deepEqual(delays,[30000]);assert.equal(syncs,1);
+ const observer=[...f.Z.Notifier.listeners.values()][0];
+ for(let i=0;i<100;i++)observer.notify('select','tab',['reader1']);
+ assert.equal(pending.size,1,'one refresh handles an event burst');
+ const [id,work]=pending.entries().next().value;pending.delete(id);work.fn();assert.equal(syncs,2);assert.equal(pending.size,0);
+ observer.notify('load','tab',['reader1']);assert.equal(pending.size,1);
+ f.service.stop();assert.equal(pending.size,0);assert.equal(f.timers.size,0);assert.equal(f.Z.Notifier.listeners.size,0);
+});
+
+test('page rendering updates enabled margin cards and releases its event listeners',async()=>{
+ const f=fixture(),listeners=new Map();
+ const bus={on(name,fn){listeners.set(name,fn);},off(name,fn){if(listeners.get(name)===fn)listeners.delete(name);}};
+ f.core._primaryView._iframeWindow.PDFViewerApplication={eventBus:bus};
+ await f.service.setMarginAnnotations(f.win,true);assert.ok(listeners.has('pagerendered'));
+ f.core._state.annotations=[];listeners.get('pagerendered')();assert.equal(f.page.children.length,0);
+ f.core._state.annotations=[{id:'NEW',position:{pageIndex:0},comment:'New card'}];listeners.get('pagerendered')();assert.equal(f.page.children.length,1);
+ await f.service.setMarginAnnotations(f.win,false);assert.equal(listeners.size,0);assert.equal(f.page.children.length,0);f.service.stop();
+});
+
+test('reader startup retries stop after a bounded readiness window',()=>{
+ const f=fixture(),pending=new Map();let next=0,syncs=0;
+ f.reader.tabID='reader1';f.win.setTimeout=(fn,ms)=>{pending.set(++next,{fn,ms});return next;};f.win.clearTimeout=id=>pending.delete(id);
+ f.runtime.readerAssist={sync(){syncs++;},releaseWindow(){}};
+ f.service.attach(f.win);
+ let fired=0;while(pending.size){assert.ok(++fired<20,'startup retries must stop');const[id,work]=pending.entries().next().value;pending.delete(id);work.fn();}
+ assert.equal(syncs,6,'initial check and five bounded retries');
+ f.service.stop();assert.equal(pending.size,0);
+});
 test('themes use native theme IDs, retain custom themes, and restore both slots on cleanup',async()=>{
  const f=fixture();const original=JSON.parse(JSON.stringify(f.core._state));const cleanup=f.service.attach(f.win);
  assert.equal(f.core._state.colorScheme,null);

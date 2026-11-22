@@ -1,0 +1,83 @@
+{
+  "state": "installed-and-verified",
+  "version": "1.2.1",
+  "verifiedAt": "2026-11-16T17:55:57.821100+00:00",
+  "DOI": "10.1016/b978-0-443-13447-0.00004-0",
+  "title": "Topological photonics in one-dimensional settings",
+  "rootCause": "Crossref book-chapter was absent from the supported publication type map; 1.2.0 returned no-published-record without conversion.",
+  "expectedType": "bookSection",
+  "installedSHA256": "5323ee9d3e8f29302396f846791ab20b674c413e20e0d03849a0b75e029b9a93",
+  "managerSHA256": "20125725fa979607d26a8a2c726f1c9750f5a037c0a9cf9766d16a7ba7f0caea",
+  "tests": {
+    "suites": [
+      {
+        "file": "source\\tests\\bootstrapMenu.test.js",
+        "exitCode": 0,
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      {
+        "file": "source\\tests\\compatibilityMetadata.test.js",
+        "exitCode": 0,
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      {
+        "file": "source\\tests\\doiManager.test.js",
+        "exitCode": 0,
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      {
+        "file": "source\\tests\\pinFirst.test.js",
+        "exitCode": 0,
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      {
+        "file": "source\\tests\\publishedMetadata.test.js",
+        "exitCode": 0,
+        "tests": 19,
+        "pass": 19,
+        "fail": 0,
+        "skipped": 0
+      }
+    ],
+    "passed": 23,
+    "failedSuites": 0
+  },
+  "nativeChecksPassed": 44,
+  "nativeProof": {
+    "beforeType": "preprint",
+    "afterType": "bookSection",
+    "DOI": "10.1016/b978-0-443-13447-0.00004-0",
+    "bookTitle": "Topological Photonics",
+    "ISBN": "978-0-443-13447-0",
+    "publisher": "Elsevier",
+    "pages": "27-65",
+    "date": "2027",
+    "lines": [
+      "Processing: Topological photonics in one-dimensional settings...",
+      "  Old DOI: 10.1016/b978-0-443-13447-0.00004-0",
+      "Existing DOI verified: 10.1016/b978-0-443-13447-0.00004-0",
+      "Publication information updated: Book Section",
+      "\nCompleted: 1 updated, 0 unchanged, 0 failed"
+    ]
+  },
+  "nativeProofLimits": "Actual Zotero item/data APIs and the Update DOI command, with HTTP returning recorded Crossref metadata and UI progress suppressed in a disposable profile.",
+  "earlierNativeAttempt": "First attempt exposed native ISBN normalization; the check was corrected to compare ISBN digits, with the failure preserved.",
+  "databaseQuickCheck": "ok",
+  "libraryDatabaseChangedByInstaller": false,
+  "userPreferencesPreserved": true,
+  "styleCustomPreserved": true,
+  "productionLibraryConversion": "Not executed by this fix. Reopen Zotero and run Update DOI once to convert this item.",
+  "publisherSource": "https://www.sciencedirect.com/science/article/pii/B9780443134470000040"
+}

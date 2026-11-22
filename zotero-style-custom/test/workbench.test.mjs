@@ -100,6 +100,8 @@ function fixture(initialCache,toolbar,{nativeJCR=false,catalog,locale}={}){
  const assist={run:record('ai','Generated result'),cancel:()=>calls.push(['cancelAI'])};
  const model={...Model,deleteBoard:(cache,id)=>{calls.push(['deleteBoard',id]);cache.testDeleted=cache.boards.find(b=>b.id===id);cache.boards=cache.boards.filter(b=>b.id!==id);return cache.testDeleted;},restoreBoard:cache=>{calls.push(['restoreBoard']);const board=cache.testDeleted;if(board){cache.boards.push(board);delete cache.testDeleted;}return board;}};
  if(locale){const i18n=require('../src/i18n.js');i18n.load(require('../src/strings.js'));i18n.use(locale);runtime.i18n=i18n;}
+ const contextListeners=new Set();runtime.subscribeLibraryContext=(_win,listener)=>{contextListeners.add(listener);return ()=>contextListeners.delete(listener);};
+ const emitContext=()=>{for(const listener of contextListeners)listener();};
  const bench=Workbench.attach(win,{runtime,library,reader,model,assist});
  const body=()=>bench.panel.querySelector('.sc-body');
  // An icon button carries its name in the tooltip and the accessible label,
@@ -109,7 +111,7 @@ function fixture(initialCache,toolbar,{nativeJCR=false,catalog,locale}={}){
  const click=async label=>{const b=findButton(label);assert.ok(b,'button: '+label);b.dispatchEvent(new win.Event('click',{bubbles:true}));await settle();};
  // The panel search waits 150ms before it acts; a test types and then looks.
  const input=(label,value)=>{const el=bench.panel.querySelector('[aria-label="'+label+'"]');assert.ok(el,label);el.value=value;el.dispatchEvent(new win.Event('input',{bubbles:true}));bench.flushSearch?.();return el;};
- return {win,doc,bench,runtime,library,reader,assist,calls,errors,papers,refs,body,click,input,findButton,setLibrary:id=>{libraryID=id;},setSelection:ids=>{mainSelection=ids.map(id=>refs.get(id));},notify:()=>notify(),record};
+ return {win,doc,bench,runtime,library,reader,assist,calls,errors,papers,refs,body,click,input,findButton,setLibrary:id=>{libraryID=id;},setSelection:ids=>{mainSelection=ids.map(id=>refs.get(id));},notify:()=>notify(),record,emitContext,contextListeners};
 }
 
 test('the notes tab offers the open, recent and searched papers when none is chosen, and the pick brings the editor', async () => {
@@ -553,7 +555,7 @@ test('rapid comparison field changes compose while persistence is still pending'
 test('collection changes during pending membership lookup discard the old scope and follow the current collection',async()=>{
  const f=fixture(),pending=deferred();let collectionID=4;f.win.ZoteroPane.getSelectedCollection=()=>({id:collectionID});f.library.collectionItems=id=>id===4?pending.promise:Promise.resolve(id===5?['2']:['1']);f.bench.state.scope='collection';const loading=f.bench.show('explore');await settle();collectionID=5;pending.resolve(['1']);await loading;
  assert.deepEqual(f.bench.state.collectionIDs,['2']);assert.match(f.body().textContent,/Beta/);assert.doesNotMatch(f.body().textContent,/Alpha/);
- collectionID=6;await new Promise(resolve=>setTimeout(resolve,600));await settle();assert.deepEqual(f.bench.state.collectionIDs,['1']);assert.match(f.body().textContent,/Alpha/);f.bench.destroy();
+ collectionID=6;f.doc.body.focus();f.emitContext();await new Promise(resolve=>setTimeout(resolve,250));await settle();assert.deepEqual(f.bench.state.collectionIDs,['1']);assert.match(f.body().textContent,/Alpha/);f.bench.destroy();assert.equal(f.contextListeners.size,0);
 });
 
 test('grouped navigation keeps every feature reachable and restores density without touching data',async()=>{
@@ -628,8 +630,8 @@ test('only focus entering an outside frame dismisses and destroy removes capture
 test('frame-to-frame focus dismissal waits while the Zotero window is inactive',async t=>{
  const f=fixture();t.after(()=>f.bench.destroy());await f.bench.show('explore');
  const outside=f.doc.createElement('iframe');f.doc.body.append(outside);outside.focus();
- f.doc.hasFocus=()=>false;await new Promise(resolve=>setTimeout(resolve,550));assert.equal(f.bench.panel.hidden,false);
- f.doc.hasFocus=()=>true;await new Promise(resolve=>setTimeout(resolve,550));assert.equal(f.bench.panel.hidden,true,'the existing selection timer detects the frame transition without another window blur');
+ f.doc.hasFocus=()=>false;f.win.dispatchEvent(new f.win.Event('focus'));await new Promise(resolve=>setTimeout(resolve,10));assert.equal(f.bench.panel.hidden,false);
+ f.doc.hasFocus=()=>true;f.win.dispatchEvent(new f.win.Event('focus'));await new Promise(resolve=>setTimeout(resolve,10));assert.equal(f.bench.panel.hidden,true,'returning to Zotero detects the frame transition without a recurring timer');
 });
 
 test('save buttons prevent duplicate pending notes and saving no longer opens the editor automatically',async()=>{

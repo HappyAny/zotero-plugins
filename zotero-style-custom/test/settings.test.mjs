@@ -6,6 +6,11 @@ import {parseHTML} from 'linkedom';
 import Settings from '../src/settings.js';
 import Schema from '../src/settings-schema.js';
 const settle=async()=>{for(let n=0;n<6;n++)await new Promise(resolve=>setImmediate(resolve));};
+test('paper assistant read aloud is an opt-in reader setting',()=>{
+ const row=Schema.schema.settings.find(row=>row.key==='readAloudEnabled');
+ assert.equal(row.category,'reader');assert.equal(row.type,'boolean');assert.equal(row.default,false);
+ assert.equal(Schema.validate('readAloudEnabled',true),true);assert.throws(()=>Schema.validate('readAloudEnabled','true'));
+});
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 
 test('language buttons update the current settings page without losing unsaved fields',async t=>{
@@ -67,11 +72,13 @@ function fixture(schema){
  const values=Object.fromEntries(schema.settings.map(spec=>[spec.key,spec.default]));if('secret'in values)values.secret='masked-value';
  const calls=[],status={version:'test',recordReading:true,selectedTitle:'Fixture paper',readSeconds:0,citationStatus:'idle',storagePath:'/local/cache.json'};
  const runtime={settingsSchema:schema,getSetting:key=>values[key],setSetting:async(key,value)=>{calls.push(['set',key,value]);values[key]=value;},resetSettings:async category=>{calls.push(['reset',category]);for(const spec of schema.settings)if(spec.category===category&&!spec.secret&&spec.type!=='password'&&spec.type!=='action')values[spec.key]=spec.default;},runSettingAction:async action=>{calls.push(['action',action]);},getSettingsStatus:()=>({...status})};
+ const statusListeners=new Set();runtime.subscribeStatus=listener=>{statusListeners.add(listener);return ()=>statusListeners.delete(listener);};
+ const emitStatus=()=>{for(const listener of statusListeners)listener();};
  const mount=()=>Settings.mount({document:doc,runtime});
  const row=key=>doc.querySelector('[data-setting="'+key+'"]');const input=key=>row(key)?.querySelector('input,select,textarea');
  const edit=(key,value,event='input')=>{const element=input(key);if(element.type==='checkbox')element.checked=!!value;else element.value=value;element.dispatchEvent(new win.Event(event,{bubbles:true}));return element;};
  const click=async text=>{const button=[...doc.querySelectorAll('button')].find(b=>b.textContent===text||b.getAttribute('aria-label')===text);assert.ok(button,text);button.dispatchEvent(new win.Event('click',{bubbles:true}));await settle();};
- return {doc,win,runtime,values,calls,status,mount,row,input,edit,click};
+ return {doc,win,runtime,values,calls,status,mount,row,input,edit,click,statusListeners,emitStatus};
 }
 test('real schema renders all ten categories and every typed runtime-bound setting',async()=>{
  const f=fixture(Schema.schema),pane=f.mount();await pane.ready;assert.equal(f.doc.querySelectorAll('.scs-nav button').length,11);assert.equal(f.doc.querySelectorAll('[data-setting]').length,Schema.schema.settings.length);assert.ok(Schema.schema.settings.length>=100);
@@ -90,6 +97,17 @@ test('search finds labels and help across categories without exposing secret val
 });
 test('navigation and actual status polling preserve uncommitted inputs including zero reading time',async()=>{
  const f=fixture(),pane=f.mount();await pane.ready;pane.selectCategory('tags');f.edit('label','Unsaved');pane.selectCategory('reader');pane.selectCategory('tags');f.status.readSeconds=1;await pane.refreshStatus();assert.equal(f.input('label').value,'Unsaved');assert.equal(f.values.label,'original');assert.match(f.doc.querySelector('.scs-live').textContent,/1초/);assert.equal(f.doc.querySelector('.scs-reading-value').textContent,'1초');f.status.readSeconds=0;await pane.refreshStatus();assert.match(f.doc.querySelector('.scs-live').textContent,/0초/);assert.equal(f.doc.querySelector('.scs-reading-value').textContent,'0초');pane.destroy();
+});
+
+test('settings status follows coalesced runtime events and remains idle without polling',async t=>{
+ const f=fixture();let reads=0;f.runtime.getSettingsStatus=()=>{reads++;return {...f.status};};
+ const pane=f.mount();t.after(()=>pane.destroy());await pane.ready;assert.equal(reads,1);
+ pane.selectCategory('tags');f.edit('label','Unsaved text');const input=f.input('label');
+ f.status.readSeconds=17;for(let i=0;i<100;i++)f.emitStatus();
+ await new Promise(resolve=>setTimeout(resolve,80));assert.equal(reads,2);
+ assert.equal(f.doc.querySelector('.scs-reading-value').textContent,'17초');assert.equal(f.input('label'),input);assert.equal(input.value,'Unsaved text');
+ await new Promise(resolve=>setTimeout(resolve,1100));assert.equal(reads,2,'an idle settings pane does not query every second');
+ pane.destroy();assert.equal(f.statusListeners.size,0);f.emitStatus();await settle();assert.equal(reads,2);
 });
 test('failed Apply preserves the draft and allows an explicit retry',async()=>{
  const f=fixture(),pane=f.mount();await pane.ready;let fail=true;f.runtime.setSetting=async(key,value)=>{if(fail)throw Error('disk full');f.values[key]=value;};pane.selectCategory('tags');f.edit('label','Keep me');await f.click('이름 적용');assert.equal(f.input('label').value,'Keep me');assert.match(f.row('label').textContent,/disk full/);fail=false;await f.click('이름 적용');assert.equal(f.values.label,'Keep me');pane.destroy();

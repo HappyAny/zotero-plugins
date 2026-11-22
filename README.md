@@ -4,6 +4,14 @@ This is [HappyAny's fork](https://github.com/HappyAny/zotero-plugins) of [JAEYOO
 It adds Simplified Chinese to ZotPoP and Style Custom. It also keeps the English labels, assistant close fix, and independent column resizing.
 Download each plugin from the links in the table below.
 
+Current source versions are ZotPoP 0.58.10, Style Custom 0.59.69, and the optional [DOI Fix custom 1.2.1](doi-fix-custom/README.md).
+Style Custom now uses events for visible-row updates, preserves scroll position during background updates, and keeps read-aloud disabled by default.
+Collection counts appear in the native sidebar. **Open with System Default** appears below the two native Open PDF actions, with a native icon.
+DOI Fix converts matching preprints to published item types when you run Retrieve DOI or Update DOI.
+See the [reproduction guide](docs/reproducing.md) for clean builds, tests, and cleanup.
+The download table below lists earlier published assets. This source update does not create a new release.
+
+
 Style Custom 0.59.61 translates complete dynamic error messages in reader chat, summaries, and shared network failures. HTTP codes and inserted provider or library text remain intact. Quota messages translate service labels and durations before composing the sentence. See the [error-localization validation](docs/error-localization-validation.json).
 
 ZotPoP 0.58.9 keeps a visible close cross at the top of paper details. The cross, Close preview, the Preview toggle, P, and Esc collapse the preview and detail pane. Selecting a paper or pressing Preview opens it again. Click the active Author search tab to fold or expand its fields and author cards without cancelling a search or clearing results. The fold choice persists between sessions. See the [preview and author-fold validation](docs/preview-fold-validation.json).
@@ -36,7 +44,7 @@ Four other native reader checks failed on PDF rendering, zoom, or highlighting. 
 
 Two plugins kept in one repository and installed separately. ZotPoP: Zotero 7–10. Style Custom: Zotero 9–10.
 
-| Plugin | What it does | Latest |
+| Plugin | What it does | Published download |
 |---|---|---|
 | **ZotPoP** | Search and import. Find papers by author, journal, title, keywords and years across several indexes, read citation counts and h-index-style metrics while you choose, and add the papers to your library. | [zotpop-0.58.9.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/preview-fold-v1/zotpop-0.58.9.xpi) |
 | **Style Custom** | A research workbench inside Zotero: your library, related papers, author tracking, journal metrics, annotations and notes, a citation graph and reading progress in one panel, plus journal-metric, citation, reading-time and journal-mark columns in the item list. | [style-custom-0.59.61.xpi](https://github.com/HappyAny/zotero-plugins/releases/download/error-localization-v1/style-custom-0.59.61.xpi) |

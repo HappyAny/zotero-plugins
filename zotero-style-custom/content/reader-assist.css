@@ -28,6 +28,7 @@
 }
 .sc-ra *{box-sizing:border-box}
 .sc-ra[hidden],.sc-ra [hidden]{display:none !important}
+.sc-ra-toolbar[hidden]{display:none !important}
 /* The reset carries no class weight (:where), so every .sc-ra-* rule after it wins: with ".sc-ra button" here the
    dark pills inherited dark ink and the play icon was invisible (1.2:1). */
 :where(.sc-ra) button{margin:0;max-height:none;min-width:0;font:inherit;color:inherit;cursor:pointer;-moz-user-select:none;user-select:none}

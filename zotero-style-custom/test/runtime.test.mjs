@@ -555,7 +555,8 @@ test('each window receives an independent library service and all feature panels
  const {plugin}=fixture();plugin.active=true;const services=[],destroyed=[];plugin.attachMotion=()=>{};
  plugin.Library={create:()=>({})};plugin.Workbench={attach:(win,args)=>{services.push(args.library);return {destroy:()=>destroyed.push(win)};}};
  plugin.readerTools={attach:()=>()=>{},tabs:()=>[],stop:()=>{}};
- const make=()=>({ZoteroPane:{},document:{getElementById:()=>null,querySelectorAll:()=>[]},addEventListener(){},removeEventListener(){},setInterval:()=>1,clearInterval(){}});
+ plugin.collectionCounts={attach:()=>()=>{},stop:()=>{}};
+ const make=()=>({ZoteroPane:{},document:{getElementById:()=>null,querySelectorAll:()=>[],addEventListener(){},removeEventListener(){}},addEventListener(){},removeEventListener(){},setTimeout:()=>1,clearTimeout(){}});
  const a=make(),b=make();plugin.addWindow(a);plugin.addWindow(b);assert.notEqual(services[0],services[1]);await plugin.stop();assert.equal(destroyed.length,2);
 });
 test('journal rank provider uses explicit credentials and preserves quartiles separately from JIF',async()=>{

@@ -1,0 +1,73 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../../..');
+const out=path.join(root,'build/validation/zotpop-panes');fs.mkdirSync(out,{recursive:true});
+const {chromium}=require('playwright');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const source=read('content/ui.js');
+const block=source.slice(source.indexOf('\tfunction restoreLayout()'),source.indexOf('\tfunction applyColumnWidths()'));
+assert.ok(block.includes('function setupSplitters()'));
+const markup=read('content/search.xhtml').replace(/<\?xml[^>]*\?>/,'').replace(/<script\b[^>]*><\/script>/g,'').replace(/<link\b[^>]*>/g,'');
+const receipt={errors:[],networkRequests:[],checks:[],measurements:[]};
+const check=(name,pass)=>{assert.equal(pass,true,name);receipt.checks.push({name,pass});};
+(async()=>{
+ const browser=await chromium.launch({executablePath:process.env.CHROME||undefined,headless:true});
+ try{
+  const page=await browser.newPage({viewport:{width:1600,height:1000}});
+  page.on('pageerror',e=>receipt.errors.push(e.message));
+  await page.route(/^https?:/,route=>{receipt.networkRequests.push(route.request().url().split('?')[0]);return route.abort();});
+  const mount=async prefs=>{
+   await page.setContent(markup);await page.addStyleTag({content:read('content/search.css')});
+   for(const file of ['i18n-zh','i18n'])await page.addScriptTag({content:read('content/'+file+'.js')});
+   await page.evaluate(prefs=>{
+    window.prefs=prefs;
+    const t=ZotPoPI18N.make('zh-CN');
+    for(const el of document.querySelectorAll('[data-i18n]'))el.textContent=t(el.dataset.i18n);
+    for(const el of document.querySelectorAll('[data-i18n-title]'))el.title=t(el.getAttribute('data-i18n-title'));
+    document.getElementById('query-form').hidden=true;document.getElementById('author-panel').hidden=false;
+    document.getElementById('mode-authors').setAttribute('aria-pressed','true');document.getElementById('mode-papers').setAttribute('aria-pressed','false');
+    const profiles=document.getElementById('author-profiles');
+    profiles.innerHTML=Array.from({length:8},(_,i)=>`<article class="author-profile"><div class="author-profile-info"><strong>Example researcher ${i+1}</strong><span class="author-profile-meta">The University of Example · ORCID</span><span>385 篇论文 · 17,586 次被引</span></div><div class="author-profile-actions"><button>加载论文</button><button>关注作者</button></div></article>`).join('');
+    document.getElementById('asplit').hidden=false;
+    document.getElementById('metrics').innerHTML='<h3>作者指标</h3>'+Array.from({length:20},(_,i)=>`<p>年度被引次数 ${200+i}</p>`).join('');
+    document.getElementById('results-body').innerHTML=Array.from({length:40},(_,i)=>`<tr><td>□</td><td>Example photonics paper ${i+1}</td><td>Example researcher</td><td>2026</td></tr>`).join('');
+    document.getElementById('results-table').setAttribute('data-aff','');
+    document.getElementById('detail-empty').hidden=true;document.getElementById('detail-body').hidden=false;
+    document.getElementById('detail-body').innerHTML='<div class="detail-head"><h3>示例论文详情</h3></div><p>这里是一段很短的摘要。</p>';
+   },prefs||{});
+   await page.addScriptTag({content:`(()=>{const $=id=>document.getElementById(id);const PREF=function(key,value){if(arguments.length>1)prefs[key]=value;return prefs[key];};const state={colWidths:{}},COL_VERSION=1,COL_VERSION_MIN_WIDTHS=1,COLUMN_KEYS=[],DEFAULT_COLS={};const log=message=>{throw new Error(message);};const renderDetail=()=>{};${block}\nrestoreLayout();setupSplitters();clampPanes();window.addEventListener('resize',clampPanes);window.demo={clampPanes,saveLayout,setMetricsVisible,syncDetailSplitter};})();`});
+  };
+  const size=()=>page.evaluate(()=>{
+   const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return {width:r.width,height:r.height,top:r.top,bottom:r.bottom};};
+   return {authors:rect('author-profiles'),metrics:rect('metrics'),detail:rect('detail'),main:rect('main'),table:rect('table-wrap'),tableMinimum:parseFloat(getComputedStyle(document.getElementById('table-wrap')).minHeight),overflow:document.documentElement.scrollHeight-innerHeight};
+  });
+  const drag=async(id,dx,dy)=>{const b=await page.locator('#'+id).boundingBox();assert.ok(b);const x=b.x+b.width/2,y=b.y+b.height/2;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y+dy,{steps:6});await page.mouse.up();};
+  await mount({detailHeight:100});let before=await size();receipt.measurements.push({stage:'initial',...before});
+  check('all three resize handles are visible',(await Promise.all(['asplit','vsplit','hsplit'].map(id=>page.locator('#'+id).isVisible()))).every(Boolean));
+  await drag('asplit',0,80);let after=await size();
+  check('author cards grow and the table yields space',after.authors.height>before.authors.height+70&&after.table.height<before.table.height-70);
+  before=after;await drag('vsplit',110,0);after=await size();
+  check('metrics sidebar grows horizontally',after.metrics.width>before.metrics.width+100);
+  before=after;await drag('hsplit',0,-70);after=await size();
+  check('short details grow beyond their natural content height',after.detail.height>before.detail.height+60);
+  check('the results retain at least four rows',after.table.height>=after.tableMinimum-1);
+  receipt.measurements.push({stage:'resized',...after});
+  const saved=await page.evaluate(()=>({...prefs}));await mount(saved);let restored=await size();
+  check('all three saved sizes restore',Math.abs(restored.authors.height-after.authors.height)<2&&Math.abs(restored.metrics.width-after.metrics.width)<2&&Math.abs(restored.detail.height-after.detail.height)<2);
+  await page.locator('#vsplit').focus();await page.keyboard.press('ArrowRight');let keyed=await size();check('arrow keys adjust pane sizes',keyed.metrics.width>restored.metrics.width+19);
+  await page.locator('#asplit').dblclick();check('double-click restores automatic author sizing',await page.evaluate(()=>!document.getElementById('author-profiles').hasAttribute('data-sized')&&prefs.authorProfilesHeight===0));
+  await page.locator('#hsplit').focus();await page.keyboard.press('Enter');check('Enter restores compact detail sizing',await page.evaluate(()=>!document.getElementById('detail').hasAttribute('data-sized')&&prefs.detailHeight===0));
+  await drag('hsplit',0,-140);
+  await page.evaluate(()=>{const d=document.getElementById('detail');d.setAttribute('data-preview','true');document.getElementById('detail-body').innerHTML='<div class="detail-head">PDF 预览</div><iframe title="示例 PDF" style="width:100%;height:280px" srcdoc="<p>PDF 内容区域</p>"></iframe>';});
+  before=await size();await drag('hsplit',0,65);after=await size();
+  check('dragging over a PDF frame finishes and releases the shield',after.detail.height<before.detail.height-50&&await page.locator('.pane-resize-shield').count()===0);
+  await page.evaluate(()=>{document.getElementById('detail').setAttribute('data-empty','');demo.syncDetailSplitter();});
+  check('empty details remain a compact hint with the grip hidden',!(await page.locator('#hsplit').isVisible())&&(await size()).detail.height<70);
+  await page.evaluate(()=>{document.getElementById('detail').removeAttribute('data-empty');demo.syncDetailSplitter();});
+  check('selecting a paper restores the detail grip',await page.locator('#hsplit').isVisible());
+  await page.setViewportSize({width:1000,height:800});await page.waitForTimeout(80);let small=await size();receipt.measurements.push({stage:'smaller-window',...small});
+  check('smaller windows preserve a usable table and avoid page overflow',small.table.height>=small.tableMinimum-1&&small.overflow<=1&&small.metrics.width<=600&&small.detail.bottom<=small.main.bottom+1);
+  await page.setViewportSize({width:1600,height:1000});await mount(saved);await page.screenshot({path:path.join(out,'resizable-panes.png')});
+  assert.deepEqual(receipt.errors,[]);assert.deepEqual(receipt.networkRequests,[]);
+  fs.writeFileSync(path.join(out,'browser.json'),JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt));
+ }catch(e){fs.writeFileSync(path.join(out,'browser-failure.json'),JSON.stringify({...receipt,error:String(e)},null,2));throw e;}finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

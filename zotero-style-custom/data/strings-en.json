@@ -1,4 +1,6 @@
 {
+  "논문 도우미 읽어주기 사용": "Enable read aloud in the paper assistant",
+  "켜면 읽어주기 버튼과 문장 목록을 표시합니다. 꺼 두면 읽어주기 단축키, 자동 재생과 PDF 따라가기가 동작하지 않습니다.": "Show read-aloud controls and the sentence list. When off, read-aloud shortcuts, playback, and PDF following are disabled.",
  "AI 서비스 응답 오류: HTTP {0}": "The AI service returned an error: HTTP {0}",
  "메모는 저장했지만 노트로 옮기지 못했습니다: {0}": "The memo was saved, but syncing it to the child note failed: {0}",
  "이 Mac의 음성 모델이 응답하지 않습니다 ({0}). 터미널에서 bridge/install.sh를 다시 실행해 보세요.": "The local speech model did not respond ({0}). Check or restart the companion bridge using its setup instructions.",
@@ -1696,6 +1698,7 @@
  "연구 작업 패널 → 최근 문헌": "Research panel → Recent",
  "연구 작업 패널 → 캔버스 · 문헌/메모 카드; 보드 최대100개, 카드 최대500개": "Research panel → Canvas · item and note cards; at most 100 boards and 500 cards",
  "연구 작업 패널 → 컬렉션": "Research panel → Collections",
+ "Zotero 왼쪽 컬렉션 목록과 연구 작업 패널에 문헌 수를 표시합니다.": "Show paper counts in Zotero's left collection tree and the research panel.",
  "연구 작업 패널 → 탭 관리 · 그룹 이름·내용 갱신; 라이브러리 탭 보호": "Research panel → Tabs · rename groups and refresh their contents; the library tab is protected",
  "연구 작업 패널 열기": "Open research workspace",
  "연도": "year",

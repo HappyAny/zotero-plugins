@@ -1,0 +1,26 @@
+{
+  "commit": "0b9dadb9e9a7820b39916fea74b75530e99dd859",
+  "date": "2026-10-02T11:32:24+08:00",
+  "subject": "Clarify startup-order helper is optional, not routine maintenance",
+  "repository": "https://github.com/pandaAIGC/zotero-doi-fix",
+  "license": "MIT",
+  "sourceFilesSHA256": {
+    "LICENSE": "10f8dc9589b39d2db93228fc0af74cfdbf95458c0a9470f81eefdfb4c8501a86",
+    "README.md": "4fa6582d86aba774f030a39ebcd8f42512962612ce02b6df106691defa26cd93",
+    "bootstrap.js": "247eb5057b21e389f2a34668f964a53a3e0dbac499817593d65776b805d13943",
+    "build.bat": "61519eb57c015832ad24681e71adb4029625cf06f937d781d98f54a3ce8ae0cc",
+    "build.ps1": "07d5eb93b329b7646b92a3cf322329b30c25b9fc39fe8eb4c22422196433102e",
+    "chrome/content/doiManager.js": "725d7ae87670c044d92ac4199a08db645b8b99bb317a826c494afb5eec3ea87f",
+    "icons/icon@48.png": "2aa28eeb9c8c036dd9aec93d52f2ab28e7ea42a4fda3fef4fab60a566c75a518",
+    "icons/icon@96.png": "81fec98e8f88ae8191c9f8f9ee9af0aaca06032f8b6088d415cddf9de068e2a0",
+    "locale/en-US/doi-fix.ftl": "37e3fdd933a7d2f0861b97fe5caf948d9ffeb12681267571e7859347f27b55ba",
+    "locale/zh-CN/doi-fix.ftl": "cbed788d9692a780856458472dce1bd9191232dac145e13244c080e7d981c580",
+    "manifest.json": "51cc377092c98cdefdb715f7834a27ceb887a33dd9ff3e725986a5f3f7686240",
+    "tests/bootstrapMenu.test.js": "114ee4e026d045f4ec90693277ce16edf004d4cec989d8c802f827c9fe9806c8",
+    "tests/compatibilityMetadata.test.js": "8239e28a735d1bfadfe93437392013a7f8cff8aa8a048007c1d40596b8ff0c44",
+    "tests/doiManager.test.js": "d93f229303e29f69d0229599ab1c9a5b1425cc512811980b9cb8639749456d03",
+    "tests/pinFirst.test.js": "b3a599dc0d721033f5087381271780ea4737a12806dc1a7d42d0d2aa5c21d793",
+    "tools/pin-first.js": "4f3fa4517a7257d50411ace0d971c3688ce2ed72129af3dcf28e100e54d5830f"
+  },
+  "history": "The upstream commit identifies the original source. Local changes are tracked in the enclosing repository."
+}

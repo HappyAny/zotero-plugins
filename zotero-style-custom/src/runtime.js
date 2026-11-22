@@ -59,6 +59,36 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // Listening, a summary, a chat and a translation inside the reader. Idle until a reader opens the panel.
     const ReaderAssist=typeof CustomStyleReaderAssist!=="undefined"?CustomStyleReaderAssist:require("./reader-assist.js");
     this.readerAssist=ReaderAssist.create({Zotero:this.Z,runtime:this});
+    const CollectionCounts=typeof CustomStyleCollectionCounts!=="undefined"?CustomStyleCollectionCounts:require("./collection-counts.js");
+    this.collectionCounts=CollectionCounts.create({Zotero:this.Z,runtime:this});
+  }
+  // Cache writers (including reader/workbench modules) schedule their own save.
+  // Idle list scanning must never be needed to discover unsaved changes.
+  get dirty() { return this._dirty === true; }
+  set dirty(value) {
+    this._dirty = !!value;
+    if (value && this.active) this.scheduleFlush();
+  }
+  subscribeStatus(listener) {
+    this.statusListeners ||= new Set(); this.statusListeners.add(listener);
+    return () => this.statusListeners.delete(listener);
+  }
+  notifyStatus() {
+    if (!this.statusListeners?.size || this.statusNotificationPending || this.stopping) return;
+    this.statusNotificationPending = true;
+    Promise.resolve().then(() => {
+      this.statusNotificationPending = false;
+      if (this.stopping) return;
+      for (const listener of this.statusListeners || []) {
+        try { listener(); } catch (error) { this.Z.logError?.(error); }
+      }
+    });
+  }
+  subscribeLibraryContext(win, listener) {
+    const state = this.windows.get(win);
+    if (!state) return () => {};
+    state.contextListeners ||= new Set(); state.contextListeners.add(listener);
+    return () => state.contextListeners.delete(listener);
   }
   // English unless the chosen language is Korean (the setting, not the OS).
   text(english, korean) { return this.i18n?.isChinese?.() ? this.t(korean) : this.i18n?.isKorean?.() ? korean : english; }
@@ -185,6 +215,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   }
   async applySettings(keys=[]) {
     if(!this.active||this.stopping)return;
+    if(keys.includes('readAloudEnabled'))this.readerAssist.applyPreferences?.();
+    if(keys.includes('feature.collectionItemCount'))this.collectionCounts.applyPreferences();
     this.syncFeatureColumns();
     if(keys.includes('feature.styleEditor'))this.setPanelCSS(this.pref('panelCSS',''));
     if(!this.featureEnabled('citedCountColumn'))this.citationJob?.controller.abort();
@@ -195,7 +227,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       if(keys.includes('hoverColumn'))this.attachCells(win,state);
       if(keys.some(key=>['marquee','hoverDelay','scrollSpeed'].includes(key)))this.attachMotion(win,state,{marquee:true,reading:false});
       if(keys.some(key=>key.startsWith('reader')||key.startsWith('margin')||key.startsWith('feature.')||key==='verticalTabs'))await this.readerTools.applyPreferences?.(win);
-      state.signature=null;await state.workbench?.applyPreferences?.();
+      state.signature=null;this.requestItemList(win,state);await state.workbench?.applyPreferences?.();
     }
     await this.flush();await this.refreshWindows();
   }
@@ -410,7 +442,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         if(cell.dataset.styleCustomReading==='time'){cell.textContent=this.formatReadTime(value.seconds);cell.style.color=value.seconds<=0?P.faint:P.text;cell.style.fontWeight=value.seconds>=3600?'590':'';}
         else if(cell.firstChild&&cell.lastChild){const own=this.statusTone(item,value.status,P),tone=own?own.mark:({unread:P.muted,reading:P.reading,done:P.done}[value.status]||P.muted);cell.firstChild.textContent={unread:'\u25cb',reading:'\u25d0',done:'\u25cf'}[value.status]||'\u25cb';cell.firstChild.style.color=tone;cell.lastChild.textContent=value.status==='unread'?'':this.t({reading:'읽는 중',done:'완료'}[value.status]||'');cell.lastChild.style.color=value.status==='unread'?P.muted:own?own.ink:tone;cell.lastChild.style.fontWeight=value.status==='unread'?'400':'590';}}}
       state.workbench?.refreshMetrics?.(itemID);
+      if (this.featureEnabled('titleColumn') && this.pref('titleHeatmap', false)) this.requestItemList(win, state, {citations: false});
     }
+    this.notifyStatus();
   }
   async start({ id, version, rootURI }) {
     this.id = id; this.version=version; this.rootURI = rootURI;
@@ -470,9 +504,13 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         if (name === "autoCitations" || name === "metadataCitations") {
           if (!this.pref(name,true) && this.citationJob?.background) this.citationJob.controller.abort();
         } else for (const [win, state] of this.windows) { if(name!=="autoStatus")this.attachMotion(win,state,{marquee:name!=="recordReading",reading:name==="recordReading"});state.signature=null; }
+        for (const [win, state] of this.windows) this.requestItemList(win, state);
+        this.notifyStatus();
       }, true));
     }
     if (this.Z.Notifier) this.itemObserver = this.Z.Notifier.registerObserver({notify:(event,type,ids,extraData)=>{
+      if (event !== 'select' && event !== 'redraw') for (const [win, state] of this.windows) this.requestItemList(win, state);
+      this.notifyStatus();
       /* An annotation moved or recoloured within the same second as the last
          paint has the same count and the same date, so the strip's memo is
          also dropped here, for the paper whose annotation changed -- during a
@@ -635,7 +673,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
      written, and expires on its own after a fifth of a second. The counter is
      what makes it correct; the expiry is what keeps a missed bump from being
      visible for longer than a blink. */
-  bumpState() { this.stateGeneration = (this.stateGeneration || 0) + 1; }
+  bumpState() { this.stateGeneration = (this.stateGeneration || 0) + 1; this.notifyStatus(); }
 
   state(item) {
     const id = item && item.id != null ? String(item.libraryID) + ':' + item.id : null;
@@ -1684,6 +1722,88 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     }
     return cell;
   }
+  canOpenWithSystemDefault(win) {
+    return (win.ZoteroPane?.getSelectedItems?.() || []).some(item => !item.deleted && (
+      item.isFileAttachment?.() || this.isRegular(item) &&
+      (typeof item.numAttachments === 'function' ? item.numAttachments() > 0 : !!item.getAttachments?.().length)
+    ));
+  }
+  async openWithSystemDefault(win, {isCurrent = () => true} = {}) {
+    // Capture the raw selection: selected() intentionally drops attachment rows.
+    const selection = [...(win.ZoteroPane?.getSelectedItems?.() || [])];
+    const result = {opened: 0, missing: 0, failed: 0, skipped: 0};
+    const seen = new Set(), paths = new Set();
+    for (const item of selection) {
+      if (!this.active || this.stopping || win.closed || !isCurrent()) break;
+      try {
+        if (item.deleted) {result.skipped++; continue;}
+        const attachment = item.isFileAttachment?.() ? item
+          : this.isRegular(item) ? await item.getBestAttachment?.() : null;
+        if (!attachment?.isFileAttachment?.() || attachment.deleted) {result.skipped++; continue;}
+        if (seen.has(attachment.id)) continue;
+        seen.add(attachment.id);
+        const path = await attachment.getFilePathAsync();
+        if (!this.active || this.stopping || win.closed || !isCurrent()) break;
+        if (!path) {result.missing++; continue;}
+        if (paths.has(path)) continue;
+        // launchFile dispatches to the OS directly, independent of PDF/EPUB
+        // reader preferences. Paths are data; no shell command is constructed.
+        await this.Z.launchFile(path);
+        paths.add(path); result.opened++;
+      } catch (error) {result.failed++; this.Z.logError?.(error);}
+    }
+    return result;
+  }
+  attachSystemDefaultMenu(win, state) {
+    state.systemDefaultMenuCleanup?.();
+    const doc = win.document, popup = doc.getElementById('zotero-itemmenu');
+    if (!popup) return;
+    const item = doc.createXULElement('menuitem');
+    item.id = 'style-custom-open-system-default';
+    item.classList.add('menuitem-iconic', 'zotero-menuitem-new-window');
+    item.setAttribute('label', 'Open with System Default');
+    item.setAttribute('tooltiptext', 'Open the selected file or main attachment with the system default application');
+    let opening = false, current = true;
+    const update = event => {
+      if (event?.target !== popup) return;
+      const opens = [...popup.children].filter(node => node !== item && node.hasAttribute('zotero-locate') && (
+        node.getAttribute('data-l10n-id') === 'item-menu-viewAttachment'
+        || node.classList.contains('zotero-menuitem-attachments-pdf')
+      ));
+      const anchor = opens.at(-1);
+      if (anchor) popup.insertBefore(item, anchor.nextSibling);
+      else if (item.parentNode !== popup) popup.appendChild(item);
+      item.disabled = opening || !this.canOpenWithSystemDefault(win);
+    };
+    item.disabled = !this.canOpenWithSystemDefault(win);
+    item.addEventListener('command', () => {
+      if (!current || opening || !this.active || this.stopping) return;
+      opening = true; item.disabled = true;
+      Promise.resolve().then(() => this.openWithSystemDefault(win, {isCurrent: () => current})).then(result => {
+        if (!current || !this.active || this.stopping || win.closed) return;
+        if (result.missing || result.failed || !result.opened) {
+          const message = result.opened
+            ? `Opened ${result.opened}; unavailable locally: ${result.missing}; failed: ${result.failed}.`
+            : result.failed ? 'The system default application could not open the selected file.'
+            : 'No local file attachment is available. Download the attachment in Zotero first.';
+          return this.say(win, message, {error: !result.opened});
+        }
+      }).catch(error => {this.Z.logError?.(error);this.say(win, error.message, {error: true});})
+        .finally(() => {opening = false;if (current && !win.closed) update({target: popup});});
+    });
+    // Zotero builds its dynamic Open actions before popupshowing. Join their
+    // cleanup prefix so its next index-based rebuild still sees native rows first.
+    item.setAttribute('zotero-locate', 'true');
+    popup.appendChild(item);
+    state.nodes.push(item); (state.menuNodes ||= []).push(item);
+    popup.addEventListener('popupshowing', update);
+    state.systemDefaultMenuCleanup = () => {
+      current = false;
+      popup.removeEventListener('popupshowing', update); item.remove();
+      state.nodes = state.nodes.filter(node => node !== item);
+      state.menuNodes = (state.menuNodes || []).filter(node => node !== item);
+    };
+  }
   selected(win) {
     const selected=win.ZoteroPane?.getSelectedItems();if(selected)return selected.filter(item=>this.isRegular(item));
     const reader=this.Z.Reader?._readers?.find(r=>r._window===win),attachment=reader&&this.Z.Items.get(reader.itemID);
@@ -2017,6 +2137,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     }
     this.paintHighlights(win,state);
     for(const n of [...state.titleNodes])if(!n.isConnected)state.titleNodes.delete(n);
+    for (const map of [state.titlePositions, state.titleWeights, state.venueColors, state.highlightRows]) {
+      for (const node of map?.keys() || []) if (!node.isConnected) map.delete(node);
+    }
   }
   /* Older Zotero layouts can overlap a long Extra field. Only that native field
      needs this repair. Measuring every .value also catches plugin fields such
@@ -7226,12 +7349,12 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const summary={ok:0,"not-found":0,error:0,unsupported:0,skipped:items.length-selection.length};
     if(!selection.length)return summary;
     const Controller=this.Z.getMainWindow?.()?.AbortController||globalThis.AbortController;
-    const job={controller:new Controller(),background:!!options.background};this.citationJob=job;
+    const job={controller:new Controller(),background:!!options.background};this.citationJob=job;this.notifyStatus();
     const records=selection.map(item=>this.citationRecord(item)),byKey=new Map(selection.map(item=>[this.identity(item),item]));
     for(const record of records)this.entry(byKey.get(record.key)).citationPending=this.citationTools.identity(record);
     let lastPaint=0;const okRows=[];
     const ctx={signal:job.controller.signal,email:this.contactEmail(),openalexApiKey:this.openAlexKey(),
-      onProgress:progress=>{this.citationProgress=progress;options.onProgress?.(progress);},
+      onProgress:progress=>{this.citationProgress=progress;this.notifyStatus();options.onProgress?.(progress);},
       onResult:async result=>{
         const item=byKey.get(result.key);
         if(!this.active||job.controller.signal.aborted||!item||this.citationTools.identity(this.citationRecord(item))!==result.identity)return;
@@ -7264,6 +7387,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         for(const item of selection)delete this.entry(item).citationPending;
         if(this.citationJob===job)this.citationJob=null;
         this.dirty=true;await this.flush();await this.refreshWindows();
+        for (const [win, state] of this.windows) if (state.citationCheckPending) this.requestItemList(win, state);
       });
     return job.promise;
   }
@@ -7344,18 +7468,24 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // for the next explicit flush.
     const host = this.Z.getMainWindow?.() || (typeof globalThis.setTimeout === 'function' ? globalThis : null);
     if (typeof host?.setTimeout !== 'function') return;
-    const timer = host.setTimeout(() => {
-      this.flushTimer = null;
-      if (this.dirty) this.flush().catch(error => this.Z.logError(error));
-    }, delay);
+    let timer;
+    try {
+      timer = host.setTimeout(() => {
+        this.flushTimer = null;
+        this.flushTimerWindow = null;
+        if (this.dirty) this.flush().catch(error => this.Z.logError(error));
+      }, delay);
+    } catch (_) { return; } // A closing window cannot prevent an explicit flush.
     if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
     this.flushTimer = timer;
+    this.flushTimerWindow = host;
   }
   cancelScheduledFlush() {
     if (!this.flushTimer) return;
-    const host = this.Z.getMainWindow?.() || (typeof globalThis.clearTimeout === 'function' ? globalThis : null);
+    const host = this.flushTimerWindow;
     if (typeof host?.clearTimeout === 'function') host.clearTimeout(this.flushTimer);
     this.flushTimer = null;
+    this.flushTimerWindow = null;
   }
   flush() {
     this.cancelScheduledFlush();
@@ -7510,8 +7640,14 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         state.refreshing = true;
         try {
           const view = win.ZoteroPane?.itemsView;
-          if (view?.collectionTreeRow) await view.refreshAndMaintainSelection();
+          // Native item notifications update the row model. Plugin metrics only
+          // need new cell contents: restoring selection would scroll back to it.
+          if (view?.tree) {
+            view.invalidateRowCache?.(true);
+            view.tree.invalidate?.();
+          }
           state.workbench?.refreshReading?.();
+          this.requestItemList(win, state, {citations: false});
         }
         finally { state.refreshing = false; }
       }
@@ -8020,6 +8156,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   buildMenus(win, state) {
     const doc = win.document, popup = doc.getElementById("zotero-itemmenu");
     if (popup) {
+      this.attachSystemDefaultMenu(win, state);
       // Menu labels pass through the dictionary like everything the panel writes.
       const make = (tag,label,parent) => { const node=doc.createXULElement(tag); if(label)node.setAttribute("label",this.t(label));parent?.appendChild(node);return node; };
       const menu=make("menu","Style Custom",popup);menu.id="style-custom-itemmenu";state.nodes.push(menu);(state.menuNodes ||= []).push(menu);
@@ -8233,10 +8370,92 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     for (const [win, state] of this.windows) {
       if (win.closed) continue;
       try {
+        state.systemDefaultMenuCleanup?.();
         for (const node of (state.menuNodes || []).splice(0)) { try { node.remove(); } catch (_) {} state.nodes = state.nodes.filter(entry => entry !== node); }
         this.buildMenus(win, state);
       } catch (error) { this.Z.logError(error); }
     }
+  }
+  // Virtual rows change while scrolling. Coalesce actual row, item and context
+  // events into one paint; leave no recurring list timer running while idle.
+  requestItemList(win, state, {citations = true} = {}) {
+    if (!this.active || this.stopping || win.closed || this.windows.get(win) !== state) return;
+    state.listCitations = state.listCitations || citations;
+    if (state.listTimer != null || typeof win.setTimeout !== 'function') return;
+    state.listTimer = win.setTimeout(() => {
+      state.listTimer = null;
+      if (!this.active || this.stopping || win.closed || this.windows.get(win) !== state) return;
+      const checkCitations = state.listCitations || state.citationCheckPending;
+      state.listCitations = false;
+      let records = [];
+      try {
+        state.listBind?.();
+        const view = win.ZoteroPane?.itemsView;
+        records = [...win.document.querySelectorAll('#zotero-items-tree .row')]
+          .map(row => view?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref)
+          .filter(item => this.isRegular(item));
+        // Decorations also change DOM children. Do not observe our own paint.
+        state.listObserver?.disconnect();
+        this.enhanceTitles(win,state,records);
+      } catch (error) { this.Z.logError(error); }
+      finally { state.listObserve?.(); }
+      if (!checkCitations) return;
+      state.citationCheckPending = false;
+      if (!this.featureEnabled('citedCountColumn') || !this.pref('autoCitations', true) || !this.openAlexKey()) return;
+      if (this.citationJob) { state.citationCheckPending = true; return; }
+      this.refreshCitations(records, {background: true}).catch(error => this.Z.logError(error));
+    }, 80);
+  }
+  attachItemList(win, state) {
+    const doc = win.document, bindings = [];
+    const request = () => this.requestItemList(win, state);
+    const context = () => {
+      request(); this.notifyStatus();
+      for (const listener of state.contextListeners || []) {
+        try { listener(); } catch (error) { this.Z.logError?.(error); }
+      }
+    };
+    const selection = () => this.notifyStatus();
+    state.listBind = () => {
+      const pane = win.ZoteroPane;
+      const wanted = [[pane?.collectionsView?.onSelect, context],
+        [pane?.itemsView?.onSelect, selection], [pane?.itemsView?.rowProvider?.onUpdate, request]];
+      if (wanted.every(([event, fn], i) => bindings[i]?.[0] === event && bindings[i]?.[1] === fn)) return false;
+      for (const [event, fn] of bindings) event?.removeListener?.(fn);
+      bindings.splice(0, bindings.length, ...wanted);
+      for (const [event, fn] of bindings) event?.addListener?.(fn);
+      return true;
+    };
+    const affectsRows = record => {
+      const target = record.target?.nodeType === 3 ? record.target.parentElement : record.target;
+      if (target?.closest?.('#zotero-items-tree')) {
+        const cell = target.closest('.cell');
+        return !cell || cell.classList.contains('title');
+      }
+      return [...(record.addedNodes || []), ...(record.removedNodes || [])].some(node =>
+        node.id === 'zotero-items-tree' || node.closest?.('#zotero-items-tree') || node.querySelector?.('#zotero-items-tree'));
+    };
+    if (typeof win.MutationObserver === 'function') {
+      state.listObserver = new win.MutationObserver(records => {
+        if (this.windows.get(win) !== state || win.closed || this.stopping) return;
+        const rebound = state.listBind();
+        if (rebound || records.some(affectsRows)) request();
+      });
+      state.listObserve = () => state.listObserver.observe(doc.documentElement,
+        {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['id']});
+      state.listObserve();
+    }
+    const scroll = event => { if (event.target?.closest?.('#zotero-items-tree')) request(); };
+    doc.addEventListener('scroll', scroll, true); state.listeners.push([doc, 'scroll', scroll, true]);
+    const visible = () => { if (!doc.hidden) { state.listBind(); request(); this.notifyStatus(); } };
+    doc.addEventListener('visibilitychange', visible); state.listeners.push([doc, 'visibilitychange', visible]);
+    state.listCleanup = () => {
+      if (state.listTimer != null) win.clearTimeout(state.listTimer);
+      state.listTimer = null; state.listObserver?.disconnect();
+      for (const [event, fn] of bindings) event?.removeListener?.(fn);
+      bindings.length = 0; state.contextListeners?.clear();
+    };
+    state.listBind(); request();
   }
   addWindow(win) {
     if (!this.active || this.stopping || this.windows.has(win)) return;
@@ -8249,34 +8468,13 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     try{this.attachCells(win,state);}catch(error){this.Z.logError(error);}
     this.watchItemPane(win,state);
     state.readerCleanup=this.readerTools.attach(win);
+    state.collectionCountCleanup=this.collectionCounts.attach(win);
     for(const tab of this.readerTools.tabs(win))if(tab.itemID)this.tabItems.set(tab.id,tab.itemID);
     state.workbench=this.Workbench.attach(win,{runtime:this,library:this.Library.create({Zotero:this.Z,runtime:this}),reader:this.readerTools,model:this.workspaceTools,assist:this.assist});
     const doc = win.document;
     state.menuNodes = [];
     this.buildMenus(win, state);
-    const poll = async () => {
-      if (!this.active || win.closed || state.polling) return;
-      state.polling = true;
-      try {
-        const view=win.ZoteroPane?.itemsView;
-        const rows=[...doc.querySelectorAll("#zotero-items-tree .row")];
-        const records=rows.map(row=>view?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref).filter(item=>this.isRegular(item));
-        /* Reading time and the last-read stamp change every second a paper is
-           open; their cells are repainted in place (refreshReadingDisplays).
-           Counted here, they rebuilt the whole list every five seconds, and the
-           flush beside them rewrote the store as often. */
-        const signature=JSON.stringify(records.map(item=>{const {seconds,lastRead,...rest}=this.state(item);return [this.identity(item),rest];}));
-        if(state.signature!==null && signature!==state.signature) await view?.refreshAndMaintainSelection();
-        state.signature=signature;this.enhanceTitles(win,state,records); if(this.dirty)this.scheduleFlush(30000);
-        if(this.featureEnabled("citedCountColumn")&&this.pref("autoCitations",true)&&!this.citationJob&&!this.stopping) {
-          // Without a key, OpenAlex list requests come out of a budget of about
-          // ten a day shared with ZotPoP's searches; the background job waits
-          // for a key rather than spending them before the user has searched once.
-          if(this.openAlexKey())this.refreshCitations(records,{background:true}).catch(error=>this.Z.logError(error));
-        }
-      } catch(error){this.Z.logError(error);} finally{state.polling=false;}
-    };
-    state.timer=win.setInterval(poll,5000); poll();
+    this.attachItemList(win, state);
     const quickFilter=event=>{if(!this.featureEnabled('itemTypeFilter')||!this.pref('quickTypeFilter',true)||event.button!==0||!event.target.closest?.('.cell-icon'))return;const row=event.target.closest('.row');if(!row)return;const item=win.ZoteroPane?.itemsView?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref;if(!this.isRegular(item)||!state.workbench)return;event.preventDefault();event.stopPropagation();state.workbench.state.type=this.Z.ItemTypes.getName(item.itemTypeID);state.workbench.show('explore').catch(e=>this.Z.logError(e));};
     const tree=doc.getElementById('zotero-items-tree');if(tree){tree.addEventListener('click',quickFilter,true);state.listeners.push([tree,'click',quickFilter,true]);}
     const css=this.pref('panelCSS','');if(css)try{this.setPanelCSS(css);}catch(error){this.Z.logError(error);}
@@ -8375,8 +8573,10 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.windows.delete(win);
     const errors=[],pending=[];
     const cleanup=fn=>{try{pending.push(Promise.resolve(fn()).catch(error=>errors.push(error)));}catch(error){errors.push(error);}};
-    cleanup(()=>win.clearInterval(state.timer));cleanup(()=>state.marqueeCleanup?.());
+    cleanup(()=>state.listCleanup?.());cleanup(()=>state.marqueeCleanup?.());
     cleanup(()=>state.workbench?.destroy());cleanup(()=>state.readerCleanup?.());
+    cleanup(()=>state.collectionCountCleanup?.());
+    cleanup(()=>state.systemDefaultMenuCleanup?.());
     cleanup(()=>state.itemPaneObserver?.disconnect());
     cleanup(()=>state.columnDragCleanup?.());cleanup(()=>state.rollCleanup?.());cleanup(()=>state.cellsCleanup?.());
     cleanup(()=>this.restoreItemPaneRows(win.document));
@@ -8398,6 +8598,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       const errors=[];
       const attempt=async fn=>{try{await fn();}catch(error){errors.push(error);}};
       await attempt(()=>this.assist.stop());await attempt(()=>this.readerAssist.stop());await attempt(()=>this.readerTools.stop());
+      await attempt(()=>this.collectionCounts.stop());
       if(this.itemObserver!=null){const observer=this.itemObserver;this.itemObserver=null;await attempt(()=>this.Z.Notifier.unregisterObserver(observer));}
       if(this.metadataTimer!=null){const timer=this.metadataTimer;this.metadataTimer=null;await attempt(()=>this.metadataTimerWindow.clearTimeout(timer));}
       this.metadataIDs.clear();
@@ -8415,6 +8616,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       if(!keepColumns)for(const column of this.columns.splice(0))await attempt(()=>this.Z.ItemTreeManager.unregisterColumn(column));
       if(this.prefPane){const pane=this.prefPane;this.prefPane=null;await attempt(()=>this.Z.PreferencePanes.unregister(pane));}
       this.tabItems.clear();
+      this.statusListeners?.clear();
       if(errors.length){for(const error of errors.slice(1))this.Z.logError(error);throw errors[0];}
     })();
     return this.stopPromise;

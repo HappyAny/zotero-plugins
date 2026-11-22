@@ -9851,6 +9851,10 @@
    },0);
   };
   win.addEventListener('blur',outsideFrame);listeners.push([win,'blur',outsideFrame]);
+  // Frame focus transitions and returning to Zotero are events, not a reason
+  // to keep checking focus twice a second while the panel is idle.
+  win.addEventListener('focus',outsideFrame,true);listeners.push([win,'focus',outsideFrame,true]);
+  doc.addEventListener('focusin',outsideFrame,true);listeners.push([doc,'focusin',outsideFrame,true]);
   /* A memo saves itself as it is typed, and the save is an item change that
      reloaded the panel: the field was rebuilt under the cursor a second after
      each pause, and a long list jumped back to the top. While the reader is
@@ -9874,9 +9878,8 @@
   const scheduleReload=()=>{if(disposed||panel.hidden)return;if(typing()){reloadPending=true;return;}reloadPending=false;if(reloadTimer)win.clearTimeout(reloadTimer);reloadTimer=win.setTimeout(reloadAgain,200);};
   panel.addEventListener('focusout',()=>{if(reloadPending)win.setTimeout(()=>{if(reloadPending&&!typing())scheduleReload();},0);});
   if(runtime.Z.Notifier){notifier=runtime.Z.Notifier.registerObserver({notify:(event,type,ids)=>{try{forgetAnnotations(event,type,ids);}catch(error){runtime.Z.logError?.(error);}scheduleReload();}},['item','item-tag','collection','tab'],'style-custom-workbench');}
-  // Moving straight between two frames does not blur their parent window a
-  // second time. Reuse the selection check to notice that focus transition.
-  const selectionTimer=win.setInterval(()=>{if(!disposed&&!win.closed&&!panel.hidden&&!dismissOutsideFrame()&&scopeContext()!==observedContext)run(load);},500);
+  const contextChanged=()=>{if(!disposed&&!win.closed&&!panel.hidden&&scopeContext()!==observedContext)scheduleReload();};
+  const stopContext=runtime.subscribeLibraryContext?.(win,contextChanged);
   function destroy(){if(disposed)return;
    try{sweepJob?.controller.abort();}catch(_){}
    for(const controller of [...worksFetches]){try{controller.abort();}catch(_){}}worksFetches.clear();
@@ -9886,7 +9889,7 @@
    // panel must write it, not discard it.
    for(const entry of memoFields)Promise.resolve(entry.flush()).catch(error=>runtime.Z.logError?.(error));
    memoFields=[];
-   abortAround();dismissToast();if(readingTickTimer){win.clearTimeout(readingTickTimer);readingTickTimer=null;}disposed=true;LIVE_DRAFT_WINDOWS.delete(WINDOW_ID);stopMemoListener?.();win.clearInterval(selectionTimer);epoch++;loadEpoch++;aiEpoch++;if(draftTimer){win.clearTimeout(draftTimer);draftTimer=null;Promise.resolve(runtime.flush()).catch(error=>runtime.Z.logError?.(error));}if(reloadTimer)win.clearTimeout(reloadTimer);if(searchTimer){win.clearTimeout(searchTimer);searchTimer=null;}noteCache=null;if(notifier!=null)runtime.Z.Notifier.unregisterObserver(notifier);clear();for(const[target,event,fn,capture]of listeners)target.removeEventListener(event,fn,capture||false);toolbar?.remove();panel.remove();sheet.remove();jcrSheet.remove();}
+   abortAround();dismissToast();if(readingTickTimer){win.clearTimeout(readingTickTimer);readingTickTimer=null;}disposed=true;LIVE_DRAFT_WINDOWS.delete(WINDOW_ID);stopMemoListener?.();stopContext?.();epoch++;loadEpoch++;aiEpoch++;if(draftTimer){win.clearTimeout(draftTimer);draftTimer=null;Promise.resolve(runtime.flush()).catch(error=>runtime.Z.logError?.(error));}if(reloadTimer)win.clearTimeout(reloadTimer);if(searchTimer){win.clearTimeout(searchTimer);searchTimer=null;}noteCache=null;if(notifier!=null)runtime.Z.Notifier.unregisterObserver(notifier);clear();for(const[target,event,fn,capture]of listeners)target.removeEventListener(event,fn,capture||false);toolbar?.remove();panel.remove();sheet.remove();jcrSheet.remove();}
   const accent=runtime.pref('accentColor','#374151');if(/^#[a-f\d]{6}$/i.test(accent)&&!['#374151','#5654d8'].includes(accent.toLowerCase()))panel.style.setProperty('--sc-accent',accent);setPanelFontSize(Math.max(11,Math.min(20,Number(runtime.pref('panelFontSize',13))||13)));
   // Long background work reports here rather than through a modal, so the user
   // can keep reading while the columns fill in behind them.

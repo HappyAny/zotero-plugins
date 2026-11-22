@@ -351,7 +351,7 @@ function fakeBridge({chunks = ['Step 1: libraries were screened ', '(Methods, p.
   return {requests, log, request};
 }
 
-function readerFixture({bridge = null} = {}) {
+function readerFixture({bridge = null, readAloudEnabled = true} = {}) {
   const {document: doc, window: win} = parseHTML('<html><head></head><body><div id="split-view"></div></body></html>');
   Object.defineProperty(win, 'setTimeout', {value: (fn, ms) => realSetTimeout(fn, ms), configurable: true, writable: true});
   Object.defineProperty(win, 'clearTimeout', {value: id => realClearTimeout(id), configurable: true, writable: true});
@@ -374,11 +374,18 @@ function readerFixture({bridge = null} = {}) {
     HTTP: {request: async (method, url, options) => /chat\/completions/.test(url) && bridge ? bridge.request(method, url, options) : ({response: css, status: 200})},
     File: {getResourceAsync: async () => css}};
   const runtime = {cache: {readerAssist: {open: true, tab: 'translate'}}, dirty: false, rootURI: 'file:///plugin/', io, paths: {join: (...p) => p.join('/'), homeDir: '/home'}, i18n: {isKorean: () => false}, t: I18N.t,
-    pref: (k, d) => d, getSetting: k => k === 'aiLanguage' ? 'Korean' : undefined, setSetting: async () => {}, scheduleFlush() {}, assist: {available: () => false}};
+    pref: (k, d) => d, getSetting: k => k === 'aiLanguage' ? 'Korean' : k === 'readAloudEnabled' ? readAloudEnabled : undefined, setSetting: async () => {}, scheduleFlush() {}, assist: {available: () => false}};
   if (bridge) runtime.assist = Assist.create({Zotero: Z, runtime});
   const service = ReaderAssist.create({Zotero: Z, runtime});
   return {doc, win, viewDoc, reader, runtime, service, touched, writes, Z};
 }
+
+test('the reader probe skips the disabled listen tab',async()=>{
+  const f=readerFixture({readAloudEnabled:false});
+  const report=await f.service.probe(f.reader);
+  assert.deepEqual(Object.keys(report.tabs).sort(),['ask','translate']);
+  f.service.stop();
+});
 
 test('diagnose() on the check\'s own reader: a probe session that saves nothing, sync() keeps out, release() leaves nothing behind', async () => {
   const f = readerFixture();

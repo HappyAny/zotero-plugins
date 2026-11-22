@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.59.61",
+  "version": "0.59.69",
   "baseline": "Installed Ethereal Style 6.0.76: all 50 simple and dotted preference feature IDs plus requested workflows",
   "sourceFeatureIDs": [
     "AIGenerateRemark",
@@ -270,13 +270,14 @@
       "origin": "Ethereal Style 6.0.76 installed preference",
       "name": "컬렉션 문헌 수",
       "implementation": {
-        "file": "src/library.js",
-        "marker": "async function collections"
+        "file": "src/collection-counts.js",
+        "marker": "CustomStyleCollectionCounts"
       },
       "tests": [
-        "test/library.test.mjs"
+        "test/library.test.mjs",
+        "test/collection-counts.test.mjs"
       ],
-      "entryPoint": "워크벤치 → 컬렉션",
+      "entryPoint": "Zotero 컬렉션 목록 · 워크벤치 → 컬렉션",
       "condition": "",
       "status": "implemented"
     },
@@ -1241,6 +1242,21 @@
       ],
       "entryPoint": "우클릭 → 보충자료 → 먼저 확인만",
       "condition": "",
+      "status": "implemented"
+    },
+    {
+      "id": "openWithSystemDefault",
+      "origin": "additional requested workflow",
+      "name": "Open with System Default",
+      "implementation": {
+        "file": "src/runtime.js",
+        "marker": "async openWithSystemDefault(win"
+      },
+      "tests": [
+        "test/system-default.test.mjs"
+      ],
+      "entryPoint": "Native item context menu → Open with System Default",
+      "condition": "Requires a local file attachment; regular items resolve their main attachment.",
       "status": "implemented"
     }
   ],

@@ -1,0 +1,228 @@
+# DOI Fix for Zotero
+
+[![Zotero](https://img.shields.io/badge/Zotero-7%2F8%2F9%2F10-CC2936)](https://www.zotero.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Automatically retrieve, update, and validate DOIs for Zotero items using the Crossref API. Compatible with Zotero 7, Zotero 8, Zotero 9, and Zotero 10.
+
+## Features
+
+本地增强版本 1.2.1：获取或更新正式 DOI 后，可原地将预印本转换为正式出版类型并更新出版信息，保留 PDF、批注和阅读数据。详见[本地增强说明](LOCAL-CHANGES.zh-CN.md)。此版本尚未发布到上游。构建与复现入口见[本地分支说明](../README.md)。
+
+- ✅ **Retrieve DOI**: Automatically fetch missing DOIs from Crossref API based on title, authors, and publication year
+- ✅ **Update DOI**: Force update existing DOIs to ensure accuracy (compares old vs new)
+- ✅ **Validate DOI**: Verify existing DOIs against CrossRef database
+- ✅ **Batch Processing**: Process multiple items at once
+- ✅ **Progress Feedback**: Real-time progress window showing success/failure status
+- ✅ **Context Menu Integration**: Right-click access from Zotero's item menu
+- ✅ **Zotero 7/8/9/10 Compatible**: Built using modern bootstrap architecture
+
+## Installation
+
+### Method 1: Download .xpi (Recommended)
+
+1. Download the latest `.xpi` file from [Releases](https://github.com/pandaAIGC/zotero-doi-fix/releases)
+2. Open Zotero → Tools → Plugins
+3. Click the gear icon → "Install Plugin From File..."
+4. Select the downloaded `.xpi` file
+5. Restart Zotero
+
+### Method 2: Build from Source
+
+**Requirements**: PowerShell 5+ on Windows
+
+```bash
+# Clone the repository
+git clone https://github.com/pandaAIGC/zotero-doi-fix.git
+cd zotero-doi-fix
+
+# Build the .xpi file (Windows)
+build.bat
+
+# Install the generated zotero-doi-fix.xpi file
+```
+
+### Method 3: Development Mode
+
+1. Find your Zotero profile's `extensions` directory:
+   - Windows: `%APPDATA%\Zotero\Zotero\Profiles\[profile]\extensions\`
+   - Mac: `~/Library/Application Support/Zotero/Profiles/[profile]/extensions/`
+   - Linux: `~/.zotero/zotero/[profile]/extensions/`
+
+2. Create a file named `doi-fix@zotero.org` (no extension)
+
+3. Inside the file, put the absolute path to this plugin's directory:
+   ```
+   /path/to/zotero-doi-fix
+   ```
+
+4. Restart Zotero
+
+## Usage
+
+### Retrieve DOI
+
+Use this feature to **add missing DOIs** to items that don't have one:
+
+1. Select one or more items in your Zotero library
+2. Right-click and select **"Retrieve DOI"**
+3. The plugin will search CrossRef and automatically fill in the DOI field
+4. Items that already have DOIs will be skipped
+
+### Update DOI
+
+Use this feature to **force update existing DOIs** (useful for correcting incorrect DOIs):
+
+1. Select one or more items in your Zotero library
+2. Right-click and select **"Update DOI"**
+3. The plugin will retrieve DOIs from CrossRef regardless of existing values
+4. Progress window shows: Old DOI → New DOI (or "DOI unchanged" if they match)
+
+### Validate DOI
+
+Use this feature to **verify the validity** of existing DOIs:
+
+1. Select items that already have DOIs
+2. Right-click and select **"Validate DOI"**
+3. View validation results in the progress window (Valid ✓ / Invalid ✗)
+
+## How It Works
+
+1. **Metadata Collection**: Gathers title, authors, and publication year from selected items
+2. **Crossref Search**: Queries the Crossref API with collected metadata
+3. **Smart Matching**: Uses title similarity matching to find the best result
+4. **DOI Update**: Automatically updates the DOI field in Zotero
+
+## API Usage
+
+This plugin uses the [Crossref REST API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/) to retrieve and validate DOIs. No API key is required for basic usage.
+
+## Troubleshooting
+
+### The context menu entry is missing or appears very late
+
+Version 1.1.9 registers the menu for existing windows, when a loading window finishes loading, and when the Zotero UI becomes ready. Normal installation and updates do not require running a Node.js command.
+
+Zotero awaits each plugin's `startup()` in sequence, so another plugin's slow startup can delay DOI Fix. Changing startup order improved menu availability in one tested profile, but the exact cause of that profile's delay has not been established from startup logs.
+
+`tools/pin-first.js` is an optional diagnostic workaround that edits Zotero's internal `extensions.json`; it is not a routine installation or update step. If the menu is already appearing promptly, no further startup-order changes are needed. For a recurring delay, report the Zotero/plugin versions and relevant startup debug output in an issue.
+
+## Compatibility
+
+- **Zotero 7**: ✅ Supported
+- **Zotero 8**: ✅ Supported
+- **Zotero 9**: ✅ Supported
+- **Zotero 10**: ✅ Supported
+- **Zotero 6 and below**: ❌ Not supported (use legacy DOI Manager)
+
+## Development
+
+### Project Structure
+
+```
+zotero-doi-fix/
+├── manifest.json           # Plugin manifest (WebExtension format)
+├── bootstrap.js           # Plugin lifecycle management
+├── build.bat             # Build script for Windows
+├── build.ps1             # PowerShell build script
+├── icons/                # Plugin icons
+│   ├── icon@48.png
+│   └── icon@96.png
+├── locale/               # Localized menu labels
+│   ├── en-US/
+│   └── zh-CN/
+└── chrome/
+    └── content/
+        └── doiManager.js  # Core functionality
+```
+
+### Building
+
+```bash
+# Windows
+build.bat
+
+# PowerShell directly
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+
+# Build and refresh updates.json with the XPI hash for release
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -UpdateManifest
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Acknowledgments
+
+- Inspired by [zotero-shortdoi](https://github.com/bwiernik/zotero-shortdoi) by Brenton M. Wiernik
+- Uses the [Crossref API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/)
+- Built with guidance from the [Zotero Plugin Development Documentation](https://www.zotero.org/support/dev/zotero_7_for_developers)
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+## Support
+
+If you encounter any issues or have suggestions, please [open an issue](https://github.com/pandaAIGC/zotero-doi-fix/issues).
+
+## Changelog
+
+### Version 1.1.9 (2026-10-02)
+- Register the menu when a main window that was still loading finishes loading, and again when the Zotero UI is ready; pending listeners are cancelled on shutdown.
+- Add an optional startup-order diagnostic helper. Menu registration was tested on Zotero 10.0.5; changing startup order improved availability in one profile, but this helper is not required for normal installation or updates.
+
+### Version 1.1.8 (2026-10-01)
+- Use a directly registered DOI Fix context submenu on all supported Zotero versions, with unique DOM IDs and no automatic "More" grouping dependency.
+- Append plugin entries after native actions without changing their indexes; keep localized labels with literal fallback text.
+- Add checks for menu visibility when managed menus do not render, command dispatch, and full plugin startup.
+
+### Version 1.1.7 (2026-10-01)
+- Fixed [#2](https://github.com/pandaAIGC/zotero-doi-fix/issues/2): the DOI Fix submenu could be relabeled as "Remove Item from Collection..." on Zotero 10.0.3, with a blank entry beneath it.
+- Removed custom menu repositioning so native item indexes stay intact and Zotero MenuManager controls menu placement and separators.
+- Added regression checks for repeated single/multiple-item menu rebuilds and Zotero 7 fallback cleanup.
+
+### Version 1.1.6 (2026-07-05)
+- Updated plugin compatibility metadata, update manifest, and documentation for Zotero 10.
+- Added a regression test for manifest/update compatibility metadata so release packages stay aligned.
+
+### Version 1.1.5 (2026-06-22)
+- Added support for DOI retrieval on Zotero webpage items, saving DOIs to the Extra field when the item type has no native DOI field.
+- Added a Crossref retry without year filtering when the year-filtered results are low confidence, covering online-first articles with different issue years.
+- Added regression tests for webpage DOI storage and online-first year fallback.
+
+### Version 1.1.4 (2026-06-21)
+- Fixed unsafe Crossref fallback that could write an incorrect DOI from the first search result.
+- Added stricter DOI candidate matching, Crossref OpenURL resolved-only handling, simple failure tags, and old DOI backup before replacement.
+- Added Node-based regression tests for DOI matching and Crossref result handling.
+
+### Version 1.1.3 (2026-05-13)
+- Added the plugin icon to the Zotero DOI Fix context submenu.
+
+### Version 1.1.2 (2026-05-13)
+- Grouped Retrieve DOI, Update DOI, and Validate DOI under a single Zotero DOI Fix submenu.
+
+### Version 1.1.1 (2026-05-13)
+- Fixed item context menu entries not appearing in some Zotero 9 builds.
+- Load Fluent menu labels into existing Zotero windows before registering menus.
+
+### Version 1.1.0 (2026-05-13)
+- Updated compatibility metadata for Zotero 9
+- Added Zotero 8/9 `Zotero.MenuManager` menu registration with Zotero 7 DOM fallback
+- Added localized menu labels for English and Simplified Chinese
+- Improved Crossref search query construction and DOI normalization
+- Replaced the 7-Zip-only build script with a PowerShell/.NET builder
+
+### Version 1.0.0 (2026-02-05)
+- Initial release
+- Automatic DOI retrieval via Crossref API
+- DOI validation feature
+- Batch processing support
+- Zotero 7/8 compatibility

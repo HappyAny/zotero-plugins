@@ -221,7 +221,7 @@
       "label": "컬렉션 문헌 수 사용",
       "type": "boolean",
       "default": true,
-      "description": "연구 작업 패널 → 컬렉션",
+      "description": "Zotero 왼쪽 컬렉션 목록과 연구 작업 패널에 문헌 수를 표시합니다.",
       "consumer": "featureEnabled"
     },
     {
@@ -844,6 +844,14 @@
           "label": "왼쪽"
         }
       ]
+    },
+    {
+      "key": "readAloudEnabled",
+      "category": "reader",
+      "label": "논문 도우미 읽어주기 사용",
+      "type": "boolean",
+      "default": false,
+      "description": "켜면 읽어주기 버튼과 문장 목록을 표시합니다. 꺼 두면 읽어주기 단축키, 자동 재생과 PDF 따라가기가 동작하지 않습니다."
     },
     {
       "key": "readAloudSpeed",

@@ -1,0 +1,1048 @@
+/**
+ * DOI Fix Core Functionality
+ * Compatible with Zotero 7/8/9/10
+ */
+
+if (typeof doiManager === "undefined") {
+  var doiManager = {};
+}
+
+(function() {
+
+  // Plugin configuration
+  let config = {
+    id: null,
+    version: null,
+    rootURI: null,
+  };
+
+  const MATCH_THRESHOLD = 0.86;
+  const WEAK_MATCH_THRESHOLD = 0.72;
+  const TAG_NO_DOI = "doi-fix:no-doi-found";
+  const TAG_LOW_CONFIDENCE = "doi-fix:low-confidence";
+  const TAG_MULTIPLE_CANDIDATES = "doi-fix:multiple-candidates";
+  const TAG_EXISTING_DOI_MISMATCH = "doi-fix:existing-doi-mismatch";
+  const OLD_DOI_BACKUP_PREFIX = "DOI Fix previous DOI:";
+  const SUPPORTED_ITEM_TYPES = [
+    "journalArticle",
+    "conferencePaper",
+    "book",
+    "bookSection",
+    "report",
+    "thesis",
+    "preprint",
+    "dataset",
+    "document",
+    "presentation",
+    "standard",
+    "encyclopediaArticle",
+    "dictionaryEntry",
+    "magazineArticle",
+    "newspaperArticle",
+    "webpage",
+  ];
+
+  // A DOI lookup must not save pending edits or use results for changed metadata.
+  async function getDOICommandGuard(item) {
+    const isReady = () => !!item.id && !item.deleted
+      && item.isEditable?.() !== false && !item.hasChanged?.();
+    if (!isReady()) return null;
+    if (typeof item.loadAllData === 'function') await item.loadAllData();
+    if (!isReady()) return null;
+    const signature = JSON.stringify(item.toJSON());
+    return () => isReady() && JSON.stringify(item.toJSON()) === signature;
+  }
+
+  /**
+   * Initialize the DOI Fix
+   */
+  doiManager.init = async function({ id, version, rootURI }) {
+    config.id = id;
+    config.version = version;
+    config.rootURI = rootURI;
+
+    Zotero.debug(`DOI Fix ${version} initialized`);
+  };
+
+  /**
+   * Shutdown handler
+   */
+  doiManager.shutdown = function() {
+    Zotero.debug("DOI Fix: Cleaning up resources");
+  };
+
+  /**
+   * Retrieve DOI for selected items
+   */
+  doiManager.retrieveDOIForSelectedItems = async function() {
+    const zoteroPane = Zotero.getActiveZoteroPane();
+    const items = zoteroPane.getSelectedItems();
+
+    if (!items || items.length === 0) {
+      Zotero.alert(null, "DOI Fix", "No items selected");
+      return;
+    }
+
+    // Filter items that can have DOIs (journal articles, etc.)
+    const validItems = this.getRegularItems(items);
+
+    if (validItems.length === 0) {
+      Zotero.alert(null, "DOI Fix", "No valid items selected");
+      return;
+    }
+
+    const progressWindow = new Zotero.ProgressWindow();
+    progressWindow.changeHeadline("DOI Fix - Retrieve DOI");
+    progressWindow.show();
+
+    let successCount = 0;
+    let failCount = 0;
+    let skippedCount = 0;
+
+    for (const item of validItems) {
+      try {
+        const canUpdate = await getDOICommandGuard(item);
+        if (!canUpdate?.()) {
+          skippedCount++;
+          progressWindow.addLines('Skipped: item must be saved and editable, with no pending changes');
+          continue;
+        }
+        const title = item.getField('title') || '(Untitled)';
+        progressWindow.addLines(`Processing: ${title.substring(0, 50)}...`);
+
+        const existingDOI = this.getStoredDOI(item);
+        if (existingDOI && existingDOI.trim()) {
+          if (await this.reportPublishedUpdate(item, progressWindow)) successCount++;
+          else skippedCount++;
+          progressWindow.addLines(`Existing DOI: ${existingDOI.trim()}`);
+          continue;
+        }
+
+        const result = await this.retrieveDOIResult(item);
+        if (!canUpdate()) {
+          skippedCount++;
+          progressWindow.addLines('Skipped: item changed during DOI lookup');
+          continue;
+        }
+
+        if (result.doi) {
+          const storageLocation = this.setStoredDOI(item, result.doi);
+          this.clearDoiFixTags(item);
+          await item.saveTx();
+          successCount++;
+          progressWindow.addLines(`Found DOI: ${result.doi} (${result.source}${storageLocation === "extra" ? ", saved to Extra" : ""})`);
+          await this.reportPublishedUpdate(item, progressWindow);
+        } else {
+          failCount++;
+          this.tagSearchFailure(item, result.status);
+          await item.saveTx();
+          progressWindow.addLines(`No DOI written: ${result.message}`);
+        }
+      } catch (e) {
+        failCount++;
+        progressWindow.addLines(`Error: ${e.message}`);
+        Zotero.debug(`DOI Fix error: ${e}`);
+      }
+    }
+
+    progressWindow.addLines(`\nCompleted: ${successCount} succeeded, ${skippedCount} skipped, ${failCount} failed`);
+    progressWindow.startCloseTimer(4000);
+  };
+
+  /**
+   * Retrieve DOI for a single item using CrossRef API
+   */
+  doiManager.retrieveDOI = async function(item, forceUpdate = false) {
+    const result = await this.retrieveDOIResult(item, forceUpdate);
+    return result.doi;
+  };
+
+  doiManager.retrieveDOIResult = async function(item, forceUpdate = false) {
+    // Check if item already has a DOI (skip if forceUpdate is false)
+    if (!forceUpdate) {
+      const existingDOI = this.getStoredDOI(item);
+      if (existingDOI && existingDOI.trim()) {
+        return {
+          doi: this.cleanDOI(existingDOI),
+          status: "existing",
+          source: "existing",
+          message: "Item already has a DOI",
+        };
+      }
+    }
+
+    // Get metadata for search
+    const title = item.getField('title');
+    const creators = item.getCreators();
+    const date = item.getField('date', true, true);
+
+    if (!title) {
+      throw new Error('Item has no title');
+    }
+
+    // Search CrossRef API
+    return this.searchCrossrefCandidate(item, title, creators, date);
+  };
+
+  /**
+   * Update DOI for selected items (force update even if DOI exists)
+   */
+  doiManager.updateDOIForSelectedItems = async function() {
+    const zoteroPane = Zotero.getActiveZoteroPane();
+    const items = zoteroPane.getSelectedItems();
+
+    if (!items || items.length === 0) {
+      Zotero.alert(null, "DOI Fix", "No items selected");
+      return;
+    }
+
+    // Filter items that can have DOIs
+    const validItems = this.getRegularItems(items);
+
+    if (validItems.length === 0) {
+      Zotero.alert(null, "DOI Fix", "No valid items selected");
+      return;
+    }
+
+    const progressWindow = new Zotero.ProgressWindow();
+    progressWindow.changeHeadline("DOI Fix - Update DOI");
+    progressWindow.show();
+
+    let successCount = 0;
+    let failCount = 0;
+    let skippedCount = 0;
+
+    for (const item of validItems) {
+      try {
+        const canUpdate = await getDOICommandGuard(item);
+        if (!canUpdate?.()) {
+          skippedCount++;
+          progressWindow.addLines('Skipped: item must be saved and editable, with no pending changes');
+          continue;
+        }
+        const title = item.getField('title') || '(Untitled)';
+        const oldDOI = this.getStoredDOI(item);
+
+        progressWindow.addLines(`Processing: ${title.substring(0, 50)}...`);
+
+        if (oldDOI) {
+          progressWindow.addLines(`  Old DOI: ${oldDOI}`);
+        }
+
+        const existingCheck = oldDOI ? await this.validateDOIForItem(oldDOI, item) : { valid: false, matchesItem: false };
+        if (!canUpdate()) {
+          skippedCount++;
+          progressWindow.addLines('Skipped: item changed during DOI lookup');
+          continue;
+        }
+
+        if (existingCheck.valid && existingCheck.matchesItem) {
+          this.clearDoiFixTags(item);
+          await item.saveTx();
+          progressWindow.addLines(`Existing DOI verified: ${this.cleanDOI(oldDOI)}`);
+          if (await this.reportPublishedUpdate(item, progressWindow, existingCheck.metadata)) successCount++;
+          else skippedCount++;
+          continue;
+        }
+
+        if (oldDOI && existingCheck.valid && !existingCheck.matchesItem) {
+          progressWindow.addLines("Existing DOI is valid but does not match this item");
+        }
+
+        // Force update DOI only after the existing DOI fails item-level verification.
+        const result = await this.retrieveDOIResult(item, true);
+        if (!canUpdate()) {
+          skippedCount++;
+          progressWindow.addLines('Skipped: item changed during DOI lookup');
+          continue;
+        }
+        if (oldDOI && existingCheck.valid && !existingCheck.matchesItem) {
+          this.addTag(item, TAG_EXISTING_DOI_MISMATCH);
+        }
+
+        if (result.doi) {
+          const cleanOldDOI = this.cleanDOI(oldDOI);
+
+          if (cleanOldDOI === result.doi) {
+            this.clearDoiFixTags(item);
+            await item.saveTx();
+            progressWindow.addLines(`DOI unchanged: ${result.doi}`);
+            if (await this.reportPublishedUpdate(item, progressWindow)) successCount++;
+            else skippedCount++;
+          } else {
+            this.backupOldDOI(item, oldDOI);
+            const storageLocation = this.setStoredDOI(item, result.doi);
+            this.clearDoiFixTags(item);
+            await item.saveTx();
+            successCount++;
+            progressWindow.addLines(`Updated DOI: ${result.doi} (${result.source}${storageLocation === "extra" ? ", saved to Extra" : ""})`);
+            await this.reportPublishedUpdate(item, progressWindow);
+          }
+        } else {
+          failCount++;
+          this.tagSearchFailure(item, result.status);
+          await item.saveTx();
+          progressWindow.addLines(`No DOI written: ${result.message}`);
+        }
+      } catch (e) {
+        failCount++;
+        progressWindow.addLines(`Error: ${e.message}`);
+        Zotero.debug(`DOI Fix update error: ${e}`);
+      }
+    }
+
+    progressWindow.addLines(`\nCompleted: ${successCount} updated, ${skippedCount} unchanged, ${failCount} failed`);
+    progressWindow.startCloseTimer(5000);
+  };
+
+  /**
+   * Search CrossRef API for DOI
+   */
+  doiManager.searchCrossref = async function(item, title, creators, date) {
+    const result = await this.searchCrossrefCandidate(item, title, creators, date);
+    return result.doi;
+  };
+
+  doiManager.searchCrossrefCandidate = async function(item, title, creators, date) {
+    const openURLResult = await this.searchCrossrefOpenURL(item);
+
+    if (openURLResult.status === "resolved") {
+      return openURLResult;
+    }
+
+    if (openURLResult.status === "multiresolved") {
+      Zotero.debug(`DOI Fix: Crossref returned multiple DOI candidates for "${title}"`);
+      return {
+        doi: null,
+        status: "multiple-candidates",
+        source: "crossref-openurl",
+        message: "Crossref returned multiple possible DOIs",
+      };
+    }
+
+    return this.searchCrossrefRestCandidate(title, creators, date);
+  };
+
+  doiManager.searchCrossrefOpenURL = async function(item) {
+    if (!Zotero.OpenURL || !Zotero.OpenURL.createContextObject) {
+      return { status: "unavailable", doi: null };
+    }
+
+    const contextObject = Zotero.OpenURL.createContextObject(item, "1.0");
+
+    if (!contextObject) {
+      return { status: "unavailable", doi: null };
+    }
+
+    const url = `https://www.crossref.org/openurl?pid=doi-fix@zotero.org&${contextObject}&multihit=true`;
+
+    try {
+      const response = await Zotero.HTTP.request('GET', url, {
+        headers: {
+          'User-Agent': `Zotero DOI Fix/${config.version}`
+        }
+      });
+
+      const mainWindow = Zotero.getMainWindow && Zotero.getMainWindow();
+      const DOMParserCtor = mainWindow && mainWindow.DOMParser;
+
+      if (!DOMParserCtor) {
+        return { status: "unavailable", doi: null };
+      }
+
+      const parser = new DOMParserCtor();
+      const xml = parser.parseFromString(response.response, "application/xml");
+      const query = xml.getElementsByTagName("query")[0];
+
+      if (!query) {
+        return { status: "unavailable", doi: null };
+      }
+
+      const status = query.getAttribute("status") || "unavailable";
+
+      if (status !== "resolved") {
+        return { status, doi: null };
+      }
+
+      const doiNode = query.getElementsByTagName("doi")[0];
+      const doi = doiNode && doiNode.textContent ? this.cleanDOI(doiNode.textContent) : null;
+
+      return doi
+        ? { status: "resolved", doi, source: "crossref-openurl", message: "Crossref OpenURL resolved one DOI" }
+        : { status: "unavailable", doi: null, source: "crossref-openurl", message: "Crossref OpenURL response had no DOI" };
+    } catch (e) {
+      Zotero.debug(`Crossref OpenURL error: ${e}`);
+      return { status: "unavailable", doi: null };
+    }
+  };
+
+  doiManager.searchCrossrefRest = async function(title, creators, date) {
+    const result = await this.searchCrossrefRestCandidate(title, creators, date);
+    return result.doi;
+  };
+
+  doiManager.searchCrossrefRestCandidate = async function(title, creators, date) {
+    const year = this.extractYear(date);
+    const attempts = year ? [year, ""] : [""];
+    let bestUnresolved = null;
+
+    for (const attemptYear of attempts) {
+      const result = await this.searchCrossrefRestCandidateOnce(title, creators, attemptYear);
+
+      if (result.status === "resolved") {
+        return result;
+      }
+
+      if (!bestUnresolved || ((result.score || 0) > (bestUnresolved.score || 0))) {
+        bestUnresolved = result;
+      }
+    }
+
+    return bestUnresolved || {
+      doi: null,
+      status: "not-found",
+      source: "crossref-rest",
+      message: "Crossref REST returned no candidates",
+    };
+  };
+
+  doiManager.searchCrossrefRestCandidateOnce = async function(title, creators, year) {
+    const params = new URLSearchParams({
+      "query.title": title,
+      rows: "5",
+      select: "DOI,title,author,published-print,published-online,issued",
+    });
+
+    if (creators && creators.length > 0) {
+      const firstAuthor = creators[0];
+      if (firstAuthor.lastName) {
+        params.set("query.author", firstAuthor.lastName);
+      }
+    }
+
+    if (year) {
+      params.set("filter", `from-pub-date:${year},until-pub-date:${year}`);
+    }
+
+    const url = `https://api.crossref.org/works?${params.toString()}`;
+
+    try {
+      const response = await Zotero.HTTP.request('GET', url, {
+        headers: {
+          'User-Agent': `Zotero DOI Manager/${config.version}`
+        }
+      });
+
+      const data = JSON.parse(response.response);
+
+      if (!data.message || !data.message.items || data.message.items.length === 0) {
+        return {
+          doi: null,
+          status: "not-found",
+          source: "crossref-rest",
+          message: "Crossref REST returned no candidates",
+        };
+      }
+
+      // Only accept a DOI when Crossref returns a high-confidence title match.
+      // Never fall back to the first search result: that creates false positives.
+      const items = data.message.items || [];
+      let bestMatch = null;
+      let bestScore = 0;
+
+      for (const crossrefItem of items) {
+        const crossrefTitle = (crossrefItem.title && crossrefItem.title[0]) || '';
+        const score = this.getTitleSimilarity(title, crossrefTitle);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = crossrefItem;
+        }
+      }
+
+      if (bestMatch && bestScore >= MATCH_THRESHOLD) {
+        return {
+          doi: this.cleanDOI(bestMatch.DOI),
+          status: "resolved",
+          source: "crossref-rest",
+          score: bestScore,
+          message: `Crossref REST title match score ${bestScore.toFixed(2)}`,
+        };
+      }
+
+      Zotero.debug(`DOI Fix: No confident Crossref match for "${title}" (best score: ${bestScore.toFixed(2)})`);
+      return {
+        doi: null,
+        status: "low-confidence",
+        source: "crossref-rest",
+        score: bestScore,
+        message: `Best Crossref REST title match score was ${bestScore.toFixed(2)}`,
+      };
+
+    } catch (e) {
+      Zotero.debug(`Crossref API error: ${e}`);
+      return {
+        doi: null,
+        status: "error",
+        source: "crossref-rest",
+        message: `Crossref REST error: ${e.message || e}`,
+      };
+    }
+  };
+
+  /**
+   * Check if two titles are similar
+   */
+  doiManager.isSimilarTitle = function(title1, title2) {
+    return this.getTitleSimilarity(title1, title2) >= WEAK_MATCH_THRESHOLD;
+  };
+
+  doiManager.getTitleSimilarity = function(title1, title2) {
+    const t1 = this.normalizeTitle(title1);
+    const t2 = this.normalizeTitle(title2);
+
+    if (!t1 || !t2) {
+      return 0;
+    }
+
+    if (t1 === t2) {
+      return 1;
+    }
+
+    const tokens1 = [...new Set(this.getTitleTokens(t1))];
+    const tokens2 = [...new Set(this.getTitleTokens(t2))];
+
+    if (tokens1.length === 0 || tokens2.length === 0) {
+      return 0;
+    }
+
+    const tokenSet2 = new Set(tokens2);
+    const common = tokens1.filter(token => tokenSet2.has(token)).length;
+    const precision = common / tokens1.length;
+    const recall = common / tokens2.length;
+    const overlap = common / Math.min(tokens1.length, tokens2.length);
+    const jaccard = common / new Set(tokens1.concat(tokens2)).size;
+
+    const shorterLength = Math.min(tokens1.length, tokens2.length);
+    const longerLength = Math.max(tokens1.length, tokens2.length);
+
+    if (overlap === 1 && shorterLength >= 2 && Math.abs(tokens1.length - tokens2.length) <= 2) {
+      return Math.max(0.94, jaccard);
+    }
+
+    if (overlap === 1 && shorterLength >= 5 && longerLength / shorterLength <= 2) {
+      return Math.max(0.9, jaccard);
+    }
+
+    const charSimilarity = this.getLevenshteinSimilarity(t1, t2);
+    const balancedTokenScore = precision + recall === 0 ? 0 : (2 * precision * recall) / (precision + recall);
+
+    return Math.max(charSimilarity, balancedTokenScore, jaccard);
+  };
+
+  doiManager.normalizeTitle = function(title) {
+    return (title || '').toLowerCase()
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&[a-z]+;/g, ' ')
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  doiManager.getTitleTokens = function(title) {
+    return this.normalizeTitle(title)
+      .split(' ')
+      .filter(token => token.length > 1);
+  };
+
+  doiManager.getLevenshteinSimilarity = function(str1, str2) {
+    const maxLength = Math.max(str1.length, str2.length);
+
+    if (maxLength === 0) {
+      return 1;
+    }
+
+    if (maxLength > 300) {
+      str1 = str1.substring(0, 300);
+      str2 = str2.substring(0, 300);
+    }
+
+    const distance = this.getLevenshteinDistance(str1, str2);
+    return 1 - (distance / Math.max(str1.length, str2.length));
+  };
+
+  doiManager.getLevenshteinDistance = function(str1, str2) {
+    const previous = Array(str2.length + 1);
+    const current = Array(str2.length + 1);
+
+    for (let j = 0; j <= str2.length; j++) {
+      previous[j] = j;
+    }
+
+    for (let i = 1; i <= str1.length; i++) {
+      current[0] = i;
+
+      for (let j = 1; j <= str2.length; j++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        current[j] = Math.min(
+          current[j - 1] + 1,
+          previous[j] + 1,
+          previous[j - 1] + cost
+        );
+      }
+
+      for (let j = 0; j <= str2.length; j++) {
+        previous[j] = current[j];
+      }
+    }
+
+    return previous[str2.length];
+  };
+
+  /**
+   * Validate DOI for selected items
+   */
+  doiManager.validateDOIForSelectedItems = async function() {
+    const zoteroPane = Zotero.getActiveZoteroPane();
+    const items = zoteroPane.getSelectedItems();
+
+    if (!items || items.length === 0) {
+      Zotero.alert(null, "DOI Manager", "No items selected");
+      return;
+    }
+
+    const progressWindow = new Zotero.ProgressWindow();
+    progressWindow.changeHeadline("DOI Validation");
+    progressWindow.show();
+
+    let validCount = 0;
+    let invalidCount = 0;
+
+    for (const item of items) {
+      if (!item.isRegularItem()) continue;
+
+      const doi = this.getStoredDOI(item);
+
+      if (!doi || !doi.trim()) {
+        const title = item.getField('title') || '(Untitled)';
+        progressWindow.addLines(`${title.substring(0, 50)}: No DOI`);
+        continue;
+      }
+
+      const isValid = await this.validateDOI(doi);
+
+      if (isValid) {
+        validCount++;
+        progressWindow.addLines(`Valid: ${doi}`);
+      } else {
+        invalidCount++;
+        progressWindow.addLines(`Invalid: ${doi}`);
+      }
+    }
+
+    progressWindow.addLines(`\nResults: ${validCount} valid, ${invalidCount} invalid`);
+    progressWindow.startCloseTimer(4000);
+  };
+
+  /**
+   * Validate DOI by checking with CrossRef
+   */
+  doiManager.validateDOI = async function(doi) {
+    // Clean up DOI
+    doi = this.cleanDOI(doi);
+
+    if (!doi) {
+      return false;
+    }
+
+    try {
+      const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}`;
+
+      const response = await Zotero.HTTP.request('GET', url, {
+        headers: {
+          'User-Agent': `Zotero DOI Manager/${config.version}`
+        },
+        successCodes: [200, 404]
+      });
+
+      return response.status === 200;
+
+    } catch (e) {
+      Zotero.debug(`DOI validation error: ${e}`);
+      return false;
+    }
+  };
+
+  doiManager.validateDOIForItem = async function(doi, item) {
+    const cleanDOI = this.cleanDOI(doi);
+
+    if (!cleanDOI) {
+      return { valid: false, matchesItem: false, score: 0 };
+    }
+
+    const metadata = await this.fetchDOIMetadata(cleanDOI);
+
+    if (!metadata.valid) {
+      return { valid: false, matchesItem: false, score: 0 };
+    }
+
+    const itemTitle = item.getField('title') || '';
+    const score = this.getTitleSimilarity(itemTitle, metadata.title || '');
+
+    return {
+      valid: true,
+      matchesItem: score >= MATCH_THRESHOLD,
+      score,
+      title: metadata.title,
+      metadata,
+    };
+  };
+
+  doiManager.fetchDOIMetadata = async function(doi) {
+    try {
+      const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}`;
+
+      const response = await Zotero.HTTP.request('GET', url, {
+        headers: {
+          'User-Agent': `Zotero DOI Fix/${config.version}`
+        },
+        successCodes: [200, 404]
+      });
+
+      if (response.status !== 200) {
+        return { valid: false };
+      }
+
+      const data = JSON.parse(response.response);
+      const item = data.message || {};
+
+      return {
+        valid: true,
+        title: item.title && item.title[0] ? item.title[0] : '',
+        record: item,
+      };
+    } catch (e) {
+      Zotero.debug(`DOI metadata validation error: ${e}`);
+      return { valid: false };
+    }
+  };
+
+  // Run only as part of Retrieve/Update DOI. No polling or background library sweep.
+  const publicationJobs = new WeakMap();
+  doiManager.updatePublishedMetadata = async function(item, {metadata} = {}) {
+    if (publicationJobs.has(item)) return publicationJobs.get(item);
+    const work = this._updatePublishedMetadata(item, metadata);
+    publicationJobs.set(item, work);
+    try { return await work; }
+    finally { if (publicationJobs.get(item) === work) publicationJobs.delete(item); }
+  };
+
+  doiManager._updatePublishedMetadata = async function(item, suppliedMetadata) {
+    const preprintType = Zotero.ItemTypes.getID('preprint');
+    if (!preprintType || item.itemTypeID !== preprintType) return {changed: false, reason: 'not-preprint'};
+    if (item.deleted || item.isEditable?.() === false || item.hasChanged?.()) {
+      return {changed: false, reason: 'item-not-ready'};
+    }
+    const doi = this.getStoredDOI(item);
+    if (!doi || /^10\.48550\//i.test(doi)) return {changed: false, reason: 'preprint-doi'};
+    if (typeof item.loadAllData === 'function') await item.loadAllData();
+    if (item.itemTypeID !== preprintType || item.hasChanged?.() || item.deleted || item.isEditable?.() === false) {
+      return {changed: false, reason: 'item-changed'};
+    }
+    const original = item.toJSON();
+    const signature = JSON.stringify(original);
+    const metadata = suppliedMetadata || await this.fetchDOIMetadata(doi);
+    if (!metadata?.valid) return {changed: false, reason: 'metadata-unavailable'};
+    const record = metadata?.record;
+    const publication = {
+      'journal-article': {type: 'journalArticle', containerField: 'publicationTitle'},
+      'proceedings-article': {type: 'conferencePaper', containerField: 'proceedingsTitle'},
+      'book-chapter': {type: 'bookSection', containerField: 'bookTitle'},
+    }[record?.type];
+    if (!publication) return {changed: false, reason: 'unsupported-publication-type', publicationType: record?.type || 'unknown'};
+    const {type, containerField} = publication;
+    if (!metadata?.valid || this.cleanDOI(record.DOI).toLowerCase() !== doi.toLowerCase()
+        || !record.title?.[0] || !record['container-title']?.[0]) {
+      return {changed: false, reason: 'no-published-record'};
+    }
+    if (this.getTitleSimilarity(original.title || '', record.title[0]) < MATCH_THRESHOLD) {
+      return {changed: false, reason: 'title-mismatch'};
+    }
+    // Do not overwrite a DOI or an edit made while the network request was pending.
+    if (item.deleted || item.hasChanged?.() || item.isEditable?.() === false
+        || JSON.stringify(item.toJSON()) !== signature || this.getStoredDOI(item) !== doi) {
+      return {changed: false, reason: 'item-changed'};
+    }
+    const typeID = Zotero.ItemTypes.getID(type);
+    if (!typeID) return {changed: false, reason: 'unsupported-type'};
+    const fields = {
+      title: String(record.title[0]), DOI: doi,
+      [containerField]: String(record['container-title'][0]),
+      libraryCatalog: 'Crossref', url: 'https://doi.org/' + doi,
+    };
+    for (const [field, value] of Object.entries({
+      volume: record.volume, issue: record.issue, pages: record.page || record['article-number'],
+      ISSN: record.ISSN?.[0],
+      ISBN: type === 'bookSection' ? record.ISBN?.[0] : undefined,
+      publisher: type === 'bookSection' ? record.publisher : undefined,
+    })) {
+      const id = Zotero.ItemFields.getID(field);
+      if (value && id && Zotero.ItemFields.isValidForType(id, typeID)) fields[field] = String(value);
+    }
+    const parts = (record['published-print'] || record['published-online'] || record.published || record.issued)?.['date-parts']?.[0];
+    if (parts && Number.isInteger(parts[0]) && parts[0] >= 1500 && parts[0] <= 2200) {
+      const date = [String(parts[0])];
+      if (Number.isInteger(parts[1]) && parts[1] >= 1 && parts[1] <= 12) {
+        date.push(String(parts[1]).padStart(2, '0'));
+        if (Number.isInteger(parts[2]) && parts[2] >= 1 && parts[2] <= 31) date.push(String(parts[2]).padStart(2, '0'));
+      }
+      fields.date = date.join('-');
+    }
+    const creators = (record.author || []).map(author => {
+      if (author.family) return {creatorType: 'author', firstName: author.given || '', lastName: author.family};
+      if (author.name) return {creatorType: 'author', name: author.name};
+      return null;
+    }).filter(Boolean);
+    // Keep the prior publication fields and every field native setType would discard.
+    const prior = {itemType: original.itemType || 'preprint', fields: {}, creators: original.creators || []};
+    const discarded = (item.getFieldsNotInType(typeID) || []).map(id => Zotero.ItemFields.getName(id));
+    for (const name of new Set([...discarded, ...Object.keys(fields)])) {
+      const value = this.getItemField(item, name);
+      if (value) prior.fields[name] = value;
+    }
+    let extra = typeof original.extra === 'string' ? original.extra : String(item.getField('extra') || '');
+    const arxiv = String(original.url || '').match(/arxiv\.org\/(?:abs|pdf)\/([^?#\s]+?)(?:\.pdf)?(?:[?#]|$)/i)?.[1]
+      || String(original.DOI || extra).match(/10\.48550\/(?:arxiv\.)?([a-z.-]+\/\d{7}(?:v\d+)?|\d{4}\.\d{4,5}(?:v\d+)?)/i)?.[1];
+    if (arxiv && !extra.split(/\r?\n/).some(line => line.trim().toLowerCase() === ('arXiv: ' + arxiv).toLowerCase())) {
+      extra += (extra ? '\n' : '') + 'arXiv: ' + arxiv;
+    }
+    extra += (extra ? '\n' : '') + 'DOI Fix preprint metadata: ' + JSON.stringify(prior);
+    try {
+      if (!item.setType(typeID)) throw new Error('The published item type is unavailable');
+      for (const [name, value] of Object.entries(fields)) item.setField(name, value);
+      item.setField('extra', extra);
+      if (creators.length) item.setCreators(creators);
+      // Native saveTx rolls back and reloads cached data on a failed save.
+      await item.saveTx();
+    } catch (error) {
+      // setType/setField can fail before saveTx gets a chance to recover.
+      if (item.hasChanged?.()) {
+        if (item.itemTypeID !== preprintType) item.setType(preprintType);
+        await item.reload(['primaryData', 'itemData', 'creators'], true);
+        item._clearChanged();
+      }
+      throw error;
+    }
+    return {changed: true, type, doi};
+  };
+
+  doiManager.reportPublishedUpdate = async function(item, progressWindow, metadata) {
+    try {
+      const result = await this.updatePublishedMetadata(item, {metadata});
+      if (result.changed) {
+        const label = {journalArticle: 'Journal Article', conferencePaper: 'Conference Paper', bookSection: 'Book Section'}[result.type];
+        progressWindow.addLines(`Publication information updated: ${label || result.type}`);
+      } else if (result.reason === 'item-changed' || result.reason === 'item-not-ready') {
+        progressWindow.addLines('Publication information left unchanged because the item is being edited');
+      } else if (result.reason === 'no-published-record' || result.reason === 'title-mismatch') {
+        progressWindow.addLines('Publication information not updated: no matching published record');
+      } else if (result.reason === 'metadata-unavailable') {
+        progressWindow.addLines('Publication information is unavailable; the DOI is kept');
+      } else if (result.reason === 'unsupported-publication-type') {
+        progressWindow.addLines(`Publication information not updated: unsupported Crossref type (${result.publicationType})`);
+      }
+      return result.changed;
+    } catch (error) {
+      progressWindow.addLines(`DOI saved; publication information update failed: ${error.message}`);
+      Zotero.logError?.(error);
+      return false;
+    }
+  };
+
+  doiManager.tagSearchFailure = function(item, status) {
+    this.clearDoiFixTags(item);
+
+    if (status === "multiple-candidates") {
+      this.addTag(item, TAG_MULTIPLE_CANDIDATES);
+      return;
+    }
+
+    if (status === "low-confidence") {
+      this.addTag(item, TAG_LOW_CONFIDENCE);
+      return;
+    }
+
+    if (status === "not-found") {
+      this.addTag(item, TAG_NO_DOI);
+    }
+  };
+
+  doiManager.clearDoiFixTags = function(item) {
+    for (const tag of [
+      TAG_NO_DOI,
+      TAG_LOW_CONFIDENCE,
+      TAG_MULTIPLE_CANDIDATES,
+      TAG_EXISTING_DOI_MISMATCH,
+    ]) {
+      if (item.removeTag) {
+        item.removeTag(tag);
+      }
+    }
+  };
+
+  doiManager.addTag = function(item, tag) {
+    if (item.addTag) {
+      item.addTag(tag, 1);
+    }
+  };
+
+  doiManager.backupOldDOI = function(item, oldDOI) {
+    const cleanOldDOI = this.cleanDOI(oldDOI);
+
+    if (!cleanOldDOI || !item.getField || !item.setField) {
+      return;
+    }
+
+    const extra = this.getItemField(item, 'extra') || '';
+    const backupLine = `${OLD_DOI_BACKUP_PREFIX} ${cleanOldDOI}`;
+
+    if (extra.includes(backupLine)) {
+      return;
+    }
+
+    item.setField('extra', extra ? `${extra}\n${backupLine}` : backupLine);
+  };
+
+  doiManager.getStoredDOI = function(item) {
+    const doiFieldValue = this.getItemField(item, 'DOI');
+
+    if (doiFieldValue) {
+      return this.cleanDOI(doiFieldValue);
+    }
+
+    return this.extractDOIFromExtra(this.getItemField(item, 'extra'));
+  };
+
+  doiManager.setStoredDOI = function(item, doi) {
+    const cleanDOI = this.cleanDOI(doi);
+
+    if (!cleanDOI) {
+      return "";
+    }
+
+    if (this.itemSupportsField(item, 'DOI')) {
+      item.setField('DOI', cleanDOI);
+      return "field";
+    }
+
+    this.setExtraDOI(item, cleanDOI);
+    return "extra";
+  };
+
+  doiManager.getItemField = function(item, fieldName) {
+    if (!item || !item.getField) {
+      return '';
+    }
+
+    try {
+      return item.getField(fieldName) || '';
+    } catch (e) {
+      return '';
+    }
+  };
+
+  doiManager.itemSupportsField = function(item, fieldName) {
+    if (!item || !item.setField) {
+      return false;
+    }
+
+    try {
+      if (!Zotero.ItemFields || !Zotero.ItemFields.getID || !Zotero.ItemFields.isValidForType) {
+        return true;
+      }
+
+      const fieldID = Zotero.ItemFields.getID(fieldName);
+
+      if (!fieldID) {
+        return false;
+      }
+
+      return !!Zotero.ItemFields.isValidForType(fieldID, item.itemTypeID);
+    } catch (e) {
+      return true;
+    }
+  };
+
+  doiManager.extractDOIFromExtra = function(extra) {
+    const lines = String(extra || '').split(/\r?\n/);
+
+    for (const line of lines) {
+      const match = line.match(/^\s*DOI:\s*(.+?)\s*$/i);
+
+      if (match) {
+        return this.cleanDOI(match[1]);
+      }
+    }
+
+    return '';
+  };
+
+  doiManager.setExtraDOI = function(item, doi) {
+    const cleanDOI = this.cleanDOI(doi);
+    const extra = this.getItemField(item, 'extra');
+    const lines = String(extra || '').split(/\r?\n/).filter((line, index, array) => {
+      return line || index < array.length - 1;
+    });
+    let replaced = false;
+
+    const updatedLines = lines.map(line => {
+      if (/^\s*DOI:\s*/i.test(line)) {
+        replaced = true;
+        return `DOI: ${cleanDOI}`;
+      }
+
+      return line;
+    });
+
+    if (!replaced) {
+      updatedLines.push(`DOI: ${cleanDOI}`);
+    }
+
+    item.setField('extra', updatedLines.join('\n'));
+  };
+
+  doiManager.getRegularItems = function(items) {
+    const supportedTypeIDs = SUPPORTED_ITEM_TYPES
+      .map(type => Zotero.ItemTypes.getID(type))
+      .filter(id => id !== false);
+
+    return (items || []).filter(item => {
+      return item.isRegularItem()
+        && !item.isFeedItem
+        && supportedTypeIDs.includes(item.itemTypeID);
+    });
+  };
+
+  doiManager.extractYear = function(date) {
+    const match = String(date || '').match(/\b(1[5-9]\d{2}|20\d{2}|21\d{2})\b/);
+    return match ? match[1] : '';
+  };
+
+  /**
+   * Clean DOI format
+   */
+  doiManager.cleanDOI = function(doi) {
+    if (!doi) return '';
+
+    // Remove URL prefix if present
+    doi = String(doi)
+      .replace(/^\s*doi:\s*/i, '')
+      .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
+
+    // Remove whitespace
+    doi = doi.trim();
+
+    return doi;
+  };
+
+})();

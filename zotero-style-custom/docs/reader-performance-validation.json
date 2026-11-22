@@ -1,0 +1,44 @@
+{
+  "version": "0.59.62",
+  "artifactSHA256": "0820d19621394ca1d02475e74155a7b429d322b750d9516cf57ccea186c68533",
+  "readerTests": {
+    "total": 191,
+    "passed": 190,
+    "failed": 0,
+    "skipped": 1,
+    "cancelled": 0
+  },
+  "fullTests": {
+    "total": 2123,
+    "passed": 2083,
+    "failed": 9,
+    "skipped": 31,
+    "cancelled": 0
+  },
+  "fullFailureScope": "Nine existing macOS audio encoder fixtures fail to execute fake-afconvert on Windows. The tests and bridge/tts/book.mjs are unchanged.",
+  "settingsVerifier": "Existing schema contains 51 feature switches; the unchanged verifier expects the 50 baseline switches exactly.",
+  "browserChecks": 12,
+  "idleSyncCalls": 60,
+  "browserBefore": {
+    "geometryReads": 780,
+    "styleWrites": 720,
+    "diagnosticWrites": 60,
+    "columnBeside": true,
+    "cycles": 60
+  },
+  "browserAfter": {
+    "geometryReads": 0,
+    "styleWrites": 0,
+    "diagnosticWrites": 0,
+    "columnBeside": true,
+    "cycles": 60
+  },
+  "nativePDFSpeedMeasured": false,
+  "nativeActivationVerified": false,
+  "installation": "Installed while Zotero was stopped; silent startup registered the new version as active.",
+  "evidence": "validation/",
+  "registeredVersion": "0.59.62",
+  "addonManagerActive": true,
+  "readerRuntimeVerified": false,
+  "reproduction": "../../docs/reproducing.md"
+}

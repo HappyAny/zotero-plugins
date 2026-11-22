@@ -1,0 +1,81 @@
+{
+  "scope": "Style Custom timer and navigation paths; DOI Fix preservation checked. Other third-party plugins were not audited.",
+  "fixed": [
+    {
+      "location": "native item list",
+      "before": "unconditional 5000 ms scan",
+      "after": "coalesced initial, scroll, native row/context and item events"
+    },
+    {
+      "location": "workbench context/focus",
+      "before": "500 ms polling",
+      "after": "native collection selection and focus events; draft deferral retained"
+    },
+    {
+      "location": "settings status",
+      "before": "1000 ms polling",
+      "after": "runtime status events plus focus/visibility"
+    },
+    {
+      "location": "cache saving",
+      "before": "dirty-state discovery by list polling",
+      "after": "data mutation schedules one save; explicit and shutdown flushes remain"
+    },
+    {
+      "location": "virtual row bookkeeping",
+      "before": "detached rows retained in decoration maps",
+      "after": "detached nodes released during enhancement"
+    },
+    {
+      "location": "save timer cleanup",
+      "before": "clear using the current main window",
+      "after": "clear using the window that created the timer"
+    }
+  ],
+  "retainedWithReason": [
+    {
+      "location": "src/reading.js",
+      "task": "reading-time sampling",
+      "reason": "elapsed-time and idle accounting require a clock; no selection restoration"
+    },
+    {
+      "location": "src/reader-tools.js",
+      "task": "30000 ms recovery watchdog",
+      "reason": "recovers late/restored reader frames alongside lifecycle events; no article selection"
+    },
+    {
+      "location": "src/workbench.js",
+      "task": "reading-progress display, at most every 10 seconds while visible",
+      "reason": "throttles reading events; defers rebuilding while a progress control has focus"
+    },
+    {
+      "location": "src/updater.js",
+      "task": "daily update schedule and bounded retry",
+      "reason": "plugin releases change over time"
+    },
+    {
+      "location": "one-shot timers",
+      "task": "batch saves, request deadlines, stream throttling, bounded readiness/highlight retries and animation",
+      "reason": "belong to active operations"
+    },
+    {
+      "location": "runtime.useColumns and reader-tools.applyLayout",
+      "task": "remaining full item-list selection refreshes",
+      "reason": "explicit user column-layout commands, not background refreshes"
+    }
+  ],
+  "additionalExistingFindings": [
+    {
+      "issue": "settings verifier assumes 50 switches; collection count makes 51",
+      "state": "recorded; verifier restored to HEAD"
+    },
+    {
+      "issue": "annotationPreferComment setting has no current source consumer",
+      "state": "recorded; unrelated to timers/navigation; schema unchanged"
+    }
+  ],
+  "limits": [
+    "Personal-profile GUI activation awaits the next normal start.",
+    "Browser checks execute native tree methods with a lightweight row model; they are not a full native GUI test."
+  ]
+}

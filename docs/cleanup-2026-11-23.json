@@ -1,0 +1,52 @@
+{
+  "apply": true,
+  "targets": [
+    {
+      "path": "build",
+      "files": 981,
+      "bytes": 569132242,
+      "linkOnly": false
+    },
+    {
+      "path": "zotero-style-custom/build",
+      "files": 408,
+      "bytes": 637349784,
+      "linkOnly": false
+    },
+    {
+      "path": "doi-fix-custom/evidence",
+      "files": 233,
+      "bytes": 84780340,
+      "linkOnly": false
+    },
+    {
+      "path": "node_modules",
+      "files": 1139,
+      "bytes": 4277640,
+      "linkOnly": false
+    },
+    {
+      "path": "content/journal-registry.json",
+      "files": 1,
+      "bytes": 20847271,
+      "linkOnly": false
+    },
+    {
+      "path": "zotero-style-custom/data/if-catalog.open.json",
+      "files": 1,
+      "bytes": 37551860,
+      "linkOnly": false
+    }
+  ],
+  "removedBytes": 1353939137,
+  "removedFiles": 2763,
+  "date": "2026-11-23",
+  "scope": "Repository-generated files only; installed Zotero profile and data were not accessed.",
+  "preserved": [
+    "Plugin sources and tests",
+    "Browser and isolated native reproduction scripts",
+    "Sanitized historical validation summaries",
+    "Licenses and upstream provenance",
+    "Enclosing Git history"
+  ]
+}

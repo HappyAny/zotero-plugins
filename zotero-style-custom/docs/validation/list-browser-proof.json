@@ -1,0 +1,145 @@
+{
+  "state": "complete",
+  "environment": "Chromium with actual installed Zotero 10 refresh, selection and cache methods; controlled timer clock and lightweight row model",
+  "runtimeSHA256": "08e8a3f6573034cf7ac506c19ed18adad29208675e08f9151181cb089409688b",
+  "nativeSourceSHA256": "c360339d6bfb389195f9a7b542800386a7a0509cef15f7795f1f77c02d217314",
+  "results": [
+    {
+      "name": "old-jump",
+      "checks": [
+        {
+          "name": "negative control scans rows twelve times per idle minute",
+          "passed": true
+        },
+        {
+          "name": "negative control reproduces snap to selected paper",
+          "passed": true
+        }
+      ],
+      "initialPaints": 1,
+      "idlePaints": 12,
+      "intervals": 1,
+      "before": {
+        "top": 4817,
+        "left": 230
+      },
+      "after": {
+        "top": 60,
+        "left": 230
+      },
+      "afterBackground": {
+        "top": 60,
+        "value": "42"
+      },
+      "fullRefreshes": 2
+    },
+    {
+      "name": "polling",
+      "checks": [
+        {
+          "name": "negative control scans rows twelve times per idle minute",
+          "passed": true
+        },
+        {
+          "name": "browsing preserves both scroll axes",
+          "passed": true
+        }
+      ],
+      "initialPaints": 1,
+      "idlePaints": 12,
+      "intervals": 1,
+      "before": {
+        "top": 4817,
+        "left": 230
+      },
+      "after": {
+        "top": 4817,
+        "left": 230
+      },
+      "afterBackground": {
+        "top": 7217,
+        "value": "42"
+      },
+      "fullRefreshes": 0
+    },
+    {
+      "name": "events",
+      "checks": [
+        {
+          "name": "no recurring item-list timer",
+          "passed": true
+        },
+        {
+          "name": "one idle minute performs zero row scans",
+          "passed": true
+        },
+        {
+          "name": "actual title decorations do not feed the observer",
+          "passed": true
+        },
+        {
+          "name": "browsing preserves both scroll axes",
+          "passed": true
+        },
+        {
+          "name": "fifty scroll events and native row mutations coalesce once",
+          "passed": true
+        },
+        {
+          "name": "newly visible titles are actually decorated",
+          "passed": true
+        },
+        {
+          "name": "actual native invalidation updates cached metrics without scrolling",
+          "passed": true
+        },
+        {
+          "name": "background work never restores the selection",
+          "passed": true
+        },
+        {
+          "name": "the input retains focus and its draft",
+          "passed": true
+        },
+        {
+          "name": "off-screen selection stays unchanged",
+          "passed": true
+        },
+        {
+          "name": "native collection selection reaches subscribers",
+          "passed": true
+        },
+        {
+          "name": "native title changes are observed without rewriting title data",
+          "passed": true
+        },
+        {
+          "name": "explicit native navigation still works",
+          "passed": true
+        },
+        {
+          "name": "teardown removes queued paints and native listeners",
+          "passed": true
+        }
+      ],
+      "initialPaints": 1,
+      "idlePaints": 0,
+      "intervals": 0,
+      "before": {
+        "top": 4817,
+        "left": 230
+      },
+      "after": {
+        "top": 4817,
+        "left": 230
+      },
+      "afterBackground": {
+        "top": 7217,
+        "value": "42"
+      },
+      "fullRefreshes": 0
+    }
+  ],
+  "errors": [],
+  "externalRequests": []
+}

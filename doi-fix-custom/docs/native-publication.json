@@ -1,0 +1,202 @@
+{
+  "state": "complete",
+  "checks": [
+    {
+      "name": "isolated disposable data directory",
+      "passed": true
+    },
+    {
+      "name": "empty disposable library",
+      "passed": true
+    },
+    {
+      "name": "native preprint converts successfully",
+      "passed": true
+    },
+    {
+      "name": "native item type is Journal Article",
+      "passed": true
+    },
+    {
+      "name": "native identity stays unchanged",
+      "passed": true
+    },
+    {
+      "name": "native journal metadata is updated",
+      "passed": true
+    },
+    {
+      "name": "native publication date is updated",
+      "passed": true
+    },
+    {
+      "name": "existing Extra and rating remain intact",
+      "passed": true
+    },
+    {
+      "name": "arXiv ID is preserved",
+      "passed": true
+    },
+    {
+      "name": "preprint fields have a backup",
+      "passed": true
+    },
+    {
+      "name": "PDF attachment stays with the original item",
+      "passed": true
+    },
+    {
+      "name": "native note stays unchanged",
+      "passed": true
+    },
+    {
+      "name": "native PDF annotation stays unchanged",
+      "passed": true
+    },
+    {
+      "name": "tags and collections stay intact",
+      "passed": true
+    },
+    {
+      "name": "converted native item has no pending edits",
+      "passed": true
+    },
+    {
+      "name": "new type is committed to SQLite",
+      "passed": true
+    },
+    {
+      "name": "native conversion is idempotent",
+      "passed": true
+    },
+    {
+      "name": "native conference type is supported",
+      "passed": true
+    },
+    {
+      "name": "native proceedings metadata is supported",
+      "passed": true
+    },
+    {
+      "name": "native institutional creator is supported",
+      "passed": true
+    },
+    {
+      "name": "native field failure is surfaced",
+      "passed": true
+    },
+    {
+      "name": "native field failure restores cached preprint data",
+      "passed": true
+    },
+    {
+      "name": "native field failure leaves SQLite unchanged",
+      "passed": true
+    },
+    {
+      "name": "native transaction write failure is surfaced",
+      "passed": true
+    },
+    {
+      "name": "native transaction rolls back the stored item type",
+      "passed": true
+    },
+    {
+      "name": "native transaction rollback restores cached fields and creators",
+      "passed": true
+    },
+    {
+      "name": "book menu requests the exact chapter DOI",
+      "passed": true
+    },
+    {
+      "name": "Update DOI converts the native preprint into Book Section",
+      "passed": true
+    },
+    {
+      "name": "native book title is correct",
+      "passed": true
+    },
+    {
+      "name": "native ISBN and publisher are correct",
+      "passed": true
+    },
+    {
+      "name": "native chapter pages and year are correct",
+      "passed": true
+    },
+    {
+      "name": "chapter DOI and title are preserved",
+      "passed": true
+    },
+    {
+      "name": "book identity stays unchanged",
+      "passed": true
+    },
+    {
+      "name": "book PDF remains attached",
+      "passed": true
+    },
+    {
+      "name": "book note remains unchanged",
+      "passed": true
+    },
+    {
+      "name": "book PDF annotation remains unchanged",
+      "passed": true
+    },
+    {
+      "name": "book tags and collection remain intact",
+      "passed": true
+    },
+    {
+      "name": "book rating and prior metadata backup are retained",
+      "passed": true
+    },
+    {
+      "name": "native chapter authors are updated",
+      "passed": true
+    },
+    {
+      "name": "book conversion leaves no pending edits",
+      "passed": true
+    },
+    {
+      "name": "book type is committed to SQLite",
+      "passed": true
+    },
+    {
+      "name": "menu reports Book Section conversion explicitly",
+      "passed": true
+    },
+    {
+      "name": "menu reports the chapter conversion as updated",
+      "passed": true
+    },
+    {
+      "name": "book metadata is fetched only once",
+      "passed": true
+    }
+  ],
+  "managerSHA256": "20125725fa979607d26a8a2c726f1c9750f5a037c0a9cf9766d16a7ba7f0caea",
+  "uiNotificationsSuppressed": true,
+  "phase": "complete",
+  "book": {
+    "beforeType": "preprint",
+    "afterType": "bookSection",
+    "DOI": "10.1016/b978-0-443-13447-0.00004-0",
+    "bookTitle": "Topological Photonics",
+    "ISBN": "978-0-443-13447-0",
+    "publisher": "Elsevier",
+    "pages": "27-65",
+    "date": "2027",
+    "lines": [
+      "Processing: Topological photonics in one-dimensional settings...",
+      "  Old DOI: 10.1016/b978-0-443-13447-0.00004-0",
+      "Existing DOI verified: 10.1016/b978-0-443-13447-0.00004-0",
+      "Publication information updated: Book Section",
+      "\nCompleted: 1 updated, 0 unchanged, 0 failed"
+    ]
+  },
+  "zoteroVersion": "10.0.8"
+}

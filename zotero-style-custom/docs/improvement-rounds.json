@@ -1,5 +1,5 @@
 {
-  "version": "0.59.61",
+  "version": "0.59.69",
   "minimumRequestedRounds": 10,
   "rounds": [
     {
@@ -3014,7 +3014,7 @@
         },
         {
           "file": "src/runtime.js",
-          "marker": "const {seconds,lastRead,...rest}=this.state(item)"
+          "marker": "this.enhanceTitles(win,state,records)"
         }
       ],
       "tests": [
@@ -4393,6 +4393,228 @@
       ],
       "status": "verified",
       "review": "파일이 제목·저자·학술지와 연도를 먼저 말하고 본문으로 들어간다. 항목에 없는 것은 지어내지 않는다."
+    },
+    {
+      "round": "R169",
+      "title": "Reader updates follow lifecycle events and skip unchanged layout",
+      "gap": "A one-second poll repeatedly measured the open assistant column and wrote its diagnostic file while idle.",
+      "entryPoint": "PDF reader and paper assistant",
+      "sources": [
+        {
+          "file": "src/reader-tools.js",
+          "marker": "WATCHDOG_MS=30000"
+        },
+        {
+          "file": "src/reader-assist.js",
+          "marker": "function layoutSnapshot"
+        }
+      ],
+      "tests": [
+        {
+          "file": "test/reader-tools.test.mjs",
+          "name": "reader events are coalesced and the recovery clock runs every 30 seconds"
+        },
+        {
+          "file": "test/reader-assist.test.mjs",
+          "name": "unchanged reader sync does not rewrite the layout or schedule another diagnostic"
+        },
+        {
+          "file": "test/reader-assist.test.mjs",
+          "name": "native container replacement and style reset repair the open panel without polling"
+        }
+      ],
+      "status": "verified",
+      "review": "Uses tab, file, item and page notifications; bounds startup retries; keeps a 30-second recovery check. Layout observers repair replaced containers and reset styles. Browser comparison measures idle work, not native PDF rendering.",
+      "nativeActivationVerified": false
+    },
+    {
+      "round": "R170",
+      "title": "Paper assistant read aloud is opt-in and cannot follow while disabled",
+      "gap": "Read-aloud keyboard shortcuts were active while the assistant panel was closed, and playback could follow its sentence to another PDF page.",
+      "entryPoint": "Reader settings: enable read aloud in the paper assistant",
+      "sources": [
+        {
+          "file": "src/reader-assist.js",
+          "marker": "const audioEnabled="
+        },
+        {
+          "file": "src/settings-schema.js",
+          "marker": "readAloudEnabled"
+        },
+        {
+          "file": "src/runtime.js",
+          "marker": "keys.includes('readAloudEnabled')"
+        }
+      ],
+      "tests": [
+        {
+          "file": "test/reader-assist.test.mjs",
+          "name": "read aloud is hidden and inactive by default while AI and translation stay available"
+        },
+        {
+          "file": "test/reader-assist.test.mjs",
+          "name": "disabling read aloud stops its player and prevents late following or playback"
+        },
+        {
+          "file": "test/reader-assist.test.mjs",
+          "name": "a pending audio start cannot survive disabling and re-enabling read aloud"
+        },
+        {
+          "file": "test/settings.test.mjs",
+          "name": "paper assistant read aloud is an opt-in reader setting"
+        }
+      ],
+      "status": "verified",
+      "review": "Defaults to disabled; hides play controls and the sentence tab, omits selection listening, leaves AI and translation available. Disabled keyboard and mouse starts do nothing. Turning it off destroys the player, clears follow marks, and invalidates pending starts. Existing audio tests opt in explicitly.",
+      "nativeActivationVerified": false
+    },
+    {
+      "round": "R171",
+      "title": "Keep the native item-list browsing position during background updates",
+      "gap": "The five-second poll mistook different visible papers for changed data. A full refresh then restored the off-screen selected paper and scrolled back to it; completed background lookups used the same refresh path.",
+      "entryPoint": "Native Zotero item list",
+      "sources": [
+        {
+          "file": "src/runtime.js",
+          "marker": "Virtual rows change while scrolling."
+        },
+        {
+          "file": "src/runtime.js",
+          "marker": "view.invalidateRowCache?.(true);"
+        }
+      ],
+      "tests": [
+        {
+          "file": "test/native-list-scroll.test.mjs",
+          "name": "scrolling to different visible papers cannot trigger the five-second selection refresh"
+        },
+        {
+          "file": "test/native-list-scroll.test.mjs",
+          "name": "background metrics invalidate cached cell values without reselecting or scrolling the list"
+        }
+      ],
+      "status": "verified",
+      "review": "The poll no longer rebuilds the item model. Background results invalidate cached cell values and repaint without restoring selection. Browser checks execute the installed Zotero refresh and selection methods and reproduce the old jump as a negative control."
+    },
+    {
+      "round": "R172",
+      "title": "Event-driven library rows, workbench context and settings status",
+      "gap": "Three idle polls repeatedly scanned the list, context and settings. Cache saves depended on the list poll, and detached virtual rows retained decoration bookkeeping.",
+      "entryPoint": "Native list, workbench and settings",
+      "sources": [
+        {
+          "file": "src/runtime.js",
+          "marker": "requestItemList(win, state"
+        },
+        {
+          "file": "src/runtime.js",
+          "marker": "subscribeLibraryContext(win, listener)"
+        },
+        {
+          "file": "src/settings.js",
+          "marker": "runtime.subscribeStatus?.(scheduleStatus)"
+        },
+        {
+          "file": "src/workbench.js",
+          "marker": "runtime.subscribeLibraryContext?.(win,contextChanged)"
+        }
+      ],
+      "tests": [
+        {
+          "file": "test/native-list-scroll.test.mjs",
+          "name": "list events coalesce bursts and leave no idle scan or decoration feedback loop"
+        },
+        {
+          "file": "test/native-list-scroll.test.mjs",
+          "name": "papers entering view during a citation job are checked when that job finishes"
+        },
+        {
+          "file": "test/native-list-scroll.test.mjs",
+          "name": "dirty data schedules one save without waiting for a list event and cancels on its owning window"
+        },
+        {
+          "file": "test/native-list-scroll.test.mjs",
+          "name": "recycled virtual rows release their detached decoration bookkeeping"
+        },
+        {
+          "file": "test/settings.test.mjs",
+          "name": "settings status follows coalesced runtime events and remains idle without polling"
+        },
+        {
+          "file": "test/workbench.test.mjs",
+          "name": "collection changes during pending membership lookup discard the old scope and follow the current collection"
+        }
+      ],
+      "status": "verified",
+      "review": "Native context, row, item and scroll events coalesce a one-shot paint. Decoration writes are excluded from observation; citation gates and due checks remain. Dirty cache writes schedule a save at the mutation. Settings subscribe to runtime changes. Workbench follows native context and focus events. Reading clocks, bounded retries, request timeouts and the reader recovery watchdog remain."
+    },
+    {
+      "round": "R173",
+      "title": "Open item attachments with the operating-system default application",
+      "gap": "Native PDF opening follows the Zotero reader preference; a one-time system-default open needed a separate context action.",
+      "entryPoint": "Native item context menu → Open with System Default",
+      "sources": [
+        {
+          "file": "src/runtime.js",
+          "marker": "async openWithSystemDefault(win"
+        },
+        {
+          "file": "src/runtime.js",
+          "marker": "attachSystemDefaultMenu(win, state)"
+        },
+        {
+          "file": "src/runtime.js",
+          "marker": "await this.Z.launchFile(path);"
+        }
+      ],
+      "tests": [
+        {
+          "file": "test/system-default.test.mjs",
+          "name": "system default opens a parent paper main attachment without changing reader preferences or item data"
+        },
+        {
+          "file": "test/system-default.test.mjs",
+          "name": "Style Custom owns a direct context-menu action that follows the current raw selection and stays idle until invoked"
+        },
+        {
+          "file": "test/system-default.test.mjs",
+          "name": "menu rebuilds and teardown remove their old entries and popup listeners"
+        },
+        {
+          "file": "test/system-default.test.mjs",
+          "name": "teardown and shutdown prevent a late file lookup from opening an external application"
+        }
+      ],
+      "status": "verified",
+      "review": "The Style Custom-owned top-level menu resolves the native best attachment for parent items and uses raw selected attachment rows directly. It deduplicates files, reports missing local files, cancels late opens after teardown and bypasses reader preferences through Zotero.launchFile."
+    },
+    {
+      "round": "R174",
+      "title": "Place system-default opening below the native PDF Open actions",
+      "gap": "Open with System Default was appended near the bottom of the item context menu.",
+      "entryPoint": "Native item context menu below Open PDF in New Tab and Open PDF in New Window",
+      "sources": [
+        {
+          "file": "src/runtime.js",
+          "marker": "node.getAttribute('data-l10n-id') === 'item-menu-viewAttachment'"
+        },
+        {
+          "file": "src/runtime.js",
+          "marker": "item.setAttribute('zotero-locate', 'true');"
+        }
+      ],
+      "tests": [
+        {
+          "file": "test/system-default.test.mjs",
+          "name": "system default sits immediately below both native Open PDF actions and survives native menu rebuilds"
+        },
+        {
+          "file": "test/system-default.test.mjs",
+          "name": "when native PDF actions are absent the system-default action is reinserted without changing native row indexes"
+        }
+      ],
+      "status": "verified",
+      "review": "On popupshowing, the existing action moves after the last native attachment-opening action. It participates in the native dynamic-prefix cleanup so subsequent index-based static menu rebuilds remain intact. No new timers, native handler patches or file-opening changes."
     }
   ],
   "introducedInVersion": "0.6.0"

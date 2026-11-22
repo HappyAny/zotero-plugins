@@ -1,0 +1,127 @@
+{
+  "DOI": "10.1103/jwmx-j2pg",
+  "title": [
+    "Quantum dispersive waves and multimode squeezing in pure-Kerr parametrically driven cavity solitons"
+  ],
+  "type": "journal-article",
+  "container-title": [
+    "Physical Review Letters"
+  ],
+  "author": [
+    {
+      "given": "Rafael Romero",
+      "family": "Mendez",
+      "sequence": "first",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Sashank Kaushik",
+      "family": "Sridhar",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Samyak",
+      "family": "Gothi",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Pradyoth",
+      "family": "Shandilya",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Yichen",
+      "family": "Shen",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Curtis",
+      "family": "Menyuk",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Avik",
+      "family": "Dutt",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    }
+  ],
+  "published": {
+    "date-parts": [
+      [
+        2026,
+        10,
+        28
+      ]
+    ]
+  },
+  "published-online": {
+    "date-parts": [
+      [
+        2026,
+        10,
+        28
+      ]
+    ]
+  },
+  "issued": {
+    "date-parts": [
+      [
+        2026,
+        10,
+        28
+      ]
+    ]
+  },
+  "ISSN": [
+    "0031-9007",
+    "1079-7114"
+  ]
+}

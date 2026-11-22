@@ -1,8 +1,14 @@
 # Style Custom
 
+Build and verification instructions: [reproduction guide](../docs/reproducing.md). Historical validation summaries: [docs/validation](docs/validation). Temporary profiles and old packages are not required.
+
 A research workbench for Zotero 9 and 10 (9.0–10.*; the manifest does not load it on other versions). Its companion ZotPoP runs on Zotero 7–10. It adds a panel with the things a working researcher keeps switching windows for, and a handful of columns to the item list. It is installed as its own `.xpi`, separately from ZotPoP, and the two work together where it helps.
 
 The repository README has the illustrated tour: [../README.md](../README.md). This file is the reference for what the plugin records, where, and how it decides things.
+
+Version 0.59.63 makes read aloud in the paper assistant opt-in. Play controls, the sentence tab, selection listening, and audio shortcuts stay hidden or inactive until enabled in Reader settings. Turning it off stops playback and PDF following, including pending audio starts. AI chat and translation remain available. See the [read-aloud validation](docs/reader-listen-opt-in-validation.json).
+
+Version 0.59.62 updates reader controls after lifecycle events, with a 30-second recovery check. An unchanged assistant layout skips geometry measurements, style writes, and diagnostic writes. See the [reader performance validation](docs/reader-performance-validation.json). The browser comparison measures repeated idle work, not PDF rendering speed.
 
 Version 0.59.61 fixes dynamic error localization. Reader chat and summary errors such as HTTP 400 use the interface language. Quota failures translate service labels and time remaining before composing the message. Column-registration and memo-to-note failures retain their details in a translated sentence. See the [error-localization validation](../docs/error-localization-validation.json).
 

@@ -1,0 +1,80 @@
+{
+  "state": "complete",
+  "checks": [
+    {
+      "name": "disposable data directory is isolated from the user library",
+      "passed": true
+    },
+    {
+      "name": "disposable library starts empty",
+      "passed": true
+    },
+    {
+      "name": "stored attachment directory remains inside the disposable library",
+      "passed": true
+    },
+    {
+      "name": "native regular item enables the command",
+      "passed": true
+    },
+    {
+      "name": "regular item resolves and opens its native main attachment",
+      "passed": true
+    },
+    {
+      "name": "native best-attachment ordering prefers PDF over the older linked text file",
+      "passed": true
+    },
+    {
+      "name": "internal-reader preference remains unchanged",
+      "passed": true
+    },
+    {
+      "name": "parent and selected PDF resolve once to the real stored file",
+      "passed": true
+    },
+    {
+      "name": "custom-reader preference remains unchanged",
+      "passed": true
+    },
+    {
+      "name": "direct attachment selection resolves its native linked-file path",
+      "passed": true
+    },
+    {
+      "name": "standalone native file attachment opens without a parent",
+      "passed": true
+    },
+    {
+      "name": "a missing native file never reaches the OS launcher",
+      "passed": true
+    },
+    {
+      "name": "native note-only selection disables the command",
+      "passed": true
+    },
+    {
+      "name": "native notes are not treated as file attachments",
+      "passed": true
+    },
+    {
+      "name": "the action bypasses internal and configured Zotero reader handlers",
+      "passed": true
+    },
+    {
+      "name": "item metadata, rating and note remain unchanged",
+      "passed": true
+    },
+    {
+      "name": "attachment relationships remain unchanged",
+      "passed": true
+    },
+    {
+      "name": "test reader preference is restored",
+      "passed": true
+    }
+  ],
+  "runtimeSHA256": "e93fdbc11ee04b15f879a16473b3dafc6aadb17f5065c57d8a05274f20efc202",
+  "externalApplicationLaunchIntercepted": true,
+  "zoteroVersion": "10.0.8"
+}

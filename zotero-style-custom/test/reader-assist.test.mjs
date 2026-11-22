@@ -82,7 +82,8 @@ function fixture({prefs={},settings={},structured=paper(),withSpeech=true,voices
   return {status:200,response:{choices:[{message:{content}}]},responseText:JSON.stringify({choices:[{message:{content}}]}),getResponseHeader:()=> 'application/json'};
  }};
  const allPrefs={aiEndpoint:'https://example.org/v1/chat/completions',aiModel:'m1',aiKey:'secret-key',deeplApiKey:'',translateTarget:'KO',translateFormality:'default',...prefs};
- const allSettings={aiLanguage:'English',aiSummaryOnOpen:false,readAloudSpeed:100,readAloudVoice:'',readAloudVoiceKo:'',readAloudHeadings:false,readAloudCredit:true,...settings};
+  // Existing audio scenarios opt in explicitly; separate tests cover the production default.
+  const allSettings={aiLanguage:'English',aiSummaryOnOpen:false,readAloudEnabled:true,readAloudSpeed:100,readAloudVoice:'',readAloudVoiceKo:'',readAloudHeadings:false,readAloudCredit:true,...settings};
  const remarks=new Map(),memoCalls=[],notes=[],readings=[];
  const copied=[];
  const Z={Items:{get:id=>id===11?attachment:id===10?parent:null},HTTP:http,PDFTranslate:pdft?{api:pdft}:undefined,Prefs:{get:(k)=>k.startsWith('extensions.zotero.ZoteroPDFTranslate.')?t4zPrefs[k.slice(37)]:undefined},Utilities:{Internal:{copyTextToClipboard:t=>copied.push(t)}},DataDirectory:{dir:'/data'},logError:e=>{(Z.errors||(Z.errors=[])).push(e);},Reader:{_readers:[reader]},getMainWindow:()=>win,PDFWorker:{async getFullText(){return {text:'Abstract\n\nPlain text. Second sentence.'};}},isMac:true};
@@ -119,6 +120,82 @@ test('the toolbar gets two buttons, one to open the panel and one to listen; ope
  assert.equal(f.panel().hidden,true);assert.equal(f.doc.querySelector('#split-view').style.getPropertyValue('inset-inline-end'),'');
  f.toolbar.remove();assert.equal(f.container.querySelectorAll('button').length,0);
  f.stop();assert.equal(f.panel(),null);
+});
+
+test('read aloud is hidden and inactive by default while AI and translation stay available',async()=>{
+ const f=fixture({settings:{readAloudEnabled:undefined},runtimeState:{readerAssist:{tab:'listen'}}});await f.open();
+ assert.equal(f.container.querySelectorAll('button')[1].hidden,true);
+ assert.equal(f.container.querySelectorAll('button')[1].style.getPropertyValue('display'),'none');
+ assert.equal(f.panel().querySelector('.sc-ra-player').hidden,true);
+ assert.equal(f.panel().querySelector('.sc-ra-rail-play').hidden,true);
+ assert.equal(f.panel().querySelector('[data-tab="listen"]').hidden,true);
+ assert.equal(f.panel().querySelector('[data-pane="ask"]').hidden,false);
+ assert.equal(f.panel().querySelector('[data-tab="translate"]').hidden,false);
+ f.press(f.byText('Read body only'));await settle(20);
+ for(const code of ['KeyK','Space','KeyJ','KeyL']){
+  const event=new f.win.Event('keydown',{bubbles:true,cancelable:true});Object.assign(event,{code,altKey:true,shiftKey:true});
+  f.viewDoc.querySelector('.page').dispatchEvent(event);assert.equal(event.defaultPrevented,false);
+ }
+ await settle(20);assert.equal(f.sessionOf().player,null);assert.deepEqual(f.synth.log,[]);assert.deepEqual(f.navs,[]);
+ assert.equal(f.requests.filter(row=>!row.url.endsWith('.css')).length,0,'opening the assistant does not look for audio engines');
+ f.stop();
+});
+
+test('disabled read aloud removes the selection listen action and retains Ask AI',async()=>{
+ const f=fixture({settings:{readAloudEnabled:false}});await f.sync();const made=[];
+ f.service.selectionPopup({reader:f.reader,doc:f.doc,params:{annotation:{text:'Selected result',position:{pageIndex:3,rects:[[80,664,200,676]]}}},append:(...nodes)=>made.push(...nodes)});
+ assert.equal(made.length,1);assert.equal(made[0].textContent,'Ask AI');assert.equal(made[0].getAttribute('data-opens'),'ai');
+ f.stop();
+});
+
+test('disabling read aloud stops its player and prevents late following or playback',async()=>{
+ const f=fixture();await f.sync();f.press(f.container.querySelectorAll('button')[1]);await settle(25);f.synth.begin();await settle();
+ assert.equal(f.sessionOf().player.state().status,'playing');
+ f.allSettings.readAloudEnabled=false;f.service.applyPreferences();const before=f.navs.length;
+ assert.equal(f.sessionOf().player,null);assert.equal(f.viewDoc.querySelectorAll('[data-sc-ra-hl]').length,0);
+ assert.equal(f.container.querySelectorAll('button')[1].hidden,true);assert.equal(f.synth.queue.length,0);
+ f.synth.finish();for(let i=0;i<10;i++)await f.sync();
+ assert.equal(f.navs.length,before);assert.equal(f.sessionOf().player,null);assert.equal(f.synth.queue.length,0);
+ f.stop();
+});
+
+test('a pending audio start cannot survive disabling and re-enabling read aloud',async()=>{
+ const f=fixture();await f.sync();let release;const read=f.fileIO.readUTF8;
+ f.fileIO.readUTF8=path=>/struct/.test(path)?new Promise(resolve=>{release=()=>resolve(read(path));}):read(path);
+ f.press(f.container.querySelectorAll('button')[1]);await settle(10);assert.equal(typeof release,'function');
+ f.allSettings.readAloudEnabled=false;f.service.applyPreferences();f.allSettings.readAloudEnabled=true;f.service.applyPreferences();
+ release();await settle(30);assert.deepEqual(f.synth.log.filter(row=>row[0]==='speak'),[]);assert.deepEqual(f.navs,[]);
+ f.stop();
+});
+
+test('read aloud can be enabled explicitly without starting playback',async()=>{
+ const f=fixture({settings:{readAloudEnabled:false}});await f.open();
+ f.allSettings.readAloudEnabled=true;f.service.applyPreferences();
+ assert.equal(f.container.querySelectorAll('button')[1].hidden,false);assert.equal(f.panel().querySelector('.sc-ra-player').hidden,false);
+ assert.equal(f.panel().querySelector('[data-tab="listen"]').hidden,false);assert.deepEqual(f.synth.log,[]);assert.deepEqual(f.navs,[]);
+ f.stop();
+});
+
+test('unchanged reader sync does not rewrite the layout or schedule another diagnostic',async()=>{
+ const f=fixture({holdTimers:true});await f.open();await f.fire();
+ const split=f.doc.querySelector('#split-view'),original=split.style.setProperty.bind(split.style);let writes=0;
+ split.style.setProperty=(...args)=>{writes++;return original(...args);};
+ for(let i=0;i<60;i++)await f.sync();
+ assert.equal(writes,0,'an unchanged open panel must leave the view styles alone');
+ assert.equal(f.held.size,0,'no repeated delayed column checks');
+ f.stop();
+});
+
+test('native container replacement and style reset repair the open panel without polling',async()=>{
+ const f=fixture({holdTimers:true});await f.open();
+ const old=f.doc.querySelector('#split-view'),replacement=f.doc.createElement('div');replacement.id='split-view';old.replaceWith(replacement);
+ await new Promise(resolve=>realSetTimeout(resolve,80));
+ assert.equal(replacement.style.getPropertyValue('inset-inline-end'),'372px');
+ replacement.style.removeProperty('inset-inline-end');await new Promise(resolve=>realSetTimeout(resolve,80));
+ assert.equal(replacement.style.getPropertyValue('inset-inline-end'),'372px');
+ f.stop();assert.equal(f.held.size,0,'teardown removes the delayed column check');
+ replacement.style.removeProperty('inset-inline-end');await new Promise(resolve=>realSetTimeout(resolve,80));
+ assert.equal(replacement.style.getPropertyValue('inset-inline-end'),'','a stopped observer cannot change the reader');
 });
 
 test('the open state is remembered for the next reader, and the panel waits for a press by default',async()=>{

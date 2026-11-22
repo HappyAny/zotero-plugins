@@ -27,6 +27,7 @@ pref("extensions.style-custom.deeplApiKey", "");
 pref("extensions.style-custom.translateTarget", "auto");
 pref("extensions.style-custom.translateFormality", "default");
 pref("extensions.style-custom.translateProtect", "");
+pref("extensions.style-custom.readAloudEnabled", false);
 pref("extensions.style-custom.readAloudSpeed", 100);
 pref("extensions.style-custom.readAloudVoice", "");
 pref("extensions.style-custom.readAloudCredit", true);

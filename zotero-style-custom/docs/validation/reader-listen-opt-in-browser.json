@@ -1,0 +1,71 @@
+{
+  "scope": "Production reader panel in headless Chrome with mock speech and PDF data; no live Zotero interaction.",
+  "errors": [],
+  "externalRequests": [],
+  "checks": [
+    {
+      "name": "the toolbar play control stays hidden even with native flex styling",
+      "pass": true
+    },
+    {
+      "name": "the player card is hidden by default",
+      "pass": true
+    },
+    {
+      "name": "the sentence tab is hidden by default",
+      "pass": true
+    },
+    {
+      "name": "the folded rail play control is marked hidden",
+      "pass": true
+    },
+    {
+      "name": "AI remains visible",
+      "pass": true
+    },
+    {
+      "name": "translation remains visible",
+      "pass": true
+    },
+    {
+      "name": "a remembered listen tab falls back to AI",
+      "pass": true
+    },
+    {
+      "name": "selection keeps Ask AI and omits Listen from here",
+      "pass": true
+    },
+    {
+      "name": "audio shortcuts do not capture keys while disabled",
+      "pass": true
+    },
+    {
+      "name": "opening the panel makes no audio engine requests",
+      "pass": true
+    },
+    {
+      "name": "the toolbar play control can be enabled explicitly",
+      "pass": true
+    },
+    {
+      "name": "enabling alone does not speak or change PDF position",
+      "pass": true
+    },
+    {
+      "name": "explicit opt-in playback still works",
+      "pass": true
+    },
+    {
+      "name": "disabling stops the player, removes follow marks and blocks late jumps",
+      "pass": true
+    },
+    {
+      "name": "playback controls are hidden again",
+      "pass": true
+    },
+    {
+      "name": "no external requests or script errors",
+      "pass": true
+    }
+  ]
+}

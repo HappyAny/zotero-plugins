@@ -1,0 +1,220 @@
+{
+  "date": "2026-11-23",
+  "environment": {
+    "platform": "Windows",
+    "node": "v24.12.0"
+  },
+  "initialVerificationRuns": [
+    {
+      "name": "build-zotpop",
+      "exitCode": 0
+    },
+    {
+      "name": "build-style",
+      "exitCode": 0
+    },
+    {
+      "name": "build-doi",
+      "exitCode": 0
+    },
+    {
+      "name": "features",
+      "exitCode": 0
+    },
+    {
+      "name": "improvements",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-safety",
+      "exitCode": 0
+    },
+    {
+      "name": "zotpop-offline",
+      "exitCode": 1,
+      "tests": 908,
+      "pass": 893,
+      "fail": 15,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "name": "style-regression",
+      "exitCode": 0,
+      "tests": 1069,
+      "pass": 1068,
+      "fail": 0,
+      "skipped": 1,
+      "cancelled": 0
+    },
+    {
+      "name": "doi-offline",
+      "exitCode": 0,
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "name": "style-full",
+      "exitCode": 1,
+      "tests": 2165,
+      "pass": 2124,
+      "fail": 10,
+      "skipped": 31,
+      "cancelled": 0
+    }
+  ],
+  "inventoryTestFollowup": {
+    "tests": 4,
+    "passed": 4,
+    "reason": "Workflow inventory increased from 29 to 30; its count assertion now matches the verified feature ledger."
+  },
+  "cleanupSafetyFollowup": {
+    "tests": 4,
+    "passed": 4
+  },
+  "doiReviewFollowup": {
+    "nodeEntries": 30,
+    "publicationTests": 26,
+    "coreRunnerCases": 13,
+    "passed": true,
+    "managerSHA256": "a8fe220cc45a43a2ae6f278310638a2a3187b29a8c937d9b66dd70ca857d1892",
+    "nativeAPICheckRepeatedForThisRevision": false
+  },
+  "baselineCommit": "b2b7a439d74bba3eb028e37d7bae24b8c66f8197",
+  "baselineComparison": {
+    "zotpopFailuresUnchanged": true,
+    "zotpopExistingFailures": 15,
+    "styleExistingEncoderFailures": 9,
+    "otherFullSuiteFailure": "Inventory assertion fixed and its four tests rerun successfully."
+  },
+  "freshCheckout": [
+    {
+      "name": "fresh-zotpop",
+      "exitCode": 0
+    },
+    {
+      "name": "fresh-style",
+      "exitCode": 0
+    },
+    {
+      "name": "fresh-doi",
+      "exitCode": 0
+    },
+    {
+      "name": "fresh-workflows",
+      "exitCode": 0,
+      "tests": 68,
+      "pass": 68,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "artifact": "build/zotpop-0.58.10.xpi",
+      "sha256": "d3587a715c8d18fb65bdbb2a4d133166978a30a6b760c0e970c2b87254028825",
+      "freshBuildMatches": true
+    },
+    {
+      "artifact": "zotero-style-custom/build/style-custom-0.59.69.xpi",
+      "sha256": "007ed8c0f482b20030052f50b3db8e3b83fa6aeaf25b6bb4680b84f77dbf61c4",
+      "freshBuildMatches": true
+    },
+    {
+      "artifact": "doi-fix-custom/build/zotero-doi-fix.xpi",
+      "sha256": "ed87ccb1abcf38ed06ee2c1fc860ba4c4d5e00eed28e2e5b6d2f9e29b33324cb",
+      "freshBuildMatches": true
+    }
+  ],
+  "browserChecks": {
+    "previewAndAuthorFold": 29,
+    "readAloudOptIn": 16,
+    "listEventsAndNegativeControls": 18,
+    "readerIdleLayout": 12
+  },
+  "readerMeasurements": {
+    "before": {
+      "geometryReads": 780,
+      "styleWrites": 720,
+      "diagnosticWrites": 60,
+      "columnBeside": true,
+      "cycles": 60
+    },
+    "after": {
+      "geometryReads": 0,
+      "styleWrites": 0,
+      "diagnosticWrites": 0,
+      "columnBeside": true,
+      "cycles": 60
+    }
+  },
+  "readerMeasurementScope": "60 repeated idle sync calls in a headless browser using production panel modules and an offline document fixture. No real PDF rendering or live Zotero interaction.",
+  "reproductionScriptSyntax": [
+    {
+      "path": "scripts/validation/chinese-localization/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/chinese-progress/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/citation-key-layout/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/detail-hint/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/language-switch/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/list-events/check-events.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/preview-fold/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/reader-listen-opt-in/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/sidebar-add/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/style-error-localization/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/workbench-dismiss/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "scripts/validation/zotpop-panes/browser-proof.cjs",
+      "passed": true
+    },
+    {
+      "path": "zotero-style-custom/scripts/benchmark-reader-refresh.cjs",
+      "passed": true
+    }
+  ],
+  "publicationScan": {
+    "matchingSecrets": 0,
+    "privateArtifactPaths": 0,
+    "stagedWhitespaceErrors": 0
+  },
+  "notes": [
+    "Historical installation receipts retain their original hashes. Current source archives use canonical LF text and can have different hashes.",
+    "Fresh checkout built from the staged source produced three byte-identical archives and passed 68 workflow checks.",
+    "The full Style suite first exposed one stale inventory assertion alongside nine existing encoder failures. The inventory followup passed. The entire suite was not rerun after that assertion-only correction.",
+    "No installed Zotero profile, plugin or personal library was modified during repository cleanup.",
+    "Generated archives, profiles, dependency directories and detailed logs are disposable and excluded from publication.",
+    "Independent review found three DOI logic errors. One fix cycle resolved them and a fresh independent review passed without findings."
+  ]
+}

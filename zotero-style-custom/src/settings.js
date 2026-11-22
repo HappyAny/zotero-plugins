@@ -8,7 +8,7 @@
   const existing=instances.get(host);if(existing)return existing;
   if(!runtime?.settingsSchema)throw new Error('Style Custom이 준비되지 않았습니다. 설정을 다시 여세요.');
   const win=doc.defaultView,schema=runtime.settingsSchema,states=new Map(),sections=new Map(),categories=new Map();
-  let destroyed=false,active=schema.categories[0]?.id||'',poll=null,observer=null,statusPending=false;
+  let destroyed=false,active=schema.categories[0]?.id||'',statusTimer=null,observer=null,statusPending=false,statusAgain=false;
   // Every string the pane shows passes through the runtime's dictionary, so an
   // English-locale Zotero reads the pane in English; keys stay Korean.
   const t=text=>typeof text==='string'&&runtime.t?runtime.t(text):text;
@@ -207,7 +207,7 @@
    await Promise.all([...states.values()].filter(state=>state.spec.type==='note').map(state=>hydrate(state)));
   }
   async function refreshStatus(){
-   if(destroyed||statusPending)return;statusPending=true;
+   if(destroyed)return;if(statusPending){statusAgain=true;return;}statusPending=true;statusAgain=false;
    try{const value=await runtime.getSettingsStatus?.();if(destroyed)return;
     if(!value){readTime.textContent='—';liveText.textContent=t('현재 동작 정보를 제공하지 않습니다.');return;}
     const seconds=typeof value.readSeconds==='number'&&Number.isFinite(value.readSeconds)&&value.readSeconds>=0?Math.floor(value.readSeconds):null;
@@ -215,7 +215,11 @@
     const parts=[value.version?t('버전 {0}').replace('{0}',value.version):null,t('읽기 기록 {0}').replace('{0}',t(value.recordReading?'켜짐':'꺼짐')),value.selectedTitle?t('선택: {0}').replace('{0}',value.selectedTitle):t('선택한 문헌 없음'),value.citationStatus?t('인용 조회: {0}').replace('{0}',t(value.citationStatus)):null,value.storagePath?t('저장 위치: {0}').replace('{0}',value.storagePath):null];
     liveText.replaceChildren();for(const part of parts.filter(Boolean))node('span',null,liveText,{class:'scs-live-part'}).textContent=part;
    }catch(error){if(!destroyed){readTime.textContent='—';liveText.textContent=t('현재 동작을 확인하지 못했습니다.');}}
-   finally{statusPending=false;if(!destroyed)refreshFirst();}
+   finally{statusPending=false;if(!destroyed){refreshFirst();if(statusAgain)scheduleStatus();}}
+  }
+  function scheduleStatus(){
+   if(destroyed||!host.isConnected||doc.hidden||statusTimer!==null)return;
+   statusTimer=win.setTimeout(()=>{statusTimer=null;void refreshStatus();},50);
   }
   search.addEventListener('input',filter);clearSearch.addEventListener('click',()=>{search.value='';filter();search.focus();});
   {
@@ -241,7 +245,7 @@
    refreshFirst();
   }
   nav.addEventListener('keydown',event=>{if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;const buttons=[...nav.querySelectorAll('button')],index=buttons.indexOf(doc.activeElement);if(index<0)return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:Math.max(0,Math.min(buttons.length-1,index+(event.key==='ArrowDown'?1:-1)));buttons[next].focus();selectCategory(buttons[next].dataset.category);});
-  function destroy(){if(destroyed)return;destroyed=true;if(poll!==null)win.clearInterval(poll);for(const section of categories.values())if(section.armed)win.clearTimeout(section.armed);observer?.disconnect();win.removeEventListener('unload',destroy);instances.delete(host);}
+  function destroy(){if(destroyed)return;destroyed=true;if(statusTimer!==null)win.clearTimeout(statusTimer);stopStatus?.();for(const section of categories.values())if(section.armed)win.clearTimeout(section.armed);observer?.disconnect();win.removeEventListener('unload',destroy);win.removeEventListener('focus',scheduleStatus);doc.removeEventListener('visibilitychange',scheduleStatus);instances.delete(host);}
   async function loadValues(){
    await Promise.all([...states.values()].filter(state=>!state.pending&&!categories.get(state.spec.category)?.pending).map(state=>{state.loading=state.spec.type!=='action';sync(state);return hydrate(state);}));
    if(destroyed)return;filter();const errors=[...states.values()].filter(state=>state.error).length;notify(errors?errors+'개 설정을 읽지 못했습니다. 설정 다시 읽기로 재시도하세요.':'설정을 불러왔습니다.',errors>0);await refreshStatus();
@@ -249,7 +253,8 @@
   const reload=node('button','설정 다시 읽기',heading,{type:'button'});reload.addEventListener('click',async()=>{if(reload.disabled||destroyed)return;reload.disabled=true;try{await loadValues();}finally{reload.disabled=false;}});
   const ready=loadValues();
   const controller={ready,destroy,refreshStatus,selectCategory};instances.set(host,controller);
-  win.addEventListener('unload',destroy,{once:true});poll=win.setInterval(()=>{if(!destroyed&&host.isConnected&&!doc.hidden)void refreshStatus();},1000);
+  const stopStatus=runtime.subscribeStatus?.(scheduleStatus);
+  win.addEventListener('unload',destroy,{once:true});win.addEventListener('focus',scheduleStatus);doc.addEventListener('visibilitychange',scheduleStatus);
   if(win.MutationObserver){observer=new win.MutationObserver(()=>{if(!host.isConnected)destroy();});observer.observe(doc,{childList:true,subtree:true});}
   filter();return controller;
  }

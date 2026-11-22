@@ -1,0 +1,31 @@
+{
+  "state": "installed-and-verified",
+  "version": "0.59.69",
+  "verifiedAt": "2026-11-20T01:14:35.812486+00:00",
+  "icon": {
+    "selector": "zotero-menuitem-new-window",
+    "nativeIcon": "chrome://zotero/skin/16/universal/new-window.svg",
+    "size": 16,
+    "themeAwareFill": true,
+    "cssVerified": true
+  },
+  "menuLabel": "Open with System Default",
+  "placement": "Below the two native Open PDF actions",
+  "tests": {
+    "exitCode": 0,
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0,
+    "files": [
+      "test/system-default.test.mjs"
+    ],
+    "runtimeSHA256": "527e93ea1ace803f76c712ec6e184be28358643e2ac65626754e7bb1a5e41fb2"
+  },
+  "installedSHA256": "dbe386c04289bc436186c16bd3cf9f8b1411a57e24b5c4a9d3148edb63ae27ed",
+  "preferencesPreserved": true,
+  "otherAddonMetadataPreserved": true,
+  "doiFixPreserved": true,
+  "pluginCachePreserved": true,
+  "activation": "next normal Zotero start; personal GUI not observed"
+}

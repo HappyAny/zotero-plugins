@@ -93,6 +93,49 @@
     }
     function removeCard(node){node._restorePageOverflow?.();node.remove();}
     function removeCards(state){for(const node of state.cards.values())removeCard(node);state.cards.clear();state.cardSignature='';}
+    // Native notifications do the work. This clock only recovers a missed lifecycle event.
+    const WATCHDOG_MS=30000,READY_DELAYS=[100,250,500,1000,2000];
+    function requestRefresh(win,state,retry=false){
+      if(stopped||win.closed||windows.get(win)!==state)return;
+      if(retry)state.readyAttempt=0;
+      if(state.refreshTimer!==null)return;
+      if(typeof win.setTimeout!=='function'){refresh(win,state);return;}
+      state.refreshTimer=win.setTimeout(()=>{state.refreshTimer=null;if(windows.get(win)!==state)return;refresh(win,state);},50);
+    }
+    function clearPageWatches(state){
+      for(const watch of state.pageWatches.values())watch.remove();state.pageWatches.clear();
+    }
+    function watchPages(win,state,available){
+      const wanted=new Set(),shown=tabHost(win)?.Zotero_Tabs?.selectedID;
+      if(state.margins&&enabled('marginAnnotation'))for(const reader of available){
+       if(shown&&reader.tabID&&reader.tabID!==shown)continue;
+       for(const view of [reader._internalReader?._primaryView,reader._internalReader?._secondaryView]){
+        const frame=view?._iframeWindow,doc=frame?.document;if(!doc)continue;wanted.add(doc);
+        const bus=frame.PDFViewerApplication?.eventBus,prior=state.pageWatches.get(doc);
+        if(prior&&prior.bus===bus)continue;
+        prior?.remove();const clean=[];
+        const raw=()=>requestRefresh(win,state);
+        let fn=raw;try{const utils=globalThis.Components?.utils||globalThis.Cu;if(utils?.exportFunction)fn=utils.exportFunction(raw,frame);}catch(error){report(error);}
+        if(typeof bus?.on==='function')for(const name of ['pagesinit','pagerendered','scalechanging','rotationchanging']){
+          bus.on(name,fn);clean.push(()=>bus.off?.(name,fn));
+        }
+        // Observe page replacement, not the text and controls inside each page.
+        const target=doc.querySelector?.('#viewer'),Observer=win.MutationObserver;
+        if(target&&typeof Observer==='function')try{const observer=new Observer(raw);observer.observe(target,{childList:true});clean.push(()=>observer.disconnect());}catch(error){report(error);}
+        state.pageWatches.set(doc,{bus,remove(){for(const remove of clean)try{remove();}catch(error){report(error);}}});
+       }
+      }
+      for(const[doc,watch]of state.pageWatches)if(!wanted.has(doc)){watch.remove();state.pageWatches.delete(doc);}
+    }
+    function retryReadiness(win,state){
+      if(typeof win.setTimeout!=='function')return;
+      const raw=(Z.Reader?._readers||[]).filter(reader=>reader._window===win);
+      const waiting=raw.some(reader=>!reader._internalReader||!reader._iframeWindow||reader.type==='pdf'&&!reader._internalReader?._primaryView?._iframeWindow?.PDFViewerApplication?.eventBus)
+        ||(tabHost(win)?.Zotero_Tabs?._tabs||[]).some(tab=>tab.type==='reader'&&!raw.some(reader=>reader.tabID===tab.id));
+      if(!waiting){if(state.readyTimer!==null)win.clearTimeout(state.readyTimer);state.readyTimer=null;return;}
+      if(state.readyTimer!==null||state.readyAttempt>=READY_DELAYS.length)return;
+      state.readyTimer=win.setTimeout(()=>{state.readyTimer=null;requestRefresh(win,state);},READY_DELAYS[state.readyAttempt++]);
+    }
     function paintCards(win,state){
       const present=new Set();
       if(!state.margins||!enabled('marginAnnotation')){removeCards(state);return;}
@@ -151,6 +194,7 @@
     function refresh(win,state){
       if(stopped||win.closed)return;
       const available=new Set(readers(win));
+      watchPages(win,state,available);
       for(const [reader,original]of state.themes)if(!available.has(reader)){restoreTheme(reader,original);state.themes.delete(reader);}
       for(const[reader,original]of state.sidebars)if(!available.has(reader)){
         try{if(reader._internalReader?._state?.sidebarOpen===original.applied)reader._internalReader.toggleSidebar(original.original);}catch(e){report(e);}
@@ -177,13 +221,16 @@
       for(const[reader,control]of state.toolbars)if(!available.has(reader)){control.remove();state.toolbars.delete(reader);}
       for(const header of state.backlinkHeaders)if(!available.has(header.reader)||!header.node.isConnected){header.remove();state.backlinkHeaders.delete(header);}
       if(state.backlinkRevision!==backlinkRevision){state.backlinkRevision=backlinkRevision;for(const header of state.backlinkHeaders)header.reload();}
+      retryReadiness(win,state);
     }
     function attach(win){
       alive();detached.delete(win);if(windows.has(win))return windows.get(win).cleanup;
-      const state={themes:new Map(),cards:new Map(),toolbars:new Map(),backlinkHeaders:new Set(),backlinkRevision,sidebars:new Map(),theme:settings().theme,margins:settings().marginAnnotations===true,sidebarVisible:typeof settings().sidebarVisible==='boolean'?settings().sidebarVisible:undefined,verticalTabs:settings().verticalTabs===true};
-      const cleanup=()=>{if(!windows.has(win))return;try{runtime.readerAssist?.releaseWindow(win);}catch(e){report(e);}detached.add(win);windows.delete(win);win.clearInterval(state.timer);win.removeEventListener('unload',cleanup);removeCards(state);state.rail?.remove();for(const c of state.toolbars.values())c.remove();state.toolbars.clear();for(const h of state.backlinkHeaders)h.remove();state.backlinkHeaders.clear();for(const[r,s]of state.sidebars)try{if(r._internalReader?._state?.sidebarOpen===s.applied)r._internalReader.toggleSidebar(s.original);}catch(e){report(e);}state.sidebars.clear();for(const [r,o]of state.themes)restoreTheme(r,o);state.themes.clear();};
+      const state={themes:new Map(),cards:new Map(),toolbars:new Map(),backlinkHeaders:new Set(),backlinkRevision,sidebars:new Map(),pageWatches:new Map(),refreshTimer:null,readyTimer:null,readyAttempt:0,theme:settings().theme,margins:settings().marginAnnotations===true,sidebarVisible:typeof settings().sidebarVisible==='boolean'?settings().sidebarVisible:undefined,verticalTabs:settings().verticalTabs===true};
+      const onLoad=event=>{const target=event.target;if(target?.nodeType===9||['iframe','browser'].includes(target?.localName))requestRefresh(win,state,true);};
+      const onResize=()=>{if(state.margins)requestRefresh(win,state);};
+      const cleanup=()=>{if(!windows.has(win))return;try{runtime.readerAssist?.releaseWindow(win);}catch(e){report(e);}detached.add(win);windows.delete(win);win.clearInterval(state.timer);if(state.refreshTimer!==null)win.clearTimeout?.(state.refreshTimer);if(state.readyTimer!==null)win.clearTimeout?.(state.readyTimer);clearPageWatches(state);win.removeEventListener('load',onLoad,true);win.removeEventListener('resize',onResize);win.removeEventListener('unload',cleanup);removeCards(state);state.rail?.remove();for(const c of state.toolbars.values())c.remove();state.toolbars.clear();for(const h of state.backlinkHeaders)h.remove();state.backlinkHeaders.clear();for(const[r,s]of state.sidebars)try{if(r._internalReader?._state?.sidebarOpen===s.applied)r._internalReader.toggleSidebar(s.original);}catch(e){report(e);}state.sidebars.clear();for(const [r,o]of state.themes)restoreTheme(r,o);state.themes.clear();};
       preferredState(state);state.cleanup=cleanup;windows.set(win,state);
-      state.timer=win.setInterval(()=>refresh(win,state),1000);win.addEventListener('unload',cleanup);refresh(win,state);for(const r of readers(win))r._internalReader._updateState?.({});return cleanup;
+      state.timer=win.setInterval(()=>requestRefresh(win,state),WATCHDOG_MS);win.addEventListener('load',onLoad,true);win.addEventListener('resize',onResize);win.addEventListener('unload',cleanup);refresh(win,state);for(const r of readers(win))r._internalReader._updateState?.({});return cleanup;
     }
     async function applyTheme(win,theme){
       alive();if(theme==='original'){syncPreference('readerTheme','original');attach(win);const state=windows.get(win);state.theme=undefined;for(const[r,o]of state.themes)restoreTheme(r,o);state.themes.clear();const next={...settings()};delete next.theme;runtime.cache.readerSettings=next;await persist();return 'original';}requireFeature('PDFStyles');theme=palette(theme);attach(win);const state=windows.get(win);
@@ -231,7 +278,7 @@
       state.theme=undefined;state.sidebarVisible=undefined;state.margins=false;state.verticalTabs=false;
       for(const[r,original]of state.themes)restoreTheme(r,original);state.themes.clear();
       for(const[r,original]of state.sidebars)try{if(r._internalReader?._state?.sidebarOpen===original.applied)r._internalReader.toggleSidebar(original.original);}catch(e){report(e);}state.sidebars.clear();
-      removeCards(state);paintRail(win,state);
+      clearPageWatches(state);removeCards(state);paintRail(win,state);
       const next={...settings(),marginAnnotations:false,verticalTabs:false};delete next.theme;delete next.sidebarVisible;runtime.cache.readerSettings=next;syncPreference('readerTheme','original');syncPreference('marginEnabled',false);syncPreference('verticalTabs',false);if(typeof sidebarOriginal==='boolean')syncPreference('readerSidebar',sidebarOriginal);
       await persist();redrawToolbars();
     }
@@ -600,10 +647,15 @@
       for(const state of [...windows.values()])state.cleanup();
     }
     if(typeof Z.Notifier?.registerObserver==='function')backlinkObserver=Z.Notifier.registerObserver({notify(event,type,ids){
-      if(stopped||type!=='item'||!['add','modify','delete','trash'].includes(event))return;
-      if(['delete','trash'].includes(event)||(Array.isArray(ids)?ids:[ids]).some(id=>{const item=Z.Items.get(id);return !item||item.isNote?.()||item.isAnnotation?.();})){backlinkRevision++;backlinkCache.clear();}
-    }},['item'],toolbarOwner+'-backlinks');
-    const hookEntries=[['renderToolbar',toolbarHook],['renderSidebarAnnotationHeader',backlinkHook],['createAnnotationContextMenu',mergeMenuHook],['renderTextSelectionPopup',selectionHook]];
+      if(stopped)return;
+      if(type==='tab'||type==='file'){for(const[win,state]of windows)requestRefresh(win,state,true);return;}
+      if(type!=='item'||!['add','modify','delete','trash'].includes(event))return;
+      const relevant=['delete','trash'].includes(event)||(Array.isArray(ids)?ids:[ids]).some(id=>{const item=Z.Items.get(id);return !item||item.isNote?.()||item.isAnnotation?.();});
+      if(relevant){backlinkRevision++;backlinkCache.clear();}
+      for(const[win,state]of windows)if(relevant||state.verticalTabs)requestRefresh(win,state);
+    }},['item','tab','file'],toolbarOwner+'-backlinks');
+    const toolbarReady=event=>{toolbarHook(event);const win=event.reader?._window,state=windows.get(win);if(state)requestRefresh(win,state,true);};
+    const hookEntries=[['renderToolbar',toolbarReady],['renderSidebarAnnotationHeader',backlinkHook],['createAnnotationContextMenu',mergeMenuHook],['renderTextSelectionPopup',selectionHook]];
     if(typeof Z.Reader?.registerEventListener==='function'){for(const[type,handler]of hookEntries)Z.Reader.registerEventListener(type,handler,toolbarOwner);toolbarRegistered=true;}
     return Object.freeze({contrast,attach,applyPreferences,applyTheme,resetAppearance,marginOptions,setMarginOptions,setMarginAnnotations,setColorLabel,setSidebar,setVerticalTabs,mergeSelectedAnnotations,attachmentVersions,switchAttachmentVersion,annotationPalettes,saveAnnotationPalette,applyAnnotationPalette,deleteAnnotationPalette,setAnnotationColor,tabs,selectTab,closeTab,moveTab,closeOtherTabs,tabGroups,saveTabGroup,renameTabGroup,updateTabGroup,restoreTabGroup,deleteTabGroup,undeleteTabGroup,viewGroups,saveView,renameView,updateView,applyView,deleteView,undeleteView,stop});
   }

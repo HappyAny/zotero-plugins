@@ -1,0 +1,2271 @@
+{
+  "indexed": {
+    "date-parts": [
+      [
+        2026,
+        10,
+        30
+      ]
+    ],
+    "date-time": "2026-10-30T08:33:20Z",
+    "timestamp": 1793349200252,
+    "version": "4.5.0"
+  },
+  "reference-count": 178,
+  "publisher": "Elsevier",
+  "isbn-type": [
+    {
+      "value": "9780443134470",
+      "type": "print"
+    }
+  ],
+  "license": [
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "tdm",
+      "delay-in-days": 0,
+      "URL": "https://www.elsevier.com/tdm/userlicense/1.0/"
+    },
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "tdm",
+      "delay-in-days": 0,
+      "URL": "https://www.elsevier.com/legal/tdmrep-license"
+    },
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "stm-asf",
+      "delay-in-days": 0,
+      "URL": "https://doi.org/10.15223/policy-017"
+    },
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "stm-asf",
+      "delay-in-days": 0,
+      "URL": "https://doi.org/10.15223/policy-037"
+    },
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "stm-asf",
+      "delay-in-days": 0,
+      "URL": "https://doi.org/10.15223/policy-012"
+    },
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "stm-asf",
+      "delay-in-days": 0,
+      "URL": "https://doi.org/10.15223/policy-029"
+    },
+    {
+      "start": {
+        "date-parts": [
+          [
+            2027,
+            1,
+            1
+          ]
+        ],
+        "date-time": "2027-01-01T00:00:00Z",
+        "timestamp": 1798761600000
+      },
+      "content-version": "stm-asf",
+      "delay-in-days": 0,
+      "URL": "https://doi.org/10.15223/policy-004"
+    }
+  ],
+  "content-domain": {
+    "domain": [],
+    "crossmark-restriction": false
+  },
+  "short-container-title": [],
+  "published-print": {
+    "date-parts": [
+      [
+        2027
+      ]
+    ]
+  },
+  "DOI": "10.1016/b978-0-443-13447-0.00004-0",
+  "type": "book-chapter",
+  "created": {
+    "date-parts": [
+      [
+        2026,
+        10,
+        30
+      ]
+    ],
+    "date-time": "2026-10-30T08:03:04Z",
+    "timestamp": 1793347384000
+  },
+  "page": "27-65",
+  "source": "Crossref",
+  "is-referenced-by-count": 0,
+  "title": [
+    "Topological photonics in one-dimensional settings"
+  ],
+  "prefix": "10.1016",
+  "author": [
+    {
+      "given": "Shiqi",
+      "family": "Xia",
+      "sequence": "first",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Ziteng",
+      "family": "Wang",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Domenico",
+      "family": "Bongiovanni",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Dario",
+      "family": "Jukić",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Daohong",
+      "family": "Song",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Liqin",
+      "family": "Tang",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Jingjun",
+      "family": "Xu",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Roberto",
+      "family": "Morandotti",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Hrvoje",
+      "family": "Buljan",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    },
+    {
+      "given": "Zhigang",
+      "family": "Chen",
+      "sequence": "additional",
+      "affiliation": [],
+      "role": [
+        {
+          "vocabulary": "crossref",
+          "role": "author"
+        }
+      ]
+    }
+  ],
+  "member": "78",
+  "reference": [
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib1",
+      "doi-asserted-by": "crossref",
+      "first-page": "494",
+      "DOI": "10.1103/PhysRevLett.45.494",
+      "article-title": "New method for high-accuracy determination of the fine-structure constant based on quantized hall resistance",
+      "volume": "45",
+      "author": "Klitzing",
+      "year": "1980",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib2",
+      "doi-asserted-by": "crossref",
+      "first-page": "405",
+      "DOI": "10.1103/PhysRevLett.49.405",
+      "article-title": "Quantized hall conductance in a two-dimensional periodic potential",
+      "volume": "49",
+      "author": "Thouless",
+      "year": "1982",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib3",
+      "doi-asserted-by": "crossref",
+      "first-page": "226801",
+      "DOI": "10.1103/PhysRevLett.95.226801",
+      "article-title": "quantum spin hall effect in graphene",
+      "volume": "95",
+      "author": "Kane",
+      "year": "2005",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib4",
+      "doi-asserted-by": "crossref",
+      "first-page": "146802",
+      "DOI": "10.1103/PhysRevLett.95.146802",
+      "article-title": "Z2 topological order and the quantum spin hall effect",
+      "volume": "95",
+      "author": "Kane",
+      "year": "2005",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib5",
+      "doi-asserted-by": "crossref",
+      "first-page": "1057",
+      "DOI": "10.1103/RevModPhys.83.1057",
+      "article-title": "Topological insulators and superconductors",
+      "volume": "83",
+      "author": "Qi",
+      "year": "2011",
+      "journal-title": "Rev. Mod. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib6",
+      "doi-asserted-by": "crossref",
+      "first-page": "013904",
+      "DOI": "10.1103/PhysRevLett.100.013904",
+      "article-title": "Possible realization of directional optical waveguides in photonic crystals with broken time-reversal symmetry",
+      "volume": "100",
+      "author": "Haldane",
+      "year": "2008",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib7",
+      "doi-asserted-by": "crossref",
+      "first-page": "772",
+      "DOI": "10.1038/nature08293",
+      "article-title": "Observation of unidirectional backscattering-immune topological electromagnetic states",
+      "volume": "461",
+      "author": "Wang",
+      "year": "2009",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib8",
+      "doi-asserted-by": "crossref",
+      "first-page": "196",
+      "DOI": "10.1038/nature12066",
+      "article-title": "Photonic floquet topological insulators",
+      "volume": "496",
+      "author": "Rechtsman",
+      "year": "2013",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib9",
+      "doi-asserted-by": "crossref",
+      "first-page": "1001",
+      "DOI": "10.1038/nphoton.2013.274",
+      "article-title": "Imaging topological edge states in silicon photonics",
+      "volume": "7",
+      "author": "Hafezi",
+      "year": "2013",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib10",
+      "doi-asserted-by": "crossref",
+      "first-page": "233",
+      "DOI": "10.1038/nmat3520",
+      "article-title": "Photonic topological insulators",
+      "volume": "12",
+      "author": "Khanikaev",
+      "year": "2013",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib11",
+      "doi-asserted-by": "crossref",
+      "first-page": "203904",
+      "DOI": "10.1103/PhysRevLett.110.203904",
+      "article-title": "Optical resonator analog of a two-dimensional topological insulator",
+      "volume": "110",
+      "author": "Liang",
+      "year": "2013",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib12",
+      "doi-asserted-by": "crossref",
+      "first-page": "5782",
+      "DOI": "10.1038/ncomms6782",
+      "article-title": "Experimental realization of photonic topological insulator in a uniaxial metacrystal waveguide",
+      "volume": "5",
+      "author": "Chen",
+      "year": "2014",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib13",
+      "doi-asserted-by": "crossref",
+      "first-page": "223901",
+      "DOI": "10.1103/PhysRevLett.114.223901",
+      "article-title": "Scheme for achieving a topological photonic crystal by using dielectric material",
+      "volume": "114",
+      "author": "Wu",
+      "year": "2015",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib14",
+      "doi-asserted-by": "crossref",
+      "first-page": "015006",
+      "DOI": "10.1103/RevModPhys.91.015006",
+      "article-title": "Topological photonics",
+      "volume": "91",
+      "author": "Ozawa",
+      "year": "2019",
+      "journal-title": "Rev. Mod. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib15",
+      "doi-asserted-by": "crossref",
+      "first-page": "687",
+      "DOI": "10.1038/s41586-023-06163-9",
+      "article-title": "A second wave of topological phenomena in photonics and acoustics",
+      "volume": "618",
+      "author": "Zhang",
+      "year": "2023",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib16",
+      "doi-asserted-by": "crossref",
+      "first-page": "821",
+      "DOI": "10.1038/nphoton.2014.248",
+      "article-title": "Topological photonics",
+      "volume": "8",
+      "author": "Lu",
+      "year": "2014",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib17",
+      "doi-asserted-by": "crossref",
+      "first-page": "763",
+      "DOI": "10.1038/s41566-017-0048-5",
+      "article-title": "Two-dimensional topological photonics",
+      "volume": "11",
+      "author": "Khanikaev",
+      "year": "2017",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib18",
+      "doi-asserted-by": "crossref",
+      "first-page": "547",
+      "DOI": "10.1515/nanoph-2019-0376",
+      "article-title": "Active topological photonics",
+      "volume": "9",
+      "author": "Ota",
+      "year": "2020",
+      "journal-title": "Nanophotonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib19",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1063/1.5142397",
+      "article-title": "Nonlinear topological photonics",
+      "volume": "7",
+      "author": "Smirnova",
+      "year": "2020",
+      "journal-title": "Applied Physics Reviews"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib20",
+      "doi-asserted-by": "crossref",
+      "first-page": "520",
+      "DOI": "10.1038/s42254-021-00323-4",
+      "article-title": "Higher-order band topology",
+      "volume": "3",
+      "author": "Xie",
+      "year": "2021",
+      "journal-title": "Nat. Rev. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib21",
+      "doi-asserted-by": "crossref",
+      "first-page": "425",
+      "DOI": "10.1515/nanoph-2020-0441",
+      "article-title": "Topological photonics: where do we go from here?",
+      "volume": "10",
+      "author": "Segev",
+      "year": "2021",
+      "journal-title": "Nanophotonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib22",
+      "doi-asserted-by": "crossref",
+      "first-page": "2",
+      "DOI": "10.1186/s43593-021-00002-y",
+      "article-title": "Highlighting photonics: looking into the next decade",
+      "volume": "1",
+      "author": "Chen",
+      "year": "2021",
+      "journal-title": "eLight"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib23",
+      "article-title": "Roadmap on topological photonics",
+      "author": "Price",
+      "year": "2022",
+      "journal-title": "Journal of Physics: Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib24",
+      "doi-asserted-by": "crossref",
+      "first-page": "1698",
+      "DOI": "10.1103/PhysRevLett.42.1698",
+      "article-title": "Solitons in polyacetylene",
+      "volume": "42",
+      "author": "Su",
+      "year": "1979",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib25",
+      "doi-asserted-by": "crossref",
+      "first-page": "2747",
+      "DOI": "10.1103/PhysRevLett.62.2747",
+      "article-title": "Berry’s phase for energy bands in solids",
+      "volume": "62",
+      "author": "Zak",
+      "year": "1989",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib26",
+      "doi-asserted-by": "crossref",
+      "first-page": "1633",
+      "DOI": "10.1364/OL.34.001633",
+      "article-title": "Observation of optical shockley-like surface states in photonic superlattices",
+      "volume": "34",
+      "author": "Malkova",
+      "year": "2009",
+      "journal-title": "Opt. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib27",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevA.80.043806",
+      "article-title": "Transition between Tamm-like and shockley-like surface states in optically induced photonic superlattices",
+      "volume": "80",
+      "author": "Malkova",
+      "year": "2009",
+      "journal-title": "Phys. Rev. A."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib28",
+      "doi-asserted-by": "crossref",
+      "first-page": "163901",
+      "DOI": "10.1103/PhysRevLett.121.163901",
+      "article-title": "Nonlinear control of electromagnetic topological edge states",
+      "volume": "121",
+      "author": "Dobrykh",
+      "year": "2018",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib29",
+      "doi-asserted-by": "crossref",
+      "first-page": "147",
+      "DOI": "10.1038/s41377-020-00371-y",
+      "article-title": "Nontrivial coupling of light into a defect: the interplay of nonlinearity and topology",
+      "volume": "9",
+      "author": "Xia",
+      "year": "2020",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib30",
+      "doi-asserted-by": "crossref",
+      "first-page": "184101",
+      "DOI": "10.1103/PhysRevLett.127.184101",
+      "article-title": "Dynamically emerging topological phase transitions in nonlinear interacting soliton lattices",
+      "volume": "127",
+      "author": "Bongiovanni",
+      "year": "2021",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib31",
+      "doi-asserted-by": "crossref",
+      "first-page": "163901",
+      "DOI": "10.1103/PhysRevLett.116.163901",
+      "article-title": "Topological optical waveguiding in silicon and the transition between topological and trivial defect states",
+      "volume": "116",
+      "author": "Blanco-Redondo",
+      "year": "2016",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib32",
+      "doi-asserted-by": "crossref",
+      "first-page": "568",
+      "DOI": "10.1126/science.aau4296",
+      "article-title": "Topological protection of biphoton states",
+      "volume": "362",
+      "author": "Blanco-Redondo",
+      "year": "2018",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib33",
+      "doi-asserted-by": "crossref",
+      "first-page": "678",
+      "DOI": "10.1038/s41567-022-01599-8",
+      "article-title": "Gap solitons in a one-dimensional driven-dissipative topological lattice",
+      "volume": "18",
+      "author": "Pernet",
+      "year": "2022",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib34",
+      "doi-asserted-by": "crossref",
+      "first-page": "7218",
+      "DOI": "10.1038/s41467-022-34979-y",
+      "article-title": "A topological nonlinear parametric amplifier",
+      "volume": "13",
+      "author": "Sohn",
+      "year": "2022",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib35",
+      "doi-asserted-by": "crossref",
+      "first-page": "981",
+      "DOI": "10.1038/s41467-018-03434-2",
+      "article-title": "Topological hybrid silicon microlasers",
+      "volume": "9",
+      "author": "Zhao",
+      "year": "2018",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib36",
+      "doi-asserted-by": "crossref",
+      "first-page": "311",
+      "DOI": "10.1126/science.aaz8727",
+      "article-title": "Topological funneling of light",
+      "volume": "368",
+      "author": "Weidemann",
+      "year": "2020",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib37",
+      "doi-asserted-by": "crossref",
+      "first-page": "72",
+      "DOI": "10.1126/science.abf6873",
+      "article-title": "Nonlinear tuning of PT symmetry and non-Hermitian topological states",
+      "volume": "372",
+      "author": "Xia",
+      "year": "2021",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib38",
+      "doi-asserted-by": "crossref",
+      "first-page": "81",
+      "DOI": "10.1038/s41377-023-01126-1",
+      "article-title": "Direct extraction of topological Zak phase with the synthetic dimension",
+      "volume": "12",
+      "author": "Li",
+      "year": "2023",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib39",
+      "doi-asserted-by": "crossref",
+      "first-page": "442",
+      "DOI": "10.1038/s41567-021-01492-w",
+      "article-title": "Topological dissipation in a time-multiplexed photonic resonator network",
+      "volume": "18",
+      "author": "Leefmans",
+      "year": "2022",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib40",
+      "doi-asserted-by": "crossref",
+      "first-page": "1396",
+      "DOI": "10.1364/OPTICA.5.001396",
+      "article-title": "Synthetic dimension in photonics",
+      "volume": "5",
+      "author": "Yuan",
+      "year": "2018",
+      "journal-title": "Optica"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib41",
+      "doi-asserted-by": "crossref",
+      "first-page": "356",
+      "DOI": "10.1038/s41586-019-0943-7",
+      "article-title": "Photonic topological insulator in synthetic dimensions",
+      "volume": "567",
+      "author": "Lustig",
+      "year": "2019",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib42",
+      "doi-asserted-by": "crossref",
+      "first-page": "931",
+      "DOI": "10.1038/s41586-022-05129-7",
+      "article-title": "Photonic topological insulator induced by a dislocation in three dimensions",
+      "volume": "609",
+      "author": "Lustig",
+      "year": "2022",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib43",
+      "doi-asserted-by": "crossref",
+      "first-page": "1455",
+      "DOI": "10.1103/PhysRevLett.49.1455",
+      "article-title": "Elementary excitations of a linearly conjugated diatomic polymer",
+      "volume": "49",
+      "author": "Rice",
+      "year": "1982",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib44",
+      "article-title": "Analyticity breaking and Anderson localization in incommensurate lattices",
+      "volume": "3",
+      "author": "Aubry",
+      "year": "1980",
+      "journal-title": "Proceedings, VIII International Colloquium on Group-Theoretical Methods in Physics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib45",
+      "doi-asserted-by": "crossref",
+      "first-page": "874",
+      "DOI": "10.1088/0370-1298/68/10/304",
+      "article-title": "Single band motion of conduction electrons in a uniform magnetic field",
+      "volume": "68",
+      "author": "Harper",
+      "year": "1955",
+      "journal-title": "Proc Phys Soc A"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib46",
+      "doi-asserted-by": "crossref",
+      "first-page": "39",
+      "DOI": "10.1038/nphys2835",
+      "article-title": "Topological boundary modes in isostatic lattices",
+      "volume": "10",
+      "author": "Kane",
+      "year": "2014",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib47",
+      "doi-asserted-by": "crossref",
+      "first-page": "077002",
+      "DOI": "10.1103/PhysRevLett.89.077002",
+      "article-title": "Topological origin of zero-energy edge states in particle-hole symmetric systems",
+      "volume": "89",
+      "author": "Ryu",
+      "year": "2002",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib48",
+      "doi-asserted-by": "crossref",
+      "first-page": "3045",
+      "DOI": "10.1103/RevModPhys.82.3045",
+      "article-title": "Colloquium: topological insulators",
+      "volume": "82",
+      "author": "Hasan",
+      "year": "2010",
+      "journal-title": "Rev. Mod. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib49",
+      "doi-asserted-by": "crossref",
+      "first-page": "035005",
+      "DOI": "10.1103/RevModPhys.88.035005",
+      "article-title": "Classification of topological quantum matter with symmetries",
+      "volume": "88",
+      "author": "Chiu",
+      "year": "2016",
+      "journal-title": "Rev. Mod. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib50",
+      "doi-asserted-by": "crossref",
+      "first-page": "1292",
+      "DOI": "10.1364/OME.417392",
+      "article-title": "Topological phenomena demonstrated in photorefractive photonic lattices [Invited]",
+      "volume": "11",
+      "author": "Xia",
+      "year": "2021",
+      "journal-title": "Optical Materials Express"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib51",
+      "doi-asserted-by": "crossref",
+      "first-page": "2100300",
+      "DOI": "10.1002/lpor.202100300",
+      "article-title": "Topological photonic crystals: physics, designs, and applications",
+      "volume": "16",
+      "author": "Tang",
+      "year": "2022",
+      "journal-title": "Laser Photonics Rev"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib52",
+      "series-title": "Berry Phases in Electronic Structure Theory: Electric Polarization, Orbital Magnetization and Topological Insulators",
+      "author": "Vanderbilt",
+      "year": "2018"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib53",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.99.245151",
+      "article-title": "Quantization of fractional corner charge in Cn-symmetric higher-order topological crystalline insulators",
+      "volume": "99",
+      "author": "Benalcazar",
+      "year": "2019",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib54",
+      "doi-asserted-by": "crossref",
+      "first-page": "1114",
+      "DOI": "10.1126/science.aba7604",
+      "article-title": "A fractional corner anomaly reveals higher-order topology",
+      "volume": "368",
+      "author": "Peterson",
+      "year": "2020",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib55",
+      "doi-asserted-by": "crossref",
+      "first-page": "317",
+      "DOI": "10.1103/PhysRev.56.317",
+      "article-title": "On the surface states associated with a periodic potential",
+      "volume": "56",
+      "author": "Shockley",
+      "year": "1939",
+      "journal-title": "Phys. Rev."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib56",
+      "doi-asserted-by": "crossref",
+      "first-page": "3398",
+      "DOI": "10.1103/PhysRevD.13.3398",
+      "article-title": "Solitons with fermion number ½",
+      "volume": "13",
+      "author": "Jackiw",
+      "year": "1976",
+      "journal-title": "Physical Review D"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib57",
+      "doi-asserted-by": "crossref",
+      "first-page": "681",
+      "DOI": "10.1016/0550-3213(81)90044-4",
+      "article-title": "Zero modes of the vortex-fermion system",
+      "volume": "190",
+      "author": "Jackiw",
+      "year": "1981",
+      "journal-title": "Nucl. Phys. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib58",
+      "doi-asserted-by": "crossref",
+      "first-page": "1012",
+      "DOI": "10.1038/s41565-020-0773-7",
+      "article-title": "Dirac-vortex topological cavities",
+      "volume": "15",
+      "author": "Gao",
+      "year": "2020",
+      "journal-title": "Nat. Nanotechnol."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib59",
+      "doi-asserted-by": "crossref",
+      "first-page": "279",
+      "DOI": "10.1038/s41566-022-00972-6",
+      "article-title": "Topological-cavity surface-emitting laser",
+      "volume": "16",
+      "author": "Yang",
+      "year": "2022",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib60",
+      "doi-asserted-by": "crossref",
+      "first-page": "147401",
+      "DOI": "10.1103/PhysRevLett.127.147401",
+      "article-title": "Experimentally detecting quantized zak phases without chiral symmetry in photonic lattices",
+      "volume": "127",
+      "author": "Jiao",
+      "year": "2021",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib61",
+      "doi-asserted-by": "crossref",
+      "first-page": "992",
+      "DOI": "10.1038/s41567-023-02011-9",
+      "article-title": "Sub-symmetry-protected topological states",
+      "volume": "19",
+      "author": "Wang",
+      "year": "2023",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib62",
+      "doi-asserted-by": "crossref",
+      "first-page": "086803",
+      "DOI": "10.1103/PhysRevLett.121.086803",
+      "article-title": "Edge states and topological invariants of non-hermitian systems",
+      "volume": "121",
+      "author": "Yao",
+      "year": "2018",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib63",
+      "doi-asserted-by": "crossref",
+      "first-page": "6083",
+      "DOI": "10.1103/PhysRevB.27.6083",
+      "article-title": "Quantization of particle transport",
+      "volume": "27",
+      "author": "Thouless",
+      "year": "1983",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib64",
+      "doi-asserted-by": "crossref",
+      "first-page": "51",
+      "DOI": "10.1103/PhysRevLett.51.51",
+      "article-title": "Homotopy and quantization in condensed matter physics",
+      "volume": "51",
+      "author": "Avron",
+      "year": "1983",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib65",
+      "doi-asserted-by": "crossref",
+      "first-page": "106402",
+      "DOI": "10.1103/PhysRevLett.109.106402",
+      "article-title": "Topological states and adiabatic pumping in quasicrystals",
+      "volume": "109",
+      "author": "Kraus",
+      "year": "2012",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib66",
+      "doi-asserted-by": "crossref",
+      "first-page": "178",
+      "DOI": "10.1038/s41377-020-00408-2",
+      "article-title": "Thouless pumping in disordered photonic systems",
+      "volume": "9",
+      "author": "Cerjan",
+      "year": "2020",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib67",
+      "doi-asserted-by": "crossref",
+      "first-page": "63",
+      "DOI": "10.1038/s41586-021-03688-9",
+      "article-title": "Quantized nonlinear Thouless pumping",
+      "volume": "596",
+      "author": "Jürgensen",
+      "year": "2021",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib68",
+      "doi-asserted-by": "crossref",
+      "first-page": "154101",
+      "DOI": "10.1103/PhysRevLett.128.154101",
+      "article-title": "Nonlinear thouless pumping: solitons and transport breakdown",
+      "volume": "128",
+      "author": "Fu",
+      "year": "2022",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib69",
+      "doi-asserted-by": "crossref",
+      "first-page": "420",
+      "DOI": "10.1038/s41567-022-01871-x",
+      "article-title": "Quantized fractional Thouless pumping of solitons",
+      "volume": "19",
+      "author": "Jürgensen",
+      "year": "2023",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib70",
+      "doi-asserted-by": "crossref",
+      "first-page": "40",
+      "DOI": "10.1038/s41377-019-0149-7",
+      "article-title": "Lasing at topological edge states in a photonic crystal L3 nanocavity dimer array",
+      "volume": "8",
+      "author": "Han",
+      "year": "2019",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib71",
+      "doi-asserted-by": "crossref",
+      "first-page": "63",
+      "DOI": "10.1038/s41377-019-0172-8",
+      "article-title": "Limits of topological protection under local periodic driving",
+      "volume": "8",
+      "author": "Fedorova",
+      "year": "2019",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib72",
+      "doi-asserted-by": "crossref",
+      "first-page": "165701",
+      "DOI": "10.1103/PhysRevLett.123.165701",
+      "article-title": "Breakup and recovery of topological zero modes in finite non-hermitian optical lattices",
+      "volume": "123",
+      "author": "Song",
+      "year": "2019",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib73",
+      "doi-asserted-by": "crossref",
+      "first-page": "6710",
+      "DOI": "10.1038/ncomms7710",
+      "article-title": "Selective enhancement of topologically induced interface states in a dielectric resonator chain",
+      "volume": "6",
+      "author": "Poli",
+      "year": "2015",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib74",
+      "doi-asserted-by": "crossref",
+      "first-page": "651",
+      "DOI": "10.1038/s41566-017-0006-2",
+      "article-title": "Lasing in topological edge states of a one-dimensional lattice",
+      "volume": "11",
+      "author": "St-Jean",
+      "year": "2017",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib75",
+      "doi-asserted-by": "crossref",
+      "first-page": "126",
+      "DOI": "10.1038/s41565-018-0324-7",
+      "article-title": "Nonlinear light generation in topological nanostructures",
+      "volume": "14",
+      "author": "Kruk",
+      "year": "2019",
+      "journal-title": "Nat. Nanotechnol."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib76",
+      "doi-asserted-by": "crossref",
+      "first-page": "1",
+      "DOI": "10.1016/j.physrep.2008.04.004",
+      "article-title": "Discrete solitons in optics",
+      "volume": "463",
+      "author": "Lederer",
+      "year": "2008",
+      "journal-title": "Phys. Rep."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib77",
+      "doi-asserted-by": "crossref",
+      "first-page": "086401",
+      "DOI": "10.1088/0034-4885/75/8/086401",
+      "article-title": "Optical spatial solitons: historical overview and recent advances",
+      "volume": "75",
+      "author": "Chen",
+      "year": "2012",
+      "journal-title": "Rep. Prog. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib78",
+      "doi-asserted-by": "crossref",
+      "first-page": "163001",
+      "DOI": "10.1088/0953-4075/43/16/163001",
+      "article-title": "Discrete optics in femtosecond-laser-written photonic structures",
+      "volume": "43",
+      "author": "Szameit",
+      "year": "2010",
+      "journal-title": "J. Phys. B: At. Mol. Opt. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib79",
+      "doi-asserted-by": "crossref",
+      "first-page": "147",
+      "DOI": "10.1038/nature01452",
+      "article-title": "Observation of two-dimensional discrete solitons in optically induced nonlinear photonic lattices",
+      "volume": "422",
+      "author": "Fleischer",
+      "year": "2003",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib80",
+      "doi-asserted-by": "crossref",
+      "first-page": "103901",
+      "DOI": "10.1103/PhysRevLett.98.103901",
+      "article-title": "Conical diffraction and gap solitons in honeycomb photonic lattices",
+      "volume": "98",
+      "author": "Peleg",
+      "year": "2007",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib81",
+      "doi-asserted-by": "crossref",
+      "first-page": "701",
+      "DOI": "10.1126/science.abd2033",
+      "article-title": "Nonlinearity-induced photonic topological insulator",
+      "volume": "370",
+      "author": "Maczewsky",
+      "year": "2020",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib82",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.93.155112",
+      "article-title": "Self-induced topological transitions and edge states supported by nonlinear staggered potentials",
+      "volume": "93",
+      "author": "Hadad",
+      "year": "2016",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib83",
+      "doi-asserted-by": "crossref",
+      "first-page": "164",
+      "DOI": "10.1038/s41377-021-00607-5",
+      "article-title": "Nonlinear control of photonic higher-order topological bound states in the continuum",
+      "volume": "10",
+      "author": "Hu",
+      "year": "2021",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib84",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevA.100.063830",
+      "article-title": "Stability of topologically protected edge states in nonlinear fiber loops",
+      "volume": "100",
+      "author": "Bisianov",
+      "year": "2019",
+      "journal-title": "Phys. Rev. A."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib85",
+      "doi-asserted-by": "crossref",
+      "first-page": "143901",
+      "DOI": "10.1103/PhysRevLett.117.143901",
+      "article-title": "Edge solitons in nonlinear-photonic topological insulators",
+      "volume": "117",
+      "author": "Leykam",
+      "year": "2016",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib86",
+      "doi-asserted-by": "crossref",
+      "first-page": "254103",
+      "DOI": "10.1103/PhysRevLett.123.254103",
+      "article-title": "Coupling of edge states and topological bragg solitons",
+      "volume": "123",
+      "author": "Zhang",
+      "year": "2019",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib87",
+      "doi-asserted-by": "crossref",
+      "first-page": "856",
+      "DOI": "10.1126/science.aba8725",
+      "article-title": "Observation of floquet solitons in a topological bandgap",
+      "volume": "368",
+      "author": "Mukherjee",
+      "year": "2020",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib88",
+      "doi-asserted-by": "crossref",
+      "first-page": "6466",
+      "DOI": "10.1364/OL.411102",
+      "article-title": "Weakly nonlinear topological gap solitons in Su–Schrieffer–Heeger photonic lattices",
+      "volume": "45",
+      "author": "Guo",
+      "year": "2020",
+      "journal-title": "Opt. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib89",
+      "doi-asserted-by": "crossref",
+      "first-page": "093902",
+      "DOI": "10.1103/PhysRevLett.103.093902",
+      "article-title": "Observation of PT-symmetry breaking in complex optical potentials",
+      "volume": "103",
+      "author": "Guo",
+      "year": "2009",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib90",
+      "doi-asserted-by": "crossref",
+      "first-page": "192",
+      "DOI": "10.1038/nphys1515",
+      "article-title": "Observation of parity–time symmetry in optics",
+      "volume": "6",
+      "author": "Rüter",
+      "year": "2010",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib91",
+      "doi-asserted-by": "crossref",
+      "first-page": "167",
+      "DOI": "10.1038/nature11298",
+      "article-title": "Parity–time synthetic photonic lattices",
+      "volume": "488",
+      "author": "Regensburger",
+      "year": "2012",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib92",
+      "doi-asserted-by": "crossref",
+      "first-page": "11",
+      "DOI": "10.1038/nphys4323",
+      "article-title": "Non-hermitian physics and PT symmetry",
+      "volume": "14",
+      "author": "El-Ganainy",
+      "year": "2018",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib93",
+      "doi-asserted-by": "crossref",
+      "first-page": "783",
+      "DOI": "10.1038/s41563-019-0304-9",
+      "article-title": "Parity–time symmetry and exceptional points in photonics",
+      "volume": "18",
+      "author": "Özdemir",
+      "year": "2019",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib94",
+      "doi-asserted-by": "crossref",
+      "first-page": "433",
+      "DOI": "10.1038/nmat4811",
+      "article-title": "Topologically protected bound states in photonic parity–time-symmetric crystals",
+      "volume": "16",
+      "author": "Weimann",
+      "year": "2017",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib95",
+      "doi-asserted-by": "crossref",
+      "first-page": "263901",
+      "DOI": "10.1103/PhysRevLett.111.263901",
+      "article-title": "Nonlinearly induced PT transition in photonic systems",
+      "volume": "111",
+      "author": "Lumer",
+      "year": "2013",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib96",
+      "doi-asserted-by": "crossref",
+      "first-page": "152",
+      "DOI": "10.1038/s41377-022-00823-7",
+      "article-title": "Topologically tuned terahertz confinement in a nonlinear photonic chip",
+      "volume": "11",
+      "author": "Wang",
+      "year": "2022",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib97",
+      "article-title": "Tunable topological lasing of circularly polarized light in a soft-matter-based superlattice",
+      "volume": "17",
+      "author": "Wang",
+      "year": "2023",
+      "journal-title": "Laser Photonics Rev"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib98",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1002/lpor.202100269",
+      "article-title": "Giant enhancement of nonlinear harmonic generation in a silicon topological photonic crystal nanocavity chain",
+      "volume": "16",
+      "author": "Yuan",
+      "year": "2022",
+      "journal-title": "Laser Photonics Rev"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib99",
+      "doi-asserted-by": "crossref",
+      "first-page": "597",
+      "DOI": "10.1038/nature05343",
+      "article-title": "Active terahertz metamaterial devices",
+      "volume": "444",
+      "author": "Chen",
+      "year": "2006",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib100",
+      "doi-asserted-by": "crossref",
+      "first-page": "R301",
+      "DOI": "10.1088/0022-3727/39/17/R01",
+      "article-title": "Biomedical applications of terahertz technology",
+      "volume": "39",
+      "author": "Pickwell",
+      "year": "2006",
+      "journal-title": "J. Phys. D. Appl. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib101",
+      "doi-asserted-by": "crossref",
+      "first-page": "97",
+      "DOI": "10.1038/nphoton.2007.3",
+      "article-title": "Cutting-edge terahertz technology",
+      "volume": "1",
+      "author": "Tonouchi",
+      "year": "2007",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib102",
+      "doi-asserted-by": "crossref",
+      "first-page": "1558",
+      "DOI": "10.1038/ncomms2572",
+      "article-title": "A magnetic non-reciprocal isolator for broadband terahertz operation",
+      "volume": "4",
+      "author": "Shalaby",
+      "year": "2013",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib103",
+      "doi-asserted-by": "crossref",
+      "first-page": "446",
+      "DOI": "10.1038/s41566-020-0618-9",
+      "article-title": "Terahertz topological photonics for on-chip communication",
+      "volume": "14",
+      "author": "Yang",
+      "year": "2020",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib104",
+      "doi-asserted-by": "crossref",
+      "first-page": "43",
+      "DOI": "10.1038/nmat2045",
+      "article-title": "Fabrication of a simultaneous red–green–blue reflector using single-pitched cholesteric liquid crystals",
+      "volume": "7",
+      "author": "Ha",
+      "year": "2008",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib105",
+      "doi-asserted-by": "crossref",
+      "first-page": "1986",
+      "DOI": "10.1016/j.scib.2021.05.016",
+      "article-title": "Triboelectric-optical responsive cholesteric liquid crystals for self-powered smart window, E-paper display and optical switch",
+      "volume": "66",
+      "author": "Liu",
+      "year": "2021",
+      "journal-title": "Science Bulletin"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib106",
+      "doi-asserted-by": "crossref",
+      "first-page": "2309",
+      "DOI": "10.1515/nanoph-2021-0096",
+      "article-title": "Liquid crystal lasers: the last decade and the future",
+      "volume": "10",
+      "author": "Mysliwiec",
+      "year": "2021",
+      "journal-title": "Nanophotonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib107",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1126/science.aar4005",
+      "article-title": "Topological insulator laser: experiments",
+      "volume": "359",
+      "author": "Bandres",
+      "year": "2018",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib108",
+      "doi-asserted-by": "crossref",
+      "first-page": "246",
+      "DOI": "10.1038/s41586-020-1981-x",
+      "article-title": "Electrically pumped topological laser with valley edge modes",
+      "volume": "578",
+      "author": "Zeng",
+      "year": "2020",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib109",
+      "doi-asserted-by": "crossref",
+      "first-page": "666",
+      "DOI": "10.1126/science.aaq0327",
+      "article-title": "A topological quantum optics interface",
+      "volume": "359",
+      "author": "Barik",
+      "year": "2018",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib110",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1126/sciadv.aaw4137",
+      "article-title": "Direct observation of topological edge states in silicon photonic crystals: spin, dispersion, and chiral routing",
+      "volume": "6",
+      "author": "Parappurath",
+      "year": "2020",
+      "journal-title": "Sci. Adv."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib111",
+      "doi-asserted-by": "crossref",
+      "first-page": "173901",
+      "DOI": "10.1103/PhysRevLett.122.173901",
+      "article-title": "Observation of anomalous π modes in photonic floquet engineering",
+      "volume": "122",
+      "author": "Cheng",
+      "year": "2019",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib112",
+      "doi-asserted-by": "crossref",
+      "first-page": "2000584",
+      "DOI": "10.1002/lpor.202000584",
+      "article-title": "Gauge-induced floquet topological states in photonic waveguides",
+      "volume": "15",
+      "author": "Song",
+      "year": "2021",
+      "journal-title": "Laser Photonics Rev"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib113",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1117/1.AP.6.2.026005",
+      "article-title": "Deep learning empowered synthetic dimension dynamics: morphing of light into topological modes",
+      "author": "Xia",
+      "year": "2024",
+      "journal-title": "Advanced Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib114",
+      "doi-asserted-by": "crossref",
+      "first-page": "016601",
+      "DOI": "10.1103/PhysRevLett.132.016601",
+      "article-title": "Perfect excitation of topological states by supersymmetric waveguides",
+      "volume": "132",
+      "author": "Liu",
+      "year": "2024",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib115",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevX.8.031079",
+      "article-title": "Topological phases of non-hermitian systems",
+      "volume": "8",
+      "author": "Gong",
+      "year": "2018",
+      "journal-title": "Physical Review X"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib116",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.101.205417",
+      "article-title": "Homotopy characterization of non-hermitian hamiltonians",
+      "volume": "101",
+      "author": "Wojcik",
+      "year": "2020",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib117",
+      "doi-asserted-by": "crossref",
+      "first-page": "59",
+      "DOI": "10.1038/s41586-021-03848-x",
+      "article-title": "Topological complex-energy braiding of non-hermitian bands",
+      "volume": "598",
+      "author": "Wang",
+      "year": "2021",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib118",
+      "doi-asserted-by": "crossref",
+      "first-page": "1240",
+      "DOI": "10.1126/science.abf6568",
+      "article-title": "Generating arbitrary topological windings of a non-hermitian band",
+      "volume": "371",
+      "author": "Wang",
+      "year": "2021",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib119",
+      "doi-asserted-by": "crossref",
+      "first-page": "237601",
+      "DOI": "10.1103/PhysRevLett.122.237601",
+      "article-title": "Topological phase transition in non-hermitian quasicrystals",
+      "volume": "122",
+      "author": "Longhi",
+      "year": "2019",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib120",
+      "doi-asserted-by": "crossref",
+      "first-page": "354",
+      "DOI": "10.1038/s41586-021-04253-0",
+      "article-title": "Topological triple phase transition in non-hermitian floquet quasicrystals",
+      "volume": "601",
+      "author": "Weidemann",
+      "year": "2022",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib121",
+      "doi-asserted-by": "crossref",
+      "first-page": "125014",
+      "DOI": "10.1088/1367-2630/17/12/125014",
+      "article-title": "Topological singularities and the general classification of Floquet–Bloch systems",
+      "volume": "17",
+      "author": "Nathan",
+      "year": "2015",
+      "journal-title": "New J. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib122",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.93.115429",
+      "article-title": "Complex classes of periodically driven topological lattice systems",
+      "volume": "93",
+      "author": "Fruchart",
+      "year": "2016",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib123",
+      "doi-asserted-by": "crossref",
+      "first-page": "59",
+      "DOI": "10.1038/nature25011",
+      "article-title": "Photonic topological boundary pumping as a probe of 4D quantum Hall physics",
+      "volume": "553",
+      "author": "Zilberberg",
+      "year": "2018",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib124",
+      "doi-asserted-by": "crossref",
+      "first-page": "296",
+      "DOI": "10.1038/nphys3622",
+      "article-title": "Topological Thouless pumping of ultracold fermions",
+      "volume": "12",
+      "author": "Nakajima",
+      "year": "2016",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib125",
+      "doi-asserted-by": "crossref",
+      "first-page": "741",
+      "DOI": "10.1364/OL.41.000741",
+      "article-title": "Photonic gauge potential in a system with a synthetic frequency dimension",
+      "volume": "41",
+      "author": "Yuan",
+      "year": "2016",
+      "journal-title": "Opt. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib126",
+      "doi-asserted-by": "crossref",
+      "first-page": "59",
+      "DOI": "10.1126/science.aaz3071",
+      "article-title": "A single photonic cavity with two independent physical synthetic dimensions",
+      "volume": "367",
+      "author": "Dutt",
+      "year": "2020",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib127",
+      "doi-asserted-by": "crossref",
+      "first-page": "745",
+      "DOI": "10.1038/s42254-022-00516-5",
+      "article-title": "Non-hermitian topology and exceptional-point geometries",
+      "volume": "4",
+      "author": "Ding",
+      "year": "2022",
+      "journal-title": "Nat. Rev. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib128",
+      "doi-asserted-by": "crossref",
+      "first-page": "61",
+      "DOI": "10.1126/science.aah6442",
+      "article-title": "Quantized electric multipole insulators",
+      "volume": "357",
+      "author": "Benalcazar",
+      "year": "2017",
+      "journal-title": "Science"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib129",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1126/sciadv.aat0346",
+      "article-title": "Higher-order topological insulators",
+      "volume": "4",
+      "author": "Schindler",
+      "year": "2018",
+      "journal-title": "Sci. Adv."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib130",
+      "doi-asserted-by": "crossref",
+      "first-page": "130",
+      "DOI": "10.1038/s41377-020-0331-y",
+      "article-title": "Recent advances in 2D, 3D and higher-order topological photonics",
+      "volume": "9",
+      "author": "Kim",
+      "year": "2020",
+      "journal-title": "Light Sci. Appl."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib131",
+      "doi-asserted-by": "crossref",
+      "first-page": "233902",
+      "DOI": "10.1103/PhysRevLett.122.233902",
+      "article-title": "Direct observation of corner states in second-order topological photonic crystal slabs",
+      "volume": "122",
+      "author": "Chen",
+      "year": "2019",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib132",
+      "doi-asserted-by": "crossref",
+      "first-page": "233903",
+      "DOI": "10.1103/PhysRevLett.122.233903",
+      "article-title": "Visualization of higher-order topological insulating phases in two-dimensional dielectric photonic crystals",
+      "volume": "122",
+      "author": "Xie",
+      "year": "2019",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib133",
+      "doi-asserted-by": "crossref",
+      "first-page": "346",
+      "DOI": "10.1038/nature25777",
+      "article-title": "A quantized microwave quadrupole insulator with topologically protected corner states",
+      "volume": "555",
+      "author": "Peterson",
+      "year": "2018",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib134",
+      "doi-asserted-by": "crossref",
+      "first-page": "342",
+      "DOI": "10.1038/nature25156",
+      "article-title": "Observation of a phononic quadrupole topological insulator",
+      "volume": "555",
+      "author": "Serra-Garcia",
+      "year": "2018",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib135",
+      "doi-asserted-by": "crossref",
+      "first-page": "925",
+      "DOI": "10.1038/s41567-018-0246-1",
+      "article-title": "Topolectrical-circuit realization of topological corner modes",
+      "volume": "14",
+      "author": "Imhof",
+      "year": "2018",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib136",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.96.245115",
+      "article-title": "Electric multipole moments, topological multipole moment pumping, and chiral hinge states in crystalline insulators",
+      "volume": "96",
+      "author": "Benalcazar",
+      "year": "2017",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib137",
+      "doi-asserted-by": "crossref",
+      "first-page": "246401",
+      "DOI": "10.1103/PhysRevLett.119.246401",
+      "article-title": "Reflection-symmetric second-order topological insulators and superconductors",
+      "volume": "119",
+      "author": "Langbehn",
+      "year": "2017",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib138",
+      "doi-asserted-by": "crossref",
+      "first-page": "246402",
+      "DOI": "10.1103/PhysRevLett.119.246402",
+      "article-title": "(d-2)-Dimensional edge states of rotation symmetry protected topological states",
+      "volume": "119",
+      "author": "Song",
+      "year": "2017",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib139",
+      "doi-asserted-by": "crossref",
+      "first-page": "995",
+      "DOI": "10.1038/s41567-021-01275-3",
+      "article-title": "Nonlinear second-order photonic topological insulators",
+      "volume": "17",
+      "author": "Kirsch",
+      "year": "2021",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib140",
+      "doi-asserted-by": "crossref",
+      "first-page": "5",
+      "DOI": "10.1186/s43593-022-00039-7",
+      "article-title": "Realization of photonic p-orbital higher-order topological insulators",
+      "volume": "3",
+      "author": "Zhang",
+      "year": "2023",
+      "journal-title": "eLight"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib141",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.83.245132",
+      "article-title": "Inversion-symmetric topological insulators",
+      "volume": "83",
+      "author": "Hughes",
+      "year": "2011",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib142",
+      "doi-asserted-by": "crossref",
+      "first-page": "076803",
+      "DOI": "10.1103/PhysRevLett.118.076803",
+      "article-title": "Novel topological phase with a zero berry curvature",
+      "volume": "118",
+      "author": "Liu",
+      "year": "2017",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib143",
+      "doi-asserted-by": "crossref",
+      "first-page": "213901",
+      "DOI": "10.1103/PhysRevLett.125.213901",
+      "article-title": "Observation of a higher-order topological bound state in the continuum",
+      "volume": "125",
+      "author": "Cerjan",
+      "year": "2020",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib144",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.101.161116",
+      "article-title": "Bound states in the continuum of higher-order topological insulators",
+      "volume": "101",
+      "author": "Benalcazar",
+      "year": "2020",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib145",
+      "doi-asserted-by": "crossref",
+      "first-page": "113",
+      "DOI": "10.1038/s41563-018-0252-9",
+      "article-title": "Observation of higher-order topological acoustic states protected by generalized chiral symmetry",
+      "volume": "18",
+      "author": "Ni",
+      "year": "2019",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib146",
+      "doi-asserted-by": "crossref",
+      "first-page": "697",
+      "DOI": "10.1038/s41566-019-0519-y",
+      "article-title": "Corner states of light in photonic waveguides",
+      "volume": "13",
+      "author": "El Hassan",
+      "year": "2019",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib147",
+      "doi-asserted-by": "crossref",
+      "first-page": "1292",
+      "DOI": "10.1038/s41563-019-0483-4",
+      "article-title": "Robust zero-energy modes in an electronic higher-order topological insulator",
+      "volume": "18",
+      "author": "Kempkes",
+      "year": "2019",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib148",
+      "doi-asserted-by": "crossref",
+      "first-page": "108",
+      "DOI": "10.1038/s41563-018-0251-x",
+      "article-title": "Acoustic higher-order topological insulator on a kagome lattice",
+      "volume": "18",
+      "author": "Xue",
+      "year": "2019",
+      "journal-title": "Nat. Mater."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib149",
+      "doi-asserted-by": "crossref",
+      "first-page": "89",
+      "DOI": "10.1038/s41566-019-0561-9",
+      "article-title": "Higher-order topological states in photonic kagome crystals with long-range interactions",
+      "volume": "14",
+      "author": "Li",
+      "year": "2020",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib150",
+      "article-title": "Observation of topologically distinct corner states in “bearded” photonic kagome lattices",
+      "author": "Song",
+      "year": "2023",
+      "journal-title": "Adv. Opt. Mater. n/a"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib151",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.100.205109",
+      "article-title": "Second-order topological corner states with ultracold atoms carrying orbital angular momentum in optical lattices",
+      "volume": "100",
+      "author": "Pelegrí",
+      "year": "2019",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib152",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1103/PhysRevB.101.195143",
+      "article-title": "Orbital corner states on breathing kagome lattices",
+      "volume": "101",
+      "author": "Lu",
+      "year": "2020",
+      "journal-title": "Phys. Rev. B"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib153",
+      "doi-asserted-by": "crossref",
+      "first-page": "2400638",
+      "DOI": "10.1002/lpor.202400638",
+      "article-title": "p-Orbital higher-order topological corner states in 2D photonic Su–schrieffer–heeger lattices",
+      "volume": "18",
+      "author": "Bongiovanni",
+      "year": "2024",
+      "journal-title": "Laser Photonics Rev"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib154",
+      "doi-asserted-by": "crossref",
+      "first-page": "4251",
+      "DOI": "10.1364/OL.44.004251",
+      "article-title": "Effect of truncation on photonic corner states in a Kagome lattice",
+      "volume": "44",
+      "author": "Chen",
+      "year": "2019",
+      "journal-title": "Opt. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib155",
+      "doi-asserted-by": "crossref",
+      "first-page": "223403",
+      "DOI": "10.1103/PhysRevLett.130.223403",
+      "article-title": "Floquet gauge anomaly inflow and arbitrary fractional charge in periodically driven topological-normal insulator heterostructures",
+      "volume": "130",
+      "author": "Pan",
+      "year": "2023",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib156",
+      "doi-asserted-by": "crossref",
+      "first-page": "086602",
+      "DOI": "10.1103/PhysRevLett.124.086602",
+      "article-title": "Dimensional crossover of the integer quantum hall plateau transition and disordered topological pumping",
+      "volume": "124",
+      "author": "Ippoliti",
+      "year": "2020",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib157",
+      "doi-asserted-by": "crossref",
+      "first-page": "426",
+      "DOI": "10.1364/AOP.418074",
+      "article-title": "Topological photonics in synthetic dimensions",
+      "volume": "13",
+      "author": "Lustig",
+      "year": "2021",
+      "journal-title": "Adv. Opt. Photon."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib158",
+      "doi-asserted-by": "crossref",
+      "first-page": "50",
+      "DOI": "10.1038/s41586-022-04929-1",
+      "article-title": "Non-Hermitian morphing of topological modes",
+      "volume": "608",
+      "author": "Wang",
+      "year": "2022",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib159",
+      "doi-asserted-by": "crossref",
+      "first-page": "083801",
+      "DOI": "10.1103/PhysRevLett.131.083801",
+      "article-title": "Observation of a topological edge state stabilized by dissipation",
+      "volume": "131",
+      "author": "Wetter",
+      "year": "2023",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib160",
+      "doi-asserted-by": "crossref",
+      "first-page": "1440",
+      "DOI": "10.1038/s41467-023-37065-z",
+      "article-title": "Non-Abelian effects in dissipative photonic topological lattices",
+      "volume": "14",
+      "author": "Parto",
+      "year": "2023",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib161",
+      "doi-asserted-by": "crossref",
+      "DOI": "10.1126/sciadv.aat3187",
+      "article-title": "Quantum interference of topological states of light",
+      "volume": "4",
+      "author": "Tambasco",
+      "year": "2018",
+      "journal-title": "Sci. Adv."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib162",
+      "doi-asserted-by": "crossref",
+      "first-page": "883",
+      "DOI": "10.1038/s41566-019-0517-0",
+      "article-title": "Observation of PT-symmetric quantum interference",
+      "volume": "13",
+      "author": "Klauck",
+      "year": "2019",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib163",
+      "doi-asserted-by": "crossref",
+      "first-page": "191",
+      "DOI": "10.1038/s41566-021-00943-3",
+      "article-title": "Observation-dependent suppression and enhancement of two-photon coincidences by tailored losses",
+      "volume": "16",
+      "author": "Ehrhardt",
+      "year": "2022",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib164",
+      "doi-asserted-by": "crossref",
+      "first-page": "113901",
+      "DOI": "10.1103/PhysRevLett.120.113901",
+      "article-title": "Edge-mode lasing in 1D topological active arrays",
+      "volume": "120",
+      "author": "Parto",
+      "year": "2018",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib165",
+      "doi-asserted-by": "crossref",
+      "first-page": "3213",
+      "DOI": "10.1021/acsphotonics.4c00600",
+      "article-title": "Construction of topological bound states in the continuum via subsymmetry",
+      "volume": "11",
+      "author": "Wang",
+      "year": "2024",
+      "journal-title": "ACS Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib166",
+      "doi-asserted-by": "crossref",
+      "first-page": "066602",
+      "DOI": "10.1103/PhysRevLett.132.066602",
+      "article-title": "Realization of Gapped and ungapped photonic topological anderson insulators",
+      "volume": "132",
+      "author": "Ren",
+      "year": "2024",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib167",
+      "doi-asserted-by": "crossref",
+      "first-page": "629",
+      "DOI": "10.1038/s41467-024-44939-3",
+      "article-title": "Programmable integrated photonics for topological Hamiltonians",
+      "volume": "15",
+      "author": "On",
+      "year": "2024",
+      "journal-title": "Nat. Commun."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib168",
+      "doi-asserted-by": "crossref",
+      "first-page": "54",
+      "DOI": "10.1038/s41586-024-07484-z",
+      "article-title": "Observation of edge states derived from topological helix chains",
+      "volume": "631",
+      "author": "Nakayama",
+      "year": "2024",
+      "journal-title": "Nature"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib169",
+      "doi-asserted-by": "crossref",
+      "first-page": "2402126",
+      "DOI": "10.1002/lpor.202402126",
+      "article-title": "Tunable edge states and topological solitons in non-hermitian photonic lattices",
+      "volume": "19",
+      "author": "Yan",
+      "year": "2025",
+      "journal-title": "Laser Photonics Rev"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib170",
+      "doi-asserted-by": "crossref",
+      "first-page": "101",
+      "DOI": "10.1038/s41567-023-02244-8",
+      "article-title": "Non-Hermitian topological phase transitions controlled by nonlinearity",
+      "volume": "20",
+      "author": "Dai",
+      "year": "2024",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib171",
+      "doi-asserted-by": "crossref",
+      "first-page": "063804",
+      "DOI": "10.1103/PhysRevLett.132.063804",
+      "article-title": "Photonic Floquet skin-topological effect",
+      "volume": "132",
+      "author": "Sun",
+      "year": "2024",
+      "journal-title": "Phys. Rev. Lett."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib172",
+      "doi-asserted-by": "crossref",
+      "first-page": "1247",
+      "DOI": "10.1038/s41566-025-01777-z",
+      "article-title": "Quadrature-dependent lattice dynamics of dissipative microcombs",
+      "volume": "19",
+      "author": "Lustig",
+      "year": "2025",
+      "journal-title": "Nat. Photonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib173",
+      "doi-asserted-by": "crossref",
+      "first-page": "015002",
+      "DOI": "10.1103/RevModPhys.96.015002",
+      "article-title": "Controlling mass and energy diffusion with metamaterials",
+      "volume": "96",
+      "author": "Yang",
+      "year": "2024",
+      "journal-title": "Rev. Mod. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib174",
+      "doi-asserted-by": "crossref",
+      "first-page": "1929",
+      "DOI": "10.1515/nanoph-2023-0900",
+      "article-title": "Engineering topological interface states in metal-wire waveguides for broadband terahertz signal processing",
+      "volume": "13",
+      "author": "Ghazialsharif",
+      "year": "2024",
+      "journal-title": "Nanophotonics"
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib175",
+      "doi-asserted-by": "crossref",
+      "first-page": "249",
+      "DOI": "10.1080/00018732.2021.1876991",
+      "article-title": "Non-Hermitian physics",
+      "volume": "69",
+      "author": "Ashida",
+      "year": "2020",
+      "journal-title": "Adv. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib176",
+      "doi-asserted-by": "crossref",
+      "first-page": "905",
+      "DOI": "10.1038/s41567-024-02454-8",
+      "article-title": "Discrete nonlinear topological photonics",
+      "volume": "20",
+      "author": "Szameit",
+      "year": "2024",
+      "journal-title": "Nat. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib177",
+      "doi-asserted-by": "crossref",
+      "first-page": "55",
+      "DOI": "10.1038/s42254-025-00889-3",
+      "article-title": "Limitations and possibilities of topological photonics",
+      "volume": "8",
+      "author": "Leykam",
+      "year": "2026",
+      "journal-title": "Nat. Rev. Phys."
+    },
+    {
+      "key": "10.1016/B978-0-443-13447-0.00004-0_bib178",
+      "doi-asserted-by": "crossref",
+      "first-page": "518",
+      "DOI": "10.1038/s41566-025-01653-w",
+      "article-title": "Space-time-topological events in photonic quantum walks",
+      "volume": "19",
+      "author": "Feis",
+      "year": "2025",
+      "journal-title": "Nat. Photonics"
+    }
+  ],
+  "container-title": [
+    "Topological Photonics"
+  ],
+  "original-title": [],
+  "language": "en",
+  "link": [
+    {
+      "URL": "https://api.elsevier.com/content/article/PII:B9780443134470000040?httpAccept=text/xml",
+      "content-type": "text/xml",
+      "content-version": "vor",
+      "intended-application": "text-mining"
+    },
+    {
+      "URL": "https://api.elsevier.com/content/article/PII:B9780443134470000040?httpAccept=text/plain",
+      "content-type": "text/plain",
+      "content-version": "vor",
+      "intended-application": "text-mining"
+    }
+  ],
+  "deposited": {
+    "date-parts": [
+      [
+        2026,
+        10,
+        30
+      ]
+    ],
+    "date-time": "2026-10-30T08:03:47Z",
+    "timestamp": 1793347427000
+  },
+  "score": 1,
+  "resource": {
+    "primary": {
+      "URL": "https://linkinghub.elsevier.com/retrieve/pii/B9780443134470000040"
+    }
+  },
+  "subtitle": [],
+  "short-title": [],
+  "issued": {
+    "date-parts": [
+      [
+        2027
+      ]
+    ]
+  },
+  "ISBN": [
+    "9780443134470"
+  ],
+  "references-count": 178,
+  "URL": "https://doi.org/10.1016/b978-0-443-13447-0.00004-0",
+  "relation": {},
+  "subject": [],
+  "published": {
+    "date-parts": [
+      [
+        2027
+      ]
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "state": "installed-and-verified",
+  "version": "0.59.66",
+  "checkedAt": "2026-11-16T17:21:40.311122+00:00",
+  "installedSHA256": "09c49fb1cd1ac863d01938f85d7058ff3abf36afaae709c19f571d95933b4a2d",
+  "preferencesPreserved": true,
+  "readAloudEnabled": false,
+  "pluginCachePreserved": true,
+  "otherAddonMetadataPreserved": true,
+  "regression": {
+    "exitCode": 0,
+    "tests": 1057,
+    "pass": 1056,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 1,
+    "files": [
+      "test/native-list-scroll.test.mjs",
+      "test/runtime.test.mjs",
+      "test/settings.test.mjs",
+      "test/workbench.test.mjs",
+      "test/reader-tools.test.mjs",
+      "test/reader-assist.test.mjs",
+      "test/collection-counts.test.mjs"
+    ],
+    "checkedAt": "2026-11-16T17:16:26.101791+00:00"
+  },
+  "fullSuite": {
+    "exitCode": 1,
+    "tests": 2153,
+    "pass": 2113,
+    "fail": 9,
+    "cancelled": 0,
+    "skipped": 31,
+    "files": 65,
+    "checkedAt": "2026-11-16T17:12:41.213546+00:00"
+  },
+  "fullSuiteLimitations": "9 unrelated Bash fake-encoder tests fail on Windows; test/bake.test.mjs and bridge/tts/book.mjs match HEAD. 31 platform/integration tests skipped.",
+  "settingsValidatorLimitations": "Existing hardcoded switch count and orphaned annotationPreferComment control; see audit.json.",
+  "browserChecks": 18,
+  "browserEventsChecks": 14,
+  "idleScansPerMinute": {
+    "before": 12,
+    "after": 0
+  },
+  "activation": "next normal Zotero start; not observed in the personal GUI"
+}

@@ -1,0 +1,42 @@
+{
+  "version": "0.59.63",
+  "reportedIssue": "PDF page changed during reading; user confirmed read-aloud following was responsible.",
+  "readAloudEnabledDefault": false,
+  "disabledBehavior": [
+    "Hide toolbar playback, player card, sentence tab and collapsed playback control",
+    "Omit selection listening; retain Ask AI",
+    "Do not capture read-aloud shortcuts or Alt-double-click playback",
+    "Stop the current plugin player and clear PDF following marks",
+    "Reject pending audio starts even after the setting is enabled again"
+  ],
+  "retainedFeatures": [
+    "AI summary",
+    "AI chat",
+    "translation",
+    "saved audio positions and cache"
+  ],
+  "readerTests": {
+    "total": 256,
+    "passed": 255,
+    "failed": 0,
+    "skipped": 1
+  },
+  "browserChecks": 16,
+  "artifactSHA256": "ace0a5e6fa0a529aea69ed9fa80525cd08edac1e30f8069b23f6aee5a7d17402",
+  "nativeInteractionVerified": false,
+  "installationState": "Installed while Zotero was stopped; silent startup registered 0.59.63 as active.",
+  "evidence": "validation/",
+  "integrationTests": {
+    "tests": 54,
+    "pass": 54,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "registeredVersion": "0.59.63",
+  "addonManagerActive": true,
+  "readAloudEnabled": false,
+  "otherPreferencesPreserved": true,
+  "otherAddonStatesPreserved": true,
+  "reproduction": "../../docs/reproducing.md"
+}

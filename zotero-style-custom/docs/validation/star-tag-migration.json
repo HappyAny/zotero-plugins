@@ -1,0 +1,23 @@
+{
+  "state": "complete",
+  "verifiedAt": "2026-11-16T14:19:23.271580+00:00",
+  "recordsMigrated": 39,
+  "ratingStorage": "Extra: Rating: N",
+  "ratingsPreserved": true,
+  "ratingCounts": {
+    "2": 3,
+    "3": 4,
+    "4": 14,
+    "5": 18
+  },
+  "remainingStarTaggedItems": 0,
+  "titlesAndUnrelatedTagsAndFieldsPreserved": true,
+  "databaseOpenedReadOnly": true,
+  "sqliteQuickCheck": "ok",
+  "pluginVersion": "0.59.63",
+  "originalPluginRestored": true,
+  "installedPluginSHA256": "ace0a5e6fa0a529aea69ed9fa80525cd08edac1e30f8069b23f6aee5a7d17402",
+  "oneTimePreferenceRemoved": true,
+  "readAloudEnabled": false,
+  "problems": []
+}
