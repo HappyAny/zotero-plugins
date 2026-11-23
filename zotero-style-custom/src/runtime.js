@@ -7493,9 +7493,16 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.bumpState();
     const work = this.writeQueue.then(async () => {
       if (!this.dirty) return;
-      const snapshot = JSON.parse(JSON.stringify(this.cache));
+      const useRaw = typeof this.storage?.writeRaw === 'function';
+      const encoded = useRaw ? JSON.stringify(this.cache) : null;
+      const snapshot = useRaw ? null : JSON.parse(JSON.stringify(this.cache));
       this.dirty = false;
-      try { await this.storage.write(snapshot); this.writeFailed = false; this.shareFacts(snapshot); }
+      try {
+        if (useRaw) await this.storage.writeRaw(encoded);
+        else await this.storage.write(snapshot);
+        this.writeFailed = false;
+        this.shareFacts(snapshot || this.cache);
+      }
       catch (error) {
         this.dirty = true;
         /* A disk that will not take the file loses reading time, ratings and
@@ -7523,14 +7530,14 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     if (this.factsAt && now - this.factsAt < 60000) return;
     this.factsAt = now;
     Promise.resolve().then(async () => {
-      const reading = await this.readingFacts(snapshot && snapshot.items);
-      const facts = this.factTools.libraryFacts({...snapshot, reading}, {inkOf: name => this.journalInk(name)});
-      if (!Object.keys(facts.papers).length) return;
       const folder = this.audioFolder();
       if (!folder) return;
       const io = this.io || (typeof IOUtils !== 'undefined' ? IOUtils : null);
       const paths = this.paths || (typeof PathUtils !== 'undefined' ? PathUtils : null);
       if (!io || !paths || !io.writeUTF8) return;
+      const reading = await this.readingFacts(snapshot && snapshot.items);
+      const facts = this.factTools.libraryFacts({...snapshot, reading}, {inkOf: name => this.journalInk(name)});
+      if (!Object.keys(facts.papers).length) return;
       await io.makeDirectory(folder, {ignoreExisting: true}).catch(() => {});
       await io.writeUTF8(paths.join(folder, 'library.json'), JSON.stringify(facts));
     }).catch(error => { this.factsAt = 0; this.Z.logError?.(error); });
@@ -8110,25 +8117,41 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // The list is built after the window: watch for it, then for its columns.
     // Switching libraries can replace the whole table, including its scroll
     // element. Rebind when that happens, without scheduling work for row paints.
-    let observer = null, watchedBody = null, watchedHeader = null;
+    let observer = null, watchedRoot = null, watchedBody = null, watchedHeader = null;
+    const observeScoped = () => {
+      if (!observer || stopped) return;
+      observer.disconnect();
+      if (watchedHeader && watchedRoot) {
+        observer.observe(watchedHeader, { childList: true, subtree: true });
+        if (watchedRoot.parentElement) {
+          observer.observe(watchedRoot.parentElement, { childList: true });
+        }
+      } else if (doc.documentElement) {
+        observer.observe(doc.documentElement, { childList: true, subtree: true });
+      }
+    };
     const watch = () => {
       const tree = win.ZoteroPane?.itemsView?.tree, root = tree?.props?.id && doc.getElementById(tree.props.id);
       const body = root?.querySelector('.virtualized-table-body'), header = root?.querySelector('.virtualized-table-header');
       if (!body || !header) return false;
-      if (body === watchedBody && header === watchedHeader) return true;
+      if (root === watchedRoot && body === watchedBody && header === watchedHeader) return true;
       watchedBody?.removeEventListener('scroll', follow);
-      watchedBody = body; watchedHeader = header;
+      watchedRoot = root; watchedBody = body; watchedHeader = header;
       body.addEventListener('scroll', follow);
+      observeScoped();
       schedule();
       return true;
     };
     if (typeof win.MutationObserver === 'function') {
       observer = new win.MutationObserver(records => {
         if (stopped) return;
-        watch();
-        if (records.some(record => record.target === watchedHeader)) schedule();
+        const headerTouched = records.some(record => record.target === watchedHeader || (watchedHeader && watchedHeader.contains?.(record.target)));
+        if (!watchedHeader || !watchedRoot?.isConnected || records.some(record => watchedRoot?.parentElement && record.target === watchedRoot.parentElement)) {
+          watch();
+        }
+        if (headerTouched) schedule();
       });
-      observer.observe(doc.documentElement, { childList: true, subtree: true });
+      observeScoped();
     }
     let tries = 0;
     const tryWatch = () => { if (stopped || watch() || ++tries > 40) return; retry = win.setTimeout(tryWatch, 500); };
@@ -8436,13 +8459,30 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         node.id === 'zotero-items-tree' || node.closest?.('#zotero-items-tree') || node.querySelector?.('#zotero-items-tree'));
     };
     if (typeof win.MutationObserver === 'function') {
+      let observedTree = null;
       state.listObserver = new win.MutationObserver(records => {
         if (this.windows.get(win) !== state || win.closed || this.stopping) return;
+        const currentTree = doc.getElementById?.('zotero-items-tree') || null;
+        if (currentTree !== observedTree) {
+          state.listObserver.disconnect();
+          state.listObserve();
+        }
         const rebound = state.listBind();
         if (rebound || records.some(affectsRows)) request();
       });
-      state.listObserve = () => state.listObserver.observe(doc.documentElement,
-        {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['id']});
+      state.listObserve = () => {
+        const treeEl = doc.getElementById?.('zotero-items-tree') || null;
+        observedTree = treeEl;
+        if (treeEl) {
+          state.listObserver.observe(treeEl, {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['id']});
+          if (treeEl.parentElement) {
+            state.listObserver.observe(treeEl.parentElement, {childList: true});
+          }
+        } else if (doc.documentElement) {
+          state.listObserver.observe(doc.documentElement,
+            {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['id']});
+        }
+      };
       state.listObserve();
     }
     const scroll = event => { if (event.target?.closest?.('#zotero-items-tree')) request(); };

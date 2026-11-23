@@ -71,10 +71,13 @@ async function startup({ id, version, rootURI }) {
           if ((await IOUtils.stat(path)).size > 50 * 1024 * 1024) throw new Error("Style Custom cache is too large");
           return JSON.parse(await IOUtils.readUTF8(path));
         },
-        async write(value) {
-          const encoded=JSON.stringify(value);
+        async writeRaw(encoded) {
           if(encoded.length>16*1024*1024)throw new Error('Style Custom storage is too large. Remove boards and drafts you no longer use.');
           await IOUtils.writeUTF8(path, encoded, { tmpPath: path + ".tmp" });
+        },
+        async write(value) {
+          const encoded=JSON.stringify(value);
+          return this.writeRaw(encoded);
         }
       }
     });

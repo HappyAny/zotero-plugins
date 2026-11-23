@@ -29,10 +29,18 @@
     let disposed = false;
     let frame = null;
     let observer = null;
+    let lastHoverTarget = null;
+    let lastMissTarget = null;
+    const hasDynamicOptions = typeof options.getOptions === "function";
+    const staticSettings = {
+      enabled: options.enabled !== false,
+      delay: finiteOption(options.delay, DEFAULT_DELAY, 0, 5000),
+      speed: finiteOption(options.speed, DEFAULT_SPEED, 20, 2000)
+    };
 
     function settings() {
-      const current = typeof options.getOptions === "function"
-        ? { ...options, ...options.getOptions() } : options;
+      if (!hasDynamicOptions) return staticSettings;
+      const current = { ...options, ...options.getOptions() };
       return {
         enabled: current.enabled !== false,
         delay: finiteOption(current.delay, DEFAULT_DELAY, 0, 5000),
@@ -75,6 +83,8 @@
     }
 
     function reset() {
+      lastHoverTarget = null;
+      lastMissTarget = null;
       if (frame !== null) window.cancelAnimationFrame(frame);
       frame = null;
       observer?.disconnect();
@@ -109,7 +119,10 @@
         }
         const movementTime = elapsed - state.delay;
         const duration = state.distance / state.speed * 1000;
-        state.text.scrollLeft = state.direction * Math.min(state.distance, movementTime / 1000 * state.speed);
+        const nextScroll = state.direction * Math.min(state.distance, movementTime / 1000 * state.speed);
+        if (Math.abs(nextScroll - state.text.scrollLeft) >= 0.25) {
+          state.text.scrollLeft = nextScroll;
+        }
         if (movementTime >= duration + END_PAUSE) {
           // One pass, then it stops. It used to return to the start and set off
           // again for as long as the pointer stayed, which is why a hovered row
@@ -156,12 +169,13 @@
       };
       animatedText.add(text);
       cell.setAttribute("title", content);
-      // Observe only while hovering. Zotero replaces cell children when reusing a
-      // virtualized row, even when the mouse has not moved to generate mouseout.
+      // Observe only the hovered row/cell (never documentElement) so unrelated UI
+      // updates in the reader or item pane do not trigger marquee mutation callbacks.
       observer = new window.MutationObserver(() => {
         if (active && !isCurrent(active)) reset();
       });
-      observer.observe(document.documentElement, { childList: true, characterData: true, subtree: true });
+      const scopeTarget = cell.closest(".row") || cell;
+      observer.observe(scopeTarget, { childList: true, characterData: true, subtree: true });
       if (!reducedMotion.matches) frame = window.requestAnimationFrame(tick);
     }
 
@@ -170,10 +184,23 @@
         reset();
         return;
       }
-      begin(cellOf(event.target));
+      const target = event.target;
+      if (target && target === lastHoverTarget && active && isCurrent(active)) return;
+      if (!active && target && target === lastMissTarget) return;
+      const cell = cellOf(target);
+      if (!cell) {
+        if (active) reset();
+        lastMissTarget = target || null;
+        return;
+      }
+      lastMissTarget = null;
+      begin(cell);
+      lastHoverTarget = active ? target || null : null;
+      if (!active) lastMissTarget = target || null;
     }
 
     function onLeave(event) {
+      lastMissTarget = null;
       if (active && cellOf(event.relatedTarget) !== active.cell) reset();
     }
 
