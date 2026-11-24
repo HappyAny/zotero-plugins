@@ -47,6 +47,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.citationProgress = null;
     this.metadataIDs = new Set();
     this.metadataQueue = Promise.resolve();
+    this.syncRefreshTimer = null; this.syncRefreshHost = null; this.syncRefreshItems = false;
+    this.startupBrightenTimer = null; this.startupBrightenHost = null;
+    this.startupPruneTimer = null; this.startupPruneHost = null;
     this.activityQueue=Promise.resolve();this.tabItems=new Map();
     this.i18n=typeof CustomStyleI18N!=='undefined'?CustomStyleI18N:require('./i18n.js');
     try{this.i18n.load(typeof CustomStyleStrings!=='undefined'?CustomStyleStrings:require('./strings.js'));}catch(error){}
@@ -108,7 +111,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   /* Rows for papers that are no longer in any library. Deleting a paper left
      its reading time, ratings and citation counts in the store, where they were
      re-read and re-written on every save. Run once per start, never during one. */
-  async pruneDeletedItems() {
+  async pruneDeletedItems({ scheduled = false } = {}) {
     const store = this.cache.items;
     if (!store || typeof store !== 'object') return 0;
     const works = this.paperWorks();
@@ -133,8 +136,94 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // that the sweeps and the self-check counted as papers (1,214 against 1,204 live).
     for (const key of keys) if (!alive.has(key) && !ledgered.has(key)) { delete store[key]; removed++; }
     for (const key of workKeys) if (!alive.has(key) && !ledgered.has(key)) { delete works[key]; removed++; }
+    if (scheduled) this.cache.lastPrunedAt = Date.now();
     if (removed) { this.dirty = true; this.scheduleFlush(5000); }
+    else if (scheduled) { this.dirty = true; this.scheduleFlush(30000); }
     return removed;
+  }
+  _timerHost() {
+    return this.Z.getMainWindow?.() || (typeof globalThis.setTimeout === 'function' ? globalThis : null);
+  }
+  _clearStartupAndSyncTimers() {
+    for (const [timerKey, hostKey] of [
+      ['syncRefreshTimer', 'syncRefreshHost'],
+      ['startupBrightenTimer', 'startupBrightenHost'],
+      ['startupPruneTimer', 'startupPruneHost']
+    ]) {
+      if (this[timerKey] != null) {
+        try { this[hostKey]?.clearTimeout?.(this[timerKey]); } catch (_) {}
+        this[timerKey] = null;
+        this[hostKey] = null;
+      }
+    }
+    this.syncRefreshItems = false;
+  }
+  schedulePostSyncRefresh(hasItemChange = false) {
+    if (hasItemChange) this.syncRefreshItems = true;
+    if (this.syncRefreshTimer != null || this.stopping) return;
+    const host = this._timerHost();
+    if (typeof host?.setTimeout !== 'function') return;
+    this.syncRefreshHost = host;
+    const check = () => {
+      this.syncRefreshTimer = null;
+      if (!this.active || this.stopping) { this.syncRefreshHost = null; this.syncRefreshItems = false; return; }
+      if (this.Z.Sync?.Runner?.syncInProgress) {
+        try {
+          this.syncRefreshTimer = host.setTimeout(check, 1000);
+          if (typeof this.syncRefreshTimer === 'object' && typeof this.syncRefreshTimer.unref === 'function') this.syncRefreshTimer.unref();
+        } catch (_) { this.syncRefreshHost = null; }
+        return;
+      }
+      this.syncRefreshHost = null;
+      const hadItems = this.syncRefreshItems;
+      this.syncRefreshItems = false;
+      if (hadItems) this.invalidateHeldRows();
+      for (const [win, state] of this.windows) this.requestItemList(win, state, { citations: false });
+      this.notifyStatus();
+    };
+    try {
+      this.syncRefreshTimer = host.setTimeout(check, 600);
+      if (typeof this.syncRefreshTimer === 'object' && typeof this.syncRefreshTimer.unref === 'function') this.syncRefreshTimer.unref();
+    } catch (_) { this.syncRefreshHost = null; }
+  }
+  scheduleStartupMaintenance({ brightenDelayMs = 15000, pruneDelayMs = 120000, pruneIntervalMs = 24 * 60 * 60 * 1000 } = {}) {
+    if (this.stopping) return;
+    const host = this._timerHost();
+    if (typeof host?.setTimeout !== 'function') return;
+    if (this.startupBrightenTimer == null) {
+      this.startupBrightenHost = host;
+      try {
+        this.startupBrightenTimer = host.setTimeout(() => {
+          this.startupBrightenTimer = null;
+          this.startupBrightenHost = null;
+          if (!this.active || this.stopping) return;
+          this.brightenStatusTagColors().catch(error => this.Z.logError(error));
+        }, brightenDelayMs);
+        if (typeof this.startupBrightenTimer === 'object' && typeof this.startupBrightenTimer.unref === 'function') this.startupBrightenTimer.unref();
+      } catch (_) { this.startupBrightenHost = null; }
+    }
+    const lastPrunedAt = Number(this.cache?.lastPrunedAt) || 0;
+    const pruneDue = !lastPrunedAt || (Date.now() - lastPrunedAt) >= pruneIntervalMs;
+    if (pruneDue && this.startupPruneTimer == null) {
+      this.startupPruneHost = host;
+      const runPrune = () => {
+        this.startupPruneTimer = null;
+        if (!this.active || this.stopping) { this.startupPruneHost = null; return; }
+        if (this.Z.Sync?.Runner?.syncInProgress) {
+          try {
+            this.startupPruneTimer = host.setTimeout(runPrune, 30000);
+            if (typeof this.startupPruneTimer === 'object' && typeof this.startupPruneTimer.unref === 'function') this.startupPruneTimer.unref();
+          } catch (_) { this.startupPruneHost = null; }
+          return;
+        }
+        this.startupPruneHost = null;
+        this.pruneDeletedItems({ scheduled: true }).catch(error => this.Z.logError(error));
+      };
+      try {
+        this.startupPruneTimer = host.setTimeout(runPrune, pruneDelayMs);
+        if (typeof this.startupPruneTimer === 'object' && typeof this.startupPruneTimer.unref === 'function') this.startupPruneTimer.unref();
+      } catch (_) { this.startupPruneHost = null; }
+    }
   }
   // Zotero.Items.getAll returns a Promise. Six call sites iterated it directly,
   // which throws, so every library-wide sweep in this plugin failed on the first
@@ -514,13 +603,11 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       }, true));
     }
     if (this.Z.Notifier) this.itemObserver = this.Z.Notifier.registerObserver({notify:(event,type,ids,extraData)=>{
-      if (event !== 'select' && event !== 'redraw') for (const [win, state] of this.windows) this.requestItemList(win, state);
-      this.notifyStatus();
+      const syncing = !!this.Z.Sync?.Runner?.syncInProgress;
       /* An annotation moved or recoloured within the same second as the last
          paint has the same count and the same date, so the strip's memo is
          also dropped here, for the paper whose annotation changed -- during a
          sync too. A deletion may leave nothing to look up; then all of it. */
-      if(type==='item'&&event!=='redraw'&&event!=='select')this.invalidateHeldRows();
       if(type==='item'&&this.annotationMemo?.size){
         for(const id of ids||[]){
           const changed=this.Z.Items?.get?.(id);
@@ -531,31 +618,36 @@ var CustomStyleRuntime = class CustomStyleRuntime {
           if(paper!=null&&event!=='modify')this.annotationMemo.delete(paper);else{this.annotationMemo.clear();break;}
         }
       }
-      if(type==='item'&&(event==='modify'||event==='add'))for(const id of ids||[]){try{this.mirrorMemoNote(id);}catch(error){this.Z.logError?.(error);}}
-      if(type==='item'&&event==='modify')for(const id of ids||[]){try{const changed=this.Z.Items?.get?.(id);if(changed)this.forgetIfIdentityChanged(changed);}catch(error){this.Z.logError?.(error);}}
-      /* A sync rewrites every item it touches. Answering each one queues a
-         lookup per paper, so the queue is left alone while a sync runs and the
-         plugin's own writes are never treated as news. */
-      if(this.Z.Sync?.Runner?.syncInProgress) return;
-      if(type === "item" && (event === "add" || event === "modify"))
-        this.scheduleMetadataCitations((ids||[]).filter(id=>!extraData?.[id]?.styleCustomCitations&&!extraData?.[id]?.styleCustomActivity));
-      if(type==='tab') {
-        const itemIDs=(ids||[]).map(id=>extraData?.[id]?.itemID||this.Z.Reader?.getByTabID?.(id)?.itemID||this.tabItems.get(id)).filter(Boolean);
-        if(['add','select','close'].includes(event)&&this.pref('touchDateOnRead',false))for(const id of new Set(itemIDs))this.activityQueue=this.activityQueue.then(()=>this.touchReadingItem(id)).catch(error=>this.Z.logError(error));
-        for(const [win]of this.windows)for(const tab of this.readerTools.tabs(win))if(tab.itemID)this.tabItems.set(tab.id,tab.itemID);
-        if(event==='close')for(const id of ids||[])this.tabItems.delete(id);
-      }
       /* A move, a rename or a delete anywhere in the tree can change a path
          that some cached paper still points at (a renamed ancestor reaches
          every descendant), so the whole memo goes rather than guessing which
          papers it touched. */
       if((type==='collection'||type==='collection-item')&&this.collectionMemo?.size)this.collectionMemo.clear();
+      /* A sync rewrites every item it touches. Defer UI list repaints, held-row
+         invalidations, memo mirrors, identity resets and citation lookups until
+         sync settles so startup/background sync does not thrash the main thread. */
+      if (syncing && type !== 'tab') {
+        if (event !== 'select' && event !== 'redraw') this.schedulePostSyncRefresh(type === 'item');
+        return;
+      }
+      if (event !== 'select' && event !== 'redraw') for (const [win, state] of this.windows) this.requestItemList(win, state);
+      this.notifyStatus();
+      if(type==='item'&&event!=='redraw'&&event!=='select')this.invalidateHeldRows();
+      if(type==='item'&&(event==='modify'||event==='add'))for(const id of ids||[]){try{this.mirrorMemoNote(id);}catch(error){this.Z.logError?.(error);}}
+      if(type==='item'&&event==='modify')for(const id of ids||[]){try{const changed=this.Z.Items?.get?.(id);if(changed)this.forgetIfIdentityChanged(changed);}catch(error){this.Z.logError?.(error);}}
+      if(!syncing && type === "item" && (event === "add" || event === "modify"))
+        this.scheduleMetadataCitations((ids||[]).filter(id=>!extraData?.[id]?.styleCustomCitations&&!extraData?.[id]?.styleCustomActivity));
+      if(type==='tab') {
+        const itemIDs=(ids||[]).map(id=>extraData?.[id]?.itemID||this.Z.Reader?.getByTabID?.(id)?.itemID||this.tabItems.get(id)).filter(Boolean);
+        if(!syncing&&['add','select','close'].includes(event)&&this.pref('touchDateOnRead',false))for(const id of new Set(itemIDs))this.activityQueue=this.activityQueue.then(()=>this.touchReadingItem(id)).catch(error=>this.Z.logError(error));
+        for(const [win]of this.windows)for(const tab of this.readerTools.tabs(win))if(tab.itemID)this.tabItems.set(tab.id,tab.itemID);
+        if(event==='close')for(const id of ids||[])this.tabItems.delete(id);
+      }
     }},["item","tab","collection","collection-item"],"style-custom-citations");
     this.Z.debug("Style Custom " + version + " ready");
-    // Off the start path: a library sweep must not delay a window opening.
+    // Off the start path: defer full-library pruning (2 min, max once/24h) and tag colour checks.
     this.scheduleFlush(60000);
-    Promise.resolve().then(() => this.pruneDeletedItems()).catch(error => this.Z.logError(error));
-    Promise.resolve().then(() => this.brightenStatusTagColors()).catch(error => this.Z.logError(error));
+    this.scheduleStartupMaintenance();
   }
   /* The coloured-tag dots Zotero draws before a title for /unread, /reading and
      /done were set in muted tones that read as dull at that size (the user,
@@ -8999,6 +9091,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   async stop({keepColumns=false}={}) {
     if(this.stopPromise)return this.stopPromise;
     this.stopping=true;
+    this._clearStartupAndSyncTimers();
     this._clearJournalSubsetTimers();
     try { this.updater?.stop(); } catch (ignored) {}
     this.stopPromise=(async()=>{

@@ -4,6 +4,9 @@ var customStyle = null;
 // Where a reader puts journal figures their institution licenses to them. Nothing in
 // this folder is ever packaged into the archive or published.
 const JOURNAL_OVERLAY_DIR = "style-custom-journals";
+// Bump only when the shipped open journal catalog/registry data schema changes,
+// so code-only plugin patch updates keep reusing the ~100 KB hot subset cache.
+const JOURNAL_SUBSET_CATALOG_REV = "open-v1";
 var readerWindowObserver = null;
 function install() {}
 function uninstall() {}
@@ -57,7 +60,7 @@ async function startup({ id, version, rootURI }) {
         return `local:${st.size || 0}:${st.lastModified || 0}`;
       } catch (_) { return "shipped"; }
     };
-    const subsetSignature = [String(version || ""), await overlaySig("if-catalog.json"), await overlaySig("journal-registry.json")].join("|");
+    const subsetSignature = [JOURNAL_SUBSET_CATALOG_REV, await overlaySig("if-catalog.json"), await overlaySig("journal-registry.json")].join("|");
     let subsetData = null;
     try {
       if (await IOUtils.exists(subsetPath) && (await IOUtils.stat(subsetPath)).size <= 16 * 1024 * 1024) {

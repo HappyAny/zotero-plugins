@@ -31,26 +31,10 @@ Zotero.ZotPoP = {
 		this.id = id;
 		this.version = version;
 		this.rootURI = rootURI;
-		// The journal registry shared with Style Custom: a publisher, abbreviation and
-		// quartile per journal, so a result whose source says nothing about its
-		// publisher still gets the house colour. It is read from the reader's own
-		// folder first, because a registry built from licensed figures may not be
-		// packaged; the archive carries only the openly licensed one.
-		try {
-			let registry = null;
-			if (typeof IOUtils !== "undefined" && typeof PathUtils !== "undefined" && Zotero.DataDirectory?.dir) {
-				let local = PathUtils.join(Zotero.DataDirectory.dir, "zotpop", "journals", "journal-registry.json");
-				if (await IOUtils.exists(local)) registry = JSON.parse(await IOUtils.readUTF8(local));
-			}
-			if (!registry) {
-				// Zotero 10's HTTP.request throws on jar: URLs; a channel reads the packaged file.
-				registry = JSON.parse(await Zotero.File.getResourceAsync(rootURI + "content/journal-registry.json"));
-			}
-			if (registry && Zotero.ZotPoPJournalMarks && Zotero.ZotPoPJournalMarks.loadRegistry) {
-				Zotero.ZotPoPJournalMarks.loadRegistry(registry);
-			}
-		}
-		catch (e) { Zotero.debug("ZotPoP: journal registry not loaded: " + (e && e.message)); }
+		// Note: content/journal-registry.json (~20.8 MB) is loaded on demand by
+		// content/ui.js when the ZotPoP search view actually opens. Parsing it here
+		// during Zotero startup had no consumer (journal-marks.js is only loaded in
+		// search.xhtml) and burned seconds of main-thread CPU + GC on every launch.
 		try {
 			this._prefPaneID = await Zotero.PreferencePanes.register({
 				pluginID: id,

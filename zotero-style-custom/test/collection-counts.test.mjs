@@ -189,3 +189,29 @@ test('count failures leave Zotero labels usable and are logged once per cache en
   assert.equal(div.querySelector('.cell-text').textContent, 'Research');
   await f.service.stop();
 });
+
+test('sync storms defer cache invalidation until sync ends and membership-only metadata edits skip repaints', async () => {
+  const items = [paper(1)], f = fixture([library(1)], {items});
+  await settle();
+  let div = f.render(0); await settle();
+  assert.equal(f.badge(div), '1');
+  assert.equal(f.reads.length, 1);
+  // Metadata-only item modify with only membership rows cached schedules no tree repaint.
+  f.notify('modify', 'item');
+  assert.equal(f.timers.size, 0, 'membership-only cache skips needless repaint timer on metadata modify');
+  // During Zotero cloud sync, bursts of adds do not invalidate or re-query on every item.
+  f.Z.Sync = {Runner: {syncInProgress: true}};
+  items.push(paper(2));
+  for (let i = 0; i < 20; i++) f.notify('add', 'item');
+  assert.equal(f.timers.size, 1, 'sync notifications coalesce into one post-sync check timer');
+  f.flush(); // still syncing -> re-arms check timer without invalidating
+  assert.equal(f.reads.length, 1, 'no library rescan while syncInProgress is true');
+  assert.equal(f.timers.size, 1);
+  f.Z.Sync.Runner.syncInProgress = false;
+  f.flush(); // sync ended -> invalidates once and schedules repaint
+  f.flush(); // repaint timer fires
+  div = f.render(0, div); await settle();
+  assert.equal(f.reads.length, 2, 'single rescan after sync completes');
+  assert.equal(f.badge(div), '2');
+  await f.service.stop();
+});

@@ -89,3 +89,41 @@ test("nothing claims the plugin ships a Journal Impact Factor, or calls the Open
 		assert.match(strings.prefNoteIF, locale === "en" ? /2-year mean citedness/ : /2년 평균 피인용도/);
 	}
 });
+
+test("ZotPoP.init does not read or parse the 20 MB journal-registry.json during Zotero startup", async () => {
+	const resourceReads = [];
+	const errors = [];
+	const context = vm.createContext({
+		Zotero: {
+			locale: "en-US",
+			DataDirectory: { dir: "/isolated/zotero" },
+			ZotPoPI18N: I18N,
+			Prefs: { get: () => "", set: () => {}, registerObserver: () => 1, unregisterObserver: () => {} },
+			PreferencePanes: { register: async () => "zotpop-pane", unregister: () => {} },
+			File: {
+				getResourceAsync: async url => {
+					resourceReads.push(url);
+					if (url.includes("journal-registry.json")) throw new Error("must not eagerly parse journal-registry.json at startup");
+					return "{}";
+				}
+			},
+			getMainWindows: () => [],
+			getMainWindow: () => null,
+			debug: () => {},
+			logError: e => errors.push(e)
+		},
+		IOUtils: {
+			exists: async p => {
+				if (String(p).includes("journal-registry.json")) throw new Error("must not stat local journal-registry.json at startup");
+				return false;
+			},
+			readUTF8: async () => { throw new Error("unexpected readUTF8"); }
+		},
+		PathUtils: { join: (...parts) => parts.join("/") }
+	});
+	vm.runInContext(readFileSync(new URL("../src/zotpop.js", import.meta.url), "utf8"), context);
+	await context.Zotero.ZotPoP.init({ id: "zotpop@sungjaeyoon.dev", version: "0.58.11", rootURI: "jar:file:///zotpop.xpi!/" });
+	assert.equal(resourceReads.some(u => u.includes("journal-registry.json")), false);
+	assert.deepEqual(errors, []);
+	context.Zotero.ZotPoP.shutdown();
+});

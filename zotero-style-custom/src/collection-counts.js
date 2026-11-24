@@ -13,6 +13,7 @@ var CustomStyleCollectionCounts = (() => {
   function create({Zotero: Z, runtime}) {
     const windows = new Map(), cache = new Map(), prefObservers = [];
     let notifier = null;
+    let syncTimer = null, syncTimerHost = null, syncPendingAll = false, syncPendingMeta = false;
     const enabled = () => runtime.featureEnabled('collectionItemCount');
     const log = error => Z.logError?.(error);
     const recursive = () => Z.Prefs?.get('recursiveCollections') === true;
@@ -77,18 +78,67 @@ var CustomStyleCollectionCounts = (() => {
       }, 100);
     }
 
-    function invalidate(metadataOnly = false) {
-      for (const [key, entry] of cache) {
-        if (!metadataOnly || !MEMBERSHIP.has(entry.type)) cache.delete(key);
+    function clearSyncTimer() {
+      if (syncTimer != null) {
+        try { syncTimerHost?.clearTimeout?.(syncTimer); } catch (_) {}
+        syncTimer = null;
+        syncTimerHost = null;
       }
-      for (const state of windows.values()) schedule(state);
+      syncPendingAll = false;
+      syncPendingMeta = false;
+    }
+
+    function invalidate(metadataOnly = false) {
+      let changed = false;
+      for (const [key, entry] of cache) {
+        if (!metadataOnly || !MEMBERSHIP.has(entry.type)) {
+          cache.delete(key);
+          changed = true;
+        }
+      }
+      if (!metadataOnly || changed) {
+        for (const state of windows.values()) schedule(state);
+      }
+    }
+
+    function schedulePostSync(metadataOnly) {
+      if (metadataOnly) syncPendingMeta = true;
+      else syncPendingAll = true;
+      if (syncTimer != null) return;
+      const host = [...windows.values()].find(s => s.active && !s.win?.closed)?.win
+        || (typeof globalThis.setTimeout === 'function' ? globalThis : null);
+      if (typeof host?.setTimeout !== 'function') return;
+      syncTimerHost = host;
+      const check = () => {
+        syncTimer = null;
+        if (!windows.size) { clearSyncTimer(); return; }
+        if (Z.Sync?.Runner?.syncInProgress) {
+          syncTimer = host.setTimeout(check, 1000);
+          if (typeof syncTimer === 'object' && typeof syncTimer.unref === 'function') syncTimer.unref();
+          return;
+        }
+        const needAll = syncPendingAll;
+        const needMeta = syncPendingMeta;
+        syncPendingAll = false;
+        syncPendingMeta = false;
+        syncTimerHost = null;
+        if (needAll) invalidate(false);
+        else if (needMeta) invalidate(true);
+      };
+      syncTimer = host.setTimeout(check, 600);
+      if (typeof syncTimer === 'object' && typeof syncTimer.unref === 'function') syncTimer.unref();
     }
 
     function startObservers() {
       if (notifier == null && Z.Notifier?.registerObserver) {
         notifier = Z.Notifier.registerObserver({notify(event, type) {
           if (event === 'select' || event === 'redraw') return;
-          invalidate(type === 'item' && event === 'modify');
+          const metadataOnly = type === 'item' && event === 'modify';
+          if (Z.Sync?.Runner?.syncInProgress) {
+            schedulePostSync(metadataOnly);
+            return;
+          }
+          invalidate(metadataOnly);
         }}, ['item', 'collection', 'collection-item', 'search', 'trash', 'group', 'feed'],
         'style-custom-collection-counts');
       }
@@ -184,6 +234,7 @@ var CustomStyleCollectionCounts = (() => {
         try { repaint(state, true); } finally { state.active = false; }
       }
       if (!windows.size) {
+        clearSyncTimer();
         cache.clear();
         const tasks = [];
         if (notifier != null) {

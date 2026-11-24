@@ -5679,7 +5679,7 @@ test('the reading history the old plugin left in notes is brought in once, and n
  assert.equal(await fresh.plugin.adoptLegacyReading({delay:0}),null);
 });
 
-test('the folder the phone and the car share is asked for once, and a settings store that has never heard of it does not take it down',()=>{
+ test('the folder the phone and the car share is asked for once, and a settings store that has never heard of it does not take it down',()=>{
  const {plugin}=fixture();
  plugin.paths={join:(...parts)=>parts.join('/'),homeDir:'/Users/test'};
  // The export runs on the save path. A throw here wrote no file at all and said nothing.
@@ -5689,4 +5689,55 @@ test('the folder the phone and the car share is asked for once, and a settings s
  assert.equal(plugin.audioFolder(),'/Volumes/Audio/papers','what the reader asked for wins');
  plugin.getSetting=()=>'';
  assert.equal(plugin.audioFolder(),'/Users/test/Dropbox/논문 음성');
+});
+
+test('itemObserver coalesces UI refreshes during syncInProgress and startup maintenance defers and throttles pruning',async()=>{
+ const {plugin,Z}=fixture();
+ let observer=null;
+ const timers=new Map();
+ let nextTimer=1;
+ const fakeWin={
+  closed:false,
+  setTimeout(fn,ms){const id=nextTimer++;timers.set(id,{fn,ms});return id;},
+  clearTimeout(id){timers.delete(id);}
+ };
+ Z.getMainWindow=()=>fakeWin;
+ Z.Notifier={registerObserver:o=>{observer=o;return 'obs';},unregisterObserver:()=>{}};
+ let listRequests=0, heldInvalidations=0, memoMirrors=0;
+ plugin.windows.set(fakeWin,{});
+ plugin.requestItemList=()=>{listRequests++;};
+ plugin.invalidateHeldRows=()=>{heldInvalidations++;};
+ plugin.mirrorMemoNote=()=>{memoMirrors++;};
+ const origRead=plugin.storage.read.bind(plugin.storage);
+ plugin.storage.read=async()=>({...(await origRead()),lastPrunedAt:Date.now()}); // recently pruned -> must not schedule prune timer
+ await plugin.start({id:'custom',version:'0.59.74',rootURI:'file:///custom/'});
+ assert.equal(plugin.startupPruneTimer,null,'recently pruned store skips scheduling startup prune');
+ // Simulate Zotero cloud sync storm
+ Z.Sync={Runner:{syncInProgress:true}};
+ for(let i=0;i<15;i++) observer.notify('modify','item',[100+i],{});
+ assert.equal(listRequests,0,'no item list repaint during syncInProgress');
+ assert.equal(heldInvalidations,0,'no held-row invalidation during syncInProgress');
+ assert.equal(memoMirrors,0,'no memo note mirror during syncInProgress');
+ assert.ok(plugin.syncRefreshTimer!=null,'coalesced post-sync refresh timer armed');
+ // Still syncing -> check re-arms without refreshing
+ const firstCheck=timers.get(plugin.syncRefreshTimer);
+ timers.delete(plugin.syncRefreshTimer);
+ firstCheck.fn();
+ assert.equal(listRequests,0,'still syncing keeps refresh deferred');
+ assert.ok(plugin.syncRefreshTimer!=null);
+ // Sync completes -> single coalesced refresh runs
+ Z.Sync.Runner.syncInProgress=false;
+ const doneCheck=timers.get(plugin.syncRefreshTimer);
+ timers.delete(plugin.syncRefreshTimer);
+ doneCheck.fn();
+ assert.equal(heldInvalidations,1,'single held-row invalidation after sync');
+ assert.equal(listRequests,1,'single item list refresh after sync');
+ // Stale lastPrunedAt schedules deferred prune timer cleanly and stop() clears it
+ plugin.cache.lastPrunedAt=Date.now()-(25*60*60*1000);
+ plugin.scheduleStartupMaintenance({brightenDelayMs:15000,pruneDelayMs:120000});
+ assert.ok(plugin.startupPruneTimer!=null,'stale lastPrunedAt schedules deferred startup prune');
+ plugin.windows.clear();
+ await plugin.stop();
+ assert.equal(plugin.startupPruneTimer,null,'stop() clears startup prune timer');
+ assert.equal(plugin.syncRefreshTimer,null,'stop() clears post-sync timer');
 });
