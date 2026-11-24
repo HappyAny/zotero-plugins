@@ -138,8 +138,8 @@
     {provider: 'Clarivate', product: 'JCR', host: 'jcr.clarivate.com', expected: 'an official HTTPS JCR URL'},
     {provider: 'OpenAlex', product: 'Sources', host: 'api.openalex.org', expected: 'an HTTPS OpenAlex API URL', license: 'CC0-1.0'}
   ];
-  function sourceOf(value) {
-    const source = copy(object(value, 'source'));
+  function sourceOf(value, copyPayload = true) {
+    const source = copyPayload ? copy(object(value, 'source')) : object(value, 'source');
     const provenance = PROVENANCE.find(entry => entry.provider === source.provider && entry.product === source.product);
     if (!provenance) invalid('source', 'requires Clarivate JCR or OpenAlex Sources provenance');
     if (provenance.license && source.license !== provenance.license) {
@@ -165,14 +165,14 @@
     return source;
   }
 
-  function create(payload) {
+  function create(payload, {copyPayload = true, freezeResult = true} = {}) {
     object(payload, 'payload');
     if (payload.schemaVersion !== 1) invalid('schemaVersion', 'unsupported schema');
-    const source = sourceOf(payload.source), groupIndex = new Map(), categoryIndex = new Map(), journalIndex = new Map();
+    const source = sourceOf(payload.source, copyPayload), groupIndex = new Map(), categoryIndex = new Map(), journalIndex = new Map();
     function records(section, index, normalize) {
       if (!Array.isArray(payload[section])) invalid(section, 'expected an array');
       return payload[section].map((input, position) => {
-        const path = section + '[' + position + ']', row = copy(object(input, path), path);
+        const path = section + '[' + position + ']', row = copyPayload ? copy(object(input, path), path) : object(input, path);
         row.key = label(row.key, path + '.key');
         if (index.has(row.key)) invalid(path + '.key', 'duplicate key');
         normalize(row, path);
@@ -272,15 +272,18 @@
         percentileJournalCount: observed.filter(journal => contexts(journal).some(entry => entry.percentile !== null)).length,
         countMatches, membershipComplete: source.complete.journals && countMatches})];
     }));
-    freeze(source); freeze(groups); freeze(categories); freeze(journals);
-    for (const values of byGroup.values()) freeze(values);
-    for (const values of byCategory.values()) freeze(values);
-    return Object.freeze({source, groups, categories, journals,
+    if (freezeResult) {
+      freeze(source); freeze(groups); freeze(categories); freeze(journals);
+      for (const values of byGroup.values()) freeze(values);
+      for (const values of byCategory.values()) freeze(values);
+    }
+    const result = {source, groups, categories, journals,
       group: key => groupIndex.get(key) || null,
       category: key => categoryIndex.get(key) || null,
       categoriesForGroup: key => byGroup.get(key) || empty,
       journalsForCategory: key => byCategory.get(key) || empty,
-      categoryCoverage: key => coverage.get(key) || null});
+      categoryCoverage: key => coverage.get(key) || null};
+    return freezeResult ? Object.freeze(result) : result;
   }
 
   const api = {create};

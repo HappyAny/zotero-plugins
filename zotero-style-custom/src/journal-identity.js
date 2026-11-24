@@ -502,40 +502,95 @@
   /* The registry: one row per JCR journal, loaded once, looked up by the same
      flattened title the rules use and by ISSN. Absent under test or before the
      data file loads, every lookup simply misses and the old behaviour stands. */
+  const ASCII_TITLE_RE = /^[\x00-\x7F]*$/;
+  const EMPTY_LEVELS = Object.freeze([]);
   let REGISTRY = null, REGISTRY_REVISION = 0;
-  function loadRegistry(payload) {
+  function unpackRowLevels(row, names) {
+    if (!row) return row;
+    if (Array.isArray(row.levels)) {
+      if (row.levels.length && Array.isArray(row.levels[0])) {
+        row.levels = row.levels
+          .map(([domain, field, subfield]) => ({domain: names[domain] || '', field: names[field] || '', subfield: names[subfield] || ''}))
+          .filter(level => level.domain || level.field || level.subfield);
+      }
+    } else {
+      row.levels = EMPTY_LEVELS;
+    }
+    return row;
+  }
+  function ensureRowKeys(registry) {
+    if (!registry || registry.rowKeys) return registry?.rowKeys || null;
+    const rowKeys = new Map();
+    const titleCounts = new Map(), usedKeys = new Set();
+    for (const row of registry.rows) {
+      const k = flat(row.title);
+      titleCounts.set(k, (titleCounts.get(k) || 0) + 1);
+    }
+    for (const row of registry.rows) {
+      const key = flat(row.title);
+      const codes = [...new Set((row.issns || []).map(code => String(code).toUpperCase().replace(/[-\s]/g, '')))].sort();
+      const rowKey = titleCounts.get(key) === 1 ? key : 'journal:' + JSON.stringify([exactRegistryTitle(row.title), codes]);
+      if (usedKeys.has(rowKey) && !rowKeys.has(row)) throw new Error('Duplicate journal registry identity: ' + row.title);
+      usedKeys.add(rowKey);
+      rowKeys.set(row, rowKey);
+    }
+    registry.rowKeys = rowKeys;
+    return rowKeys;
+  }
+  function loadRegistry(payload, {lazyKeys = false} = {}) {
     const list = Array.isArray(payload) ? payload : (payload && payload.journals) || [];
     /* Each row's subjects are indexes into one table of names, because the
-       same two hundred subject names repeat across 22,594 journals. They are
-       unpacked here so nothing downstream has to know how they are stored. */
+       same two hundred subject names repeat across 22,594+ journals. They stay
+       packed until a row is actually looked up or ranked, avoiding hundreds of
+       thousands of upfront heap allocations on startup. */
     const names = (payload && payload.subjects) || [];
-    const registry = {byExactTitle: new Map(), byTitle: new Map(), byIssn: new Map(), rowKeys: new Map(),
+    const registry = {byExactTitle: new Map(), byTitle: new Map(), byIssn: new Map(), rowKeys: null,
       rows: [...new Set(list)], size: list.length, subjects: names};
-    const titleCounts = new Map(), usedKeys = new Set();
-    for (const row of registry.rows) titleCounts.set(flat(row.title), (titleCounts.get(flat(row.title)) || 0) + 1);
+    const internPool = new Map();
+    const intern = v => { if (typeof v !== 'string' || !v) return v; let hit = internPool.get(v); if (hit === undefined) { internPool.set(v, v); hit = v; } return hit; };
     const indexUnique = (map, key, row) => {
       if (!key) return;
       if (!map.has(key)) map.set(key, row);
       else if (map.get(key) !== row) map.set(key, null);
     };
-    for (const row of list) {
-      if (Array.isArray(row.levels) && row.levels.length && Array.isArray(row.levels[0])) {
-        row.levels = row.levels
-          .map(([domain, field, subfield]) => ({domain: names[domain] || '', field: names[field] || '', subfield: names[subfield] || ''}))
-          .filter(level => level.domain || level.field || level.subfield);
+    const indexTitle = (key, row, exactForTitle) => {
+      if (!key) return;
+      if (!registry.byTitle.has(key)) {
+        registry.byTitle.set(key, row);
+        if (exactForTitle && exactForTitle !== key) indexUnique(registry.byExactTitle, exactForTitle, row);
+        return;
       }
-      else if (!Array.isArray(row.levels)) row.levels = [];
+      const prev = registry.byTitle.get(key);
+      if (prev === row) {
+        if (exactForTitle && exactForTitle !== key) indexUnique(registry.byExactTitle, exactForTitle, row);
+        return;
+      }
+      if (prev !== null) {
+        indexUnique(registry.byExactTitle, exactRegistryTitle(prev.title), prev);
+        registry.byTitle.set(key, null);
+      }
+      if (exactForTitle) indexUnique(registry.byExactTitle, exactForTitle, row);
+    };
+    for (const row of list) {
+      if (row.publisher) row.publisher = intern(row.publisher);
+      if (row.metric) row.metric = intern(row.metric);
+      if (!Array.isArray(row.levels)) row.levels = EMPTY_LEVELS;
+      const exact = exactRegistryTitle(row.title);
       const key = flat(row.title);
-      const codes = [...new Set((row.issns || []).map(code => String(code).toUpperCase().replace(/[-\s]/g, '')))].sort();
-      const rowKey = titleCounts.get(key) === 1 ? key : 'journal:' + JSON.stringify([exactRegistryTitle(row.title), codes]);
-      if (usedKeys.has(rowKey) && !registry.rowKeys.has(row)) throw new Error('Duplicate journal registry identity: ' + row.title);
-      usedKeys.add(rowKey); registry.rowKeys.set(row, rowKey);
-      indexUnique(registry.byExactTitle, exactRegistryTitle(row.title), row);
-      indexUnique(registry.byTitle, key, row);
-      const abbr = flat(row.abbreviation);
-      indexUnique(registry.byTitle, abbr, row);
-      for (const issn of row.issns || []) if (issn) indexUnique(registry.byIssn, String(issn).toUpperCase().replace(/[-\s]/g, ''), row);
+      indexTitle(key, row, exact);
+      if (row.abbreviation) {
+        const abbr = flat(row.abbreviation);
+        if (abbr && abbr !== key) indexTitle(abbr, row, null);
+      }
+      const issns = row.issns;
+      if (issns && issns.length) {
+        for (let i = 0; i < issns.length; i++) {
+          const issn = issns[i];
+          if (issn) indexUnique(registry.byIssn, String(issn).toUpperCase().replace(/[-\s]/g, ''), row);
+        }
+      }
     }
+    if (!lazyKeys) ensureRowKeys(registry);
     REGISTRY = registry;
     REGISTRY_REVISION++;
     seen.clear();
@@ -548,9 +603,14 @@
   function registryRanked() {
     if (!REGISTRY) return [];
     if (!REGISTRY.ranked) {
+      const rowKeys = ensureRowKeys(REGISTRY);
+      const names = REGISTRY.subjects;
       const rows = [...REGISTRY.rows];
       rows.sort((a, b) => (Number(b.impactFactor) || 0) - (Number(a.impactFactor) || 0) || String(a.title).localeCompare(String(b.title)));
-      REGISTRY.ranked = rows.map((row, index) => ({...row, rank: index + 1, key: REGISTRY.rowKeys.get(row)}));
+      REGISTRY.ranked = rows.map((row, index) => {
+        unpackRowLevels(row, names);
+        return {...row, rank: index + 1, key: rowKeys.get(row)};
+      });
       REGISTRY.rankByKey = new Map(REGISTRY.ranked.map(row => [row.key, row.rank]));
     }
     return REGISTRY.ranked;
@@ -559,7 +619,10 @@
     registryRanked(); const row = registryLookup(title);
     return row && REGISTRY.rankByKey ? (REGISTRY.rankByKey.get(REGISTRY.rowKeys.get(row)) || null) : null;
   }
-  function exactRegistryTitle(title) { return String(title || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase(); }
+  function exactRegistryTitle(title) {
+    const raw = String(title || '');
+    return (ASCII_TITLE_RE.test(raw) ? raw : raw.normalize('NFKC')).trim().replace(/\s+/g, ' ').toLowerCase();
+  }
   /* By title (exact, then flattened, then without a leading "The": "The ISME
      Journal" is filed as "ISME Journal"), and when the title finds nothing, by
      the ISSN the item carries. A string may hold several ISSNs. */
@@ -569,17 +632,18 @@
   function registryLookup(title, issn) {
     if (!REGISTRY) return null;
     const exact = exactRegistryTitle(title);
-    if (REGISTRY.byExactTitle.has(exact)) return REGISTRY.byExactTitle.get(exact);
+    if (REGISTRY.byExactTitle.has(exact)) return unpackRowLevels(REGISTRY.byExactTitle.get(exact), REGISTRY.subjects);
     const hit = REGISTRY.byTitle.get(flat(title));
-    if (hit) return hit;
+    if (hit) return unpackRowLevels(hit, REGISTRY.subjects);
     if (/^the\s+/i.test(text(title))) {
       const bare = text(title).replace(/^the\s+/i, '');
-      const byBare = REGISTRY.byExactTitle.get(exactRegistryTitle(bare)) || REGISTRY.byTitle.get(flat(bare));
-      if (byBare) return byBare;
+      const bareExact = exactRegistryTitle(bare);
+      const byBare = (REGISTRY.byExactTitle.has(bareExact) ? REGISTRY.byExactTitle.get(bareExact) : null) || REGISTRY.byTitle.get(flat(bare));
+      if (byBare) return unpackRowLevels(byBare, REGISTRY.subjects);
     }
     for (const code of issnCodes(issn)) {
       const row = REGISTRY.byIssn.get(code);
-      if (row) return row;
+      if (row) return unpackRowLevels(row, REGISTRY.subjects);
     }
     return null;
   }
@@ -657,7 +721,7 @@
     return known.length ? known : completeLevels(profile?.topics);
   }
   function registryRevision() { return REGISTRY_REVISION; }
-  function registryByIssn(issn) { return REGISTRY ? (REGISTRY.byIssn.get(String(issn || '').toUpperCase().replace(/[-\s]/g, '')) || null) : null; }
+  function registryByIssn(issn) { return REGISTRY ? unpackRowLevels(REGISTRY.byIssn.get(String(issn || '').toUpperCase().replace(/[-\s]/g, '')) || null, REGISTRY.subjects) : null; }
 
   // The mark's ink and its fill, derived from one hue so every tile in the
   // column is built the same way. A curated family sits a little stronger than

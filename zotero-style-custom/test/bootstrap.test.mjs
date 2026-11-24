@@ -33,19 +33,23 @@ async function boot({failJCR=false,invalidJCR=false,licensed=null}={}){
  await vm.runInContext("startup({id:'style-custom@sungjaeyoon.dev',version:'0.8.0',rootURI:'file:///plugin/'})",context);
  return {Z,context,columns,observers,registered,writes,errors,debug,loaded,attached,started,timers};
 }
-test('Gecko-like bootstrap loads the openly licensed catalog before startup or window attachment without UI',async()=>{
+test('Gecko-like bootstrap defers the shipped open catalog until requested without UI',async()=>{
  const {Z,context,columns,observers,registered,writes,errors,loaded,attached,started}=await boot();
  assert.equal(columns.size,29);assert.equal(Z.StyleCustom.Workbench.TABS.length,19);assert.equal(typeof Z.StyleCustom.readerTools.setVerticalTabs,'function');assert.equal(typeof Z.StyleCustom.libraryService.graph,'function');assert.equal(registered.size,1);assert.equal(writes.length,0);
- // What ships is what may be passed on. Nothing licensed travels in the archive.
+ // Shipped 28.7 MB OpenAlex category catalog stays unloaded at startup (0 MB / 0 ms) until Journals tab opens.
+ assert.equal(Z.StyleCustom.jcrCatalog,null);
+ assert.equal(typeof Z.StyleCustom.ensureJcrCatalog,'function');
+ assert.equal(Z.StyleCustom.journalLayers['jcr-categories.json'],'shipped');
+ assert.ok(loaded.indexOf('jcr-categories.js')<loaded.indexOf('workbench.js'));assert.ok(loaded.indexOf('jcr-browser.js')<loaded.indexOf('workbench.js'));
+ assert.equal(started[0].catalog,null);assert.equal(attached[0].catalog,null);assert.equal(typeof attached[0].browser.mount,'function');
+ // On-demand load returns the exact openly licensed catalog.
+ await Z.StyleCustom.ensureJcrCatalog();
  const packaged=JSON.parse(fs.readFileSync(shipped('journal-catalog.json'),'utf8'));
  assert.equal(Z.StyleCustom.jcrCatalog.groups.length,packaged.groups.length);
  assert.equal(Z.StyleCustom.jcrCatalog.categories.length,packaged.categories.length);
  assert.equal(Z.StyleCustom.jcrCatalog.source.provider,'OpenAlex');
  assert.match(String(Z.StyleCustom.jcrCatalog.source.license||Z.StyleCustom.jcrCatalog.source.licence||''),/CC0/i);
  assert.doesNotMatch(JSON.stringify(Z.StyleCustom.jcrCatalog.source),/clarivate/i);
- assert.equal(Z.StyleCustom.journalLayers['jcr-categories.json'],'shipped');
- assert.ok(loaded.indexOf('jcr-categories.js')<loaded.indexOf('workbench.js'));assert.ok(loaded.indexOf('jcr-browser.js')<loaded.indexOf('workbench.js'));
- assert.equal(started[0].catalog,Z.StyleCustom.jcrCatalog);assert.equal(attached[0].catalog,Z.StyleCustom.jcrCatalog);assert.equal(typeof attached[0].browser.mount,'function');
  await vm.runInContext('shutdown()',context);assert.equal(columns.size,0);assert.equal(observers.size,0);assert.equal(registered.size,0);assert.equal(Z.StyleCustom,undefined);assert.equal(errors.length,0);
 });
 
@@ -69,6 +73,7 @@ test("a reader's own licensed catalog wins over the one in the archive",async()=
 test('missing or invalid catalog data stays unavailable without substituting the journal registry',async()=>{
  for(const options of [{failJCR:true},{invalidJCR:true}]){
   const {Z,context,columns,errors,debug}=await boot(options);
+  await Z.StyleCustom.ensureJcrCatalog();
   assert.equal(Z.StyleCustom.jcrCatalog,null);assert.ok(Z.StyleCustom.jcrCatalogError);assert.equal(columns.size,29);
   assert.ok(debug.some(message=>message.includes('journal category catalog not loaded')));
   assert.ok(vm.runInContext('CustomStyleJournalIdentity.registryRanked().length',context)>0,'the registry is still loaded');

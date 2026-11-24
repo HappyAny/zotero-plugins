@@ -3,14 +3,18 @@
 var CustomStyleRuntime = class CustomStyleRuntime {
   // What OpenAlex files that is not a paper: repository deposits, datasets, reviews of reviews.
   static NOT_A_PAPER = /^(dataset|other|paratext|peer-review|grant|libguides|supplementary-materials)$/i;
-  constructor({ Zotero, model, marquee, reading, storage, legacy = {}, catalog = [], citations, io, paths }) {
+  constructor({ Zotero, model, marquee, reading, storage, legacy = {}, catalog = [], ownCatalog = false, citations, io, paths }) {
     Object.assign(this, { Z: Zotero, model, marquee, reading, storage, legacy, io, paths });
     this.windows = new Map(); this.columns = []; this.observers = [];
     this.queue = Promise.resolve(); this.writeQueue = Promise.resolve();
     this.cache = { schema: 1, items: {} }; this.active = false; this.dirty = false;
+    this._readingDirty = false; this._hotReadingKeys = new Set();
     this.journalTools = typeof CustomStyleJournals !== "undefined" ? CustomStyleJournals : require("./journals.js");
-    this.catalog = catalog;
-    this.journals = this.journalTools.create(catalog);
+    this.journals = this.journalTools.create(catalog, { ownRecords: !!ownCatalog });
+    this.catalog = this.journals.records;
+    this._journalsBaseOnly = true;
+    this._journalsBuiltCatalog = this.catalog;
+    this._journalsBuiltCatalogLen = this.catalog.length;
     this.citationTools = citations || (typeof CustomStyleCitations !== "undefined" ? CustomStyleCitations : require("./citations.js"));
     this.citationFormats = typeof CustomStyleCitationFormats !== "undefined" ? CustomStyleCitationFormats : require("./citation-formats.js");
     this.supplementaryTools = typeof CustomStyleSupplementary !== "undefined" ? CustomStyleSupplementary : require("./supplementary.js");
@@ -7392,6 +7396,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     return job.promise;
   }
   rebuildJournals() {
+    const cachedJournals = this.cache.journals ? Object.values(this.cache.journals) : [];
+    if (this._journalsBaseOnly && !cachedJournals.length && this.catalog === this._journalsBuiltCatalog && this.catalog.length === this._journalsBuiltCatalogLen) return;
     /* One record per title, but a JCR record is never displaced by a publisher-page
        record, whichever comes later in the catalog or the cache. */
     const records = new Map();
@@ -7404,12 +7410,15 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       records.set(key, r);
     };
     for (const r of this.catalog) offer(r);
-    for (const r of Object.values(this.cache.journals || {})) {
+    for (const r of cachedJournals) {
       if (!this.journalTools.valid(r)) continue;
       const previous = records.get(keyOf(r));
       if (!previous || (r.year || 0) >= (previous.year || 0) && r.checkedAt >= previous.checkedAt) offer(r);
     }
-    this.journals = this.journalTools.create([...records.values()]);
+    this.journals = this.journalTools.create([...records.values()], { ownRecords: true });
+    this._journalsBaseOnly = !cachedJournals.length;
+    this._journalsBuiltCatalog = this.catalog;
+    this._journalsBuiltCatalogLen = this.catalog.length;
   }
   async refreshJournalMetrics(items, DOMParser) {
     const rows = new Map(), unknown = new Set();
@@ -7444,7 +7453,15 @@ var CustomStyleRuntime = class CustomStyleRuntime {
        /reading through the ordinary edit path; clearing the override alone left
        the /unread tag standing and the two disagreed. */
     const unreadTagged = record.unreadOverride || (item.getTags?.() || []).some(tag => /^\/unread$/i.test(String(tag?.tag ?? tag).trim()));
-    record.seconds += seconds; record.unreadOverride = false; this.dirty = true;
+    record.seconds += seconds; record.unreadOverride = false;
+    const useHot = typeof this.storage?.writeHot === 'function';
+    if (useHot) {
+      this._hotReadingKeys ||= new Set();
+      this._hotReadingKeys.add(this.identity(item));
+      this._readingDirty = true;
+    } else {
+      this.dirty = true;
+    }
     // In-progress promotions live in a Set, not in the cache: anything on the entry is flushed to disk.
     const promotingKey = `${item.libraryID}:${item.key ?? item.id}`;
     this._promoting ||= new Set();
@@ -7457,7 +7474,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.refreshReadingDisplays(item.id);
     /* The cells are already repainted in place. A full store write and an item
        tree rebuild every second was the rest of this method; the seconds are
-       now written at most twice a minute, and on stop. */
+       now written at most twice a minute (to a small hot reading overlay when
+       supported), and consolidated into style-custom.json on full saves/stop. */
     this.scheduleFlush(30000);
   }
   /* A write that can wait. Anything that must be on disk now calls flush(). */
@@ -7473,7 +7491,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       timer = host.setTimeout(() => {
         this.flushTimer = null;
         this.flushTimerWindow = null;
-        if (this.dirty) this.flush().catch(error => this.Z.logError(error));
+        if (this.dirty || this._readingDirty) this.flush().catch(error => this.Z.logError(error));
       }, delay);
     } catch (_) { return; } // A closing window cannot prevent an explicit flush.
     if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
@@ -7487,24 +7505,66 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.flushTimer = null;
     this.flushTimerWindow = null;
   }
-  flush() {
+  flush({ full = false } = {}) {
     this.cancelScheduledFlush();
     // A write is a change, whether or not a window is refreshed after it.
     this.bumpState();
     const work = this.writeQueue.then(async () => {
-      if (!this.dirty) return;
+      const hasHotKeys = !!(this._hotReadingKeys && this._hotReadingKeys.size > 0);
+      const hadHotOnStart = typeof this.storage?.hadHot === 'function' && this.storage.hadHot();
+      if (full && (this._readingDirty || hasHotKeys || hadHotOnStart)) this._dirty = true;
+      if (!this.dirty && !this._readingDirty) return;
+      if (!this.dirty && this._readingDirty && typeof this.storage?.writeHot === 'function') {
+        const hotItems = {};
+        for (const id of this._hotReadingKeys || []) {
+          const entry = this.cache.items?.[id];
+          if (!entry) continue;
+          const patch = {};
+          if (Number.isFinite(entry.seconds)) patch.seconds = entry.seconds;
+          if (typeof entry.unreadOverride === 'boolean') patch.unreadOverride = entry.unreadOverride;
+          if (typeof entry.lastRead === 'string') patch.lastRead = entry.lastRead;
+          if (entry.readingAttachments) patch.readingAttachments = entry.readingAttachments;
+          if (Number.isInteger(entry.readingAttachmentID)) patch.readingAttachmentID = entry.readingAttachmentID;
+          hotItems[id] = patch;
+        }
+        const encoded = JSON.stringify({ schema: 1, items: hotItems });
+        this._readingDirty = false;
+        try {
+          await this.storage.writeHot(encoded);
+          this.writeFailed = false;
+          this.shareFacts(this.cache);
+        } catch (error) {
+          this._readingDirty = true;
+          if (!this.writeFailed) {
+            this.writeFailed = true;
+            for (const [, state] of this.windows) {
+              try { state.workbench?.setStatus?.('저장하지 못했습니다. 디스크 공간과 Zotero 폴더 권한을 확인하세요. 지금까지의 기록은 창을 닫기 전까지 남아 있습니다.'); } catch (ignored) {}
+            }
+          }
+          throw error;
+        }
+        return;
+      }
       const useRaw = typeof this.storage?.writeRaw === 'function';
       const encoded = useRaw ? JSON.stringify(this.cache) : null;
       const snapshot = useRaw ? null : JSON.parse(JSON.stringify(this.cache));
-      this.dirty = false;
+      this._dirty = false;
+      this._readingDirty = false;
+      const savedHotKeys = this._hotReadingKeys ? [...this._hotReadingKeys] : [];
+      this._hotReadingKeys?.clear();
       try {
         if (useRaw) await this.storage.writeRaw(encoded);
         else await this.storage.write(snapshot);
+        if (typeof this.storage?.clearHot === 'function') await this.storage.clearHot();
         this.writeFailed = false;
         this.shareFacts(snapshot || this.cache);
       }
       catch (error) {
-        this.dirty = true;
+        this._dirty = true;
+        if (savedHotKeys.length) {
+          this._hotReadingKeys ||= new Set();
+          for (const k of savedHotKeys) this._hotReadingKeys.add(k);
+        }
         /* A disk that will not take the file loses reading time, ratings and
            citation counts silently. Say it once, in the panel, and not again
            until a write succeeds. */
@@ -8648,7 +8708,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       await attempt(()=>citationJob?.promise);await attempt(()=>this.bulkCitationPromise);
       await attempt(()=>this.metadataQueue);await attempt(()=>this.activityQueue);
       this.active=false;
-      await attempt(()=>this.queue);await attempt(()=>this.flush());
+      await attempt(()=>this.queue);await attempt(()=>this.flush({ full: true }));
       for(const observer of this.observers.splice(0))await attempt(()=>this.Z.Prefs.unregisterObserver(observer));
       // Unregistering a column while Zotero quits deletes its saved width and
       // order from treePrefs.json; on quit the columns stay and Zotero drops them

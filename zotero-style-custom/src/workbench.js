@@ -9161,6 +9161,11 @@
     drawOpenAlexJournals();return;
    }
    const browser=runtime.jcrBrowser||root.CustomStyleJCRBrowser;
+   if(!runtime.jcrCatalog&&!runtime.jcrCatalogError&&typeof runtime.ensureJcrCatalog==='function'){
+    emptyCard(body,{title:'불러오는 중…'});
+    runtime.ensureJcrCatalog().then(()=>{if(!disposed&&state.tab==='journals')render();}).catch(error=>runtime.Z.logError?.(error));
+    return;
+   }
    if(!runtime.jcrCatalog||typeof browser?.mount!=='function'){
     emptyCard(body,{title:'공식 JCR 카테고리 자료를 불러오지 못했습니다.',hint:'플러그인 업데이트를 확인하거나 아래에서 다른 탐색 방법을 고르세요.',role:'alert'}).classList.add('sc-jcr-unavailable');
     /* A failure says so and offers the ways on. Rows of dashes under real

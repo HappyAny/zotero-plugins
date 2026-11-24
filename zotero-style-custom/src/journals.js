@@ -14,7 +14,13 @@
   // title on an old paper is sent to the new one (Biotechnology for Biofuels is
   // now "... and Bioproducts", Journal of General Microbiology is Microbiology).
   const SPELLED={'biotechnology for biofuels':'biotechnology for biofuels and bioproducts','bmc evolutionary biology':'bmc ecology and evolution','molecular and general genetics mgg':'molecular genetics and genomics','molecular and general genetics':'molecular genetics and genomics','journal of general microbiology':'microbiology sgm','european journal of biochemistry':'febs journal','journal of applied bacteriology':'journal of applied microbiology','genome announcements':'microbiology resource announcements','agricultural and biological chemistry':'bioscience biotechnology and biochemistry','biotechnology techniques':'biotechnology letters','standards in genomic sciences':'environmental microbiome','current protocols in molecular biology':'current protocols','bioelectrochemistry and bioenergetics':'bioelectrochemistry','angewandte chemie':'angewandte chemie international edition','acta crystallographica section f structural biology and crystallization communications':'acta crystallographica section f structural biology communications','acta crystallographica section f':'acta crystallographica section f structural biology communications','frontiers in bioscience':'frontiers in bioscience landmark','proceedings of the national academy of sciences':'proceedings of the national academy of sciences of the united states of america','pnas':'proceedings of the national academy of sciences of the united states of america'};
-  function plain(value) { return String(value || '').normalize('NFKC').toLowerCase().replace(/&/g,' and ').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ').replace(/^the /,''); }
+  const ASCII_RE=/^[\x00-\x7F]*$/;
+  const EMPTY_ARRAY=Object.freeze([]);
+  function plain(value) {
+    const raw=String(value || '');
+    if(ASCII_RE.test(raw))return raw.toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/^the /,'');
+    return raw.normalize('NFKC').toLowerCase().replace(/&/g,' and ').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ').replace(/^the /,'');
+  }
   function name(value) { const key=plain(value); return SPELLED[key]||key; }
   /* The year the successor title began, for the titles SPELLED sends to a new
      name. A paper older than that was published in a different journal, so the
@@ -29,29 +35,100 @@
     return left.some(x=>right.some(y=>x.startsWith(y)||y.startsWith(x)));
   }
   function issn(value) {
-    const s=String(value||'').toUpperCase().replace(/[^0-9X]/g,'');
-    if(!/^\d{7}[\dX]$/.test(s))return null;
-    const sum=[...s.slice(0,7)].reduce((n,c,i)=>n+Number(c)*(8-i),0)+(s[7]==='X'?10:Number(s[7]));
+    const str=String(value||'');
+    let s;
+    if(str.length===9 && str.charCodeAt(4)===45) s=str.slice(0,4)+str.slice(5);
+    else if(str.length===8) s=str;
+    else {
+      s=str.toUpperCase().replace(/[^0-9X]/g,'');
+      if(s.length!==8)return null;
+    }
+    let sum=0;
+    for(let i=0;i<7;i++) {
+      const c=s.charCodeAt(i)-48;
+      if(c<0||c>9)return null;
+      sum+=c*(8-i);
+    }
+    const last=s.charCodeAt(7);
+    if(last===88||last===120){sum+=10;if(last===120)s=s.slice(0,7)+'X';}
+    else {
+      const d=last-48;
+      if(d<0||d>9)return null;
+      sum+=d;
+    }
     return sum%11===0?s:null;
   }
-  function valid(record) {
-    const url=/^https:\/\/([a-z0-9.-]+)(?:\/[^\s]*)?$/i.exec(String(record.sourceURL||''));
+  const URL_RE=/^https:\/\/([a-z0-9.-]+)(?:\/[^\s]*)?$/i;
+  const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
+  function valid(record, ctx) {
+    const url=URL_RE.exec(String(record.sourceURL||''));
     if(!url)return false;
-    return typeof record.title==='string' && !!name(record.title) && Array.isArray(record.aliases) && record.aliases.every(a=>typeof a==='string')
-      && Array.isArray(record.issns) && record.issns.every(i=>!!issn(i))
-      && typeof record.impactFactor==='number' && Number.isFinite(record.impactFactor) && record.impactFactor>=0 && record.impactFactor<1000
-      && (record.year===null || Number.isInteger(record.year) && record.year>=2000 && record.year<=new Date().getFullYear())
-      && hosts.test(url[1])
-      && /^\d{4}-\d{2}-\d{2}$/.test(record.checkedAt) && Number.isFinite(Date.parse(record.checkedAt));
+    const host=url[1];
+    let hostOk;
+    if(ctx && ctx.hostCache.has(host)) hostOk=ctx.hostCache.get(host);
+    else { hostOk=hosts.test(host); if(ctx)ctx.hostCache.set(host,hostOk); }
+    if(!hostOk)return false;
+    const maxYear=ctx?ctx.currentYear:new Date().getFullYear();
+    const dateCache=ctx?ctx.dateCache:null;
+    let dateOk;
+    if(dateCache && typeof record.checkedAt==='string' && dateCache.has(record.checkedAt)) {
+      dateOk=dateCache.get(record.checkedAt);
+    } else {
+      dateOk=typeof record.checkedAt==='string' && DATE_RE.test(record.checkedAt) && Number.isFinite(Date.parse(record.checkedAt));
+      if(dateCache && typeof record.checkedAt==='string')dateCache.set(record.checkedAt,dateOk);
+    }
+    if(!dateOk || typeof record.title!=='string' || !Array.isArray(record.aliases) || !Array.isArray(record.issns))return false;
+    const titleKey=name(record.title);
+    if(!titleKey)return false;
+    if(typeof record.impactFactor!=='number' || !Number.isFinite(record.impactFactor) || record.impactFactor<0 || record.impactFactor>=1000)return false;
+    if(!(record.year===null || Number.isInteger(record.year) && record.year>=2000 && record.year<=maxYear))return false;
+    for(let i=0;i<record.aliases.length;i++)if(typeof record.aliases[i]!=='string')return false;
+    const normalizedIssns=ctx?[]:null;
+    for(let i=0;i<record.issns.length;i++){
+      const code=issn(record.issns[i]);
+      if(!code)return false;
+      if(normalizedIssns)normalizedIssns.push(code);
+    }
+    if(ctx){ctx.lastTitleKey=titleKey;ctx.lastIssns=normalizedIssns;}
+    return true;
   }
-  function create(records=[]) {
+  function create(records=[], {ownRecords=false}={}) {
     const titles=new Map(), ids=new Map(), all=[];
-    const put=(map,key,r)=>{if(!key)return;if(!map.has(key))map.set(key,[]);map.get(key).push(r);};
+    const ctx={currentYear:new Date().getFullYear(),dateCache:new Map(),hostCache:new Map(),lastTitleKey:'',lastIssns:null};
+    const internPool=new Map();
+    const intern=v=>{if(typeof v!=='string'||!v)return v;let hit=internPool.get(v);if(hit===undefined){internPool.set(v,v);hit=v;}return hit;};
+    const put=(map,key,r)=>{
+      if(!key)return;
+      const prev=map.get(key);
+      if(prev===undefined)map.set(key,r);
+      else if(Array.isArray(prev))prev.push(r);
+      else map.set(key,[prev,r]);
+    };
+    const getList=(map,key)=>{
+      const v=map.get(key);
+      return v===undefined?EMPTY_ARRAY:Array.isArray(v)?v:[v];
+    };
     for(const original of records) {
-      if(!valid(original))throw new Error('Invalid verified IF catalog entry: '+original?.title);
-      const r={...original,aliases:[...original.aliases],issns:[...original.issns]};all.push(r);
-      for(const title of [r.title,...r.aliases])put(titles,name(title),r);
-      for(const id of r.issns)put(ids,issn(id),r);
+      if(!valid(original,ctx))throw new Error('Invalid verified IF catalog entry: '+original?.title);
+      const aliases=original.aliases.length?(ownRecords?original.aliases:[...original.aliases]):EMPTY_ARRAY;
+      const issns=original.issns.length?(ownRecords?original.issns:[...original.issns]):EMPTY_ARRAY;
+      let r;
+      if(ownRecords) {
+        r=original;
+        r.aliases=aliases;
+        r.issns=issns;
+      } else {
+        r={...original,aliases,issns};
+      }
+      if(r.checkedAt)r.checkedAt=intern(r.checkedAt);
+      if(r.evidence)r.evidence=intern(r.evidence);
+      if(r.metric)r.metric=intern(r.metric);
+      if(r.authority)r.authority=intern(r.authority);
+      all.push(r);
+      put(titles,ctx.lastTitleKey,r);
+      for(let i=0;i<aliases.length;i++)put(titles,name(aliases[i]),r);
+      const normIssns=ctx.lastIssns;
+      for(let i=0;i<normIssns.length;i++)put(ids,normIssns[i],r);
     }
     function choose(matches) {
       let unique=[...new Set(matches)];if(!unique.length)return null;
@@ -67,9 +144,9 @@
       const field=k=>{try{return item.getField(k)||'';}catch(_){return '';}};
       const names=[field('publicationTitle'),field('journalAbbreviation')].filter(Boolean);
       const identifiers=(String(field('ISSN')).match(/\d{4}-?\d{3}[\dXx]/g)||[]).map(issn).filter(Boolean);
-      const idMatches=identifiers.flatMap(id=>ids.get(id)||[]);
+      const idMatches=identifiers.flatMap(id=>getList(ids,id));
       if(idMatches.length)return choose(idMatches);
-      const byName=[...new Set(names.flatMap(title=>titles.get(name(title))||[]))];
+      const byName=[...new Set(names.flatMap(title=>getList(titles,name(title))))];
       /* One title can name two different journals (Microbiology: Russian 0026-2617
          and the Society's 1465-2080). With no ISSN to decide, records whose ISSNs
          share nothing are not the same journal, so no figure is better than the

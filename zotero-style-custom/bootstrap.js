@@ -18,6 +18,8 @@ async function startup({ id, version, rootURI }) {
     try { Services.scriptloader.loadSubScript(rootURI + "src/paper-text.js", globalThis); }
     catch (error) { Zotero.debug("Style Custom: paper-text not loaded: " + (error && error.message)); }
     const path = PathUtils.join(Zotero.DataDirectory.dir, "style-custom.json");
+    const hotPath = PathUtils.join(Zotero.DataDirectory.dir, "style-custom-reading.json");
+    let hadHotReadingOnRead = false;
     let legacy = {};
     try {
       const oldPath = PathUtils.join(Zotero.DataDirectory.dir, "zoterostyle.json");
@@ -52,24 +54,90 @@ async function startup({ id, version, rootURI }) {
     try {
       const registry = await journalData("journal-registry.json");
       if (registry && globalThis.CustomStyleJournalIdentity) {
-        globalThis.CustomStyleJournalIdentity.loadRegistry(registry);
+        globalThis.CustomStyleJournalIdentity.loadRegistry(registry, { lazyKeys: true });
       }
     } catch (error) { Zotero.debug("Style Custom: journal registry not loaded: " + (error && error.message)); }
-    let jcrCatalog = null, jcrCatalogError = null;
-    try {
-      jcrCatalog = globalThis.CustomStyleJCRCategories.create(await journalData("jcr-categories.json", "journal-catalog.json"));
-    } catch (error) {
-      jcrCatalogError = String(error && error.message || error);
-      Zotero.debug("Style Custom: journal category catalog not loaded: " + jcrCatalogError);
+    let jcrCatalog = null, jcrCatalogError = null, jcrCatalogLoaded = false, jcrCatalogPromise = null;
+    const loadJcrCatalog = async () => {
+      if (jcrCatalogLoaded) return jcrCatalog;
+      if (jcrCatalogPromise) return jcrCatalogPromise;
+      jcrCatalogPromise = (async () => {
+        try {
+          const raw = await journalData("jcr-categories.json", "journal-catalog.json");
+          jcrCatalog = globalThis.CustomStyleJCRCategories.create(raw, { copyPayload: false, freezeResult: false });
+          jcrCatalogError = null;
+        } catch (error) {
+          jcrCatalog = null;
+          jcrCatalogError = String(error && error.message || error);
+          Zotero.debug("Style Custom: journal category catalog not loaded: " + jcrCatalogError);
+        } finally {
+          jcrCatalogLoaded = true;
+          jcrCatalogPromise = null;
+          if (customStyle) {
+            customStyle.jcrCatalog = jcrCatalog;
+            customStyle.jcrCatalogError = jcrCatalogError;
+          }
+        }
+        return jcrCatalog;
+      })();
+      return jcrCatalogPromise;
+    };
+    // A local licensed JCR overlay powers item-list IF tooltips (Q1/rank) right away.
+    // The shipped 28.7 MB OpenAlex category catalog is only used inside the Workbench
+    // Journals browser, so it loads lazily on first open to save ~100 MB & >1s at startup.
+    let hasLocalJcr = false;
+    try { hasLocalJcr = await IOUtils.exists(PathUtils.join(journalDir, "jcr-categories.json")); } catch (_) {}
+    if (hasLocalJcr) {
+      await loadJcrCatalog();
+    } else {
+      journalLayers["jcr-categories.json"] = "shipped";
     }
-    customStyle = new globalThis.CustomStyleRuntime({ Zotero, catalog, io: IOUtils, paths: PathUtils,
+    const mergeHotReading = (base, hot) => {
+      if (!hot || hot.schema !== 1 || !hot.items || typeof hot.items !== "object" || Array.isArray(hot.items)) return false;
+      let merged = false;
+      base.items ||= {};
+      for (const [id, patch] of Object.entries(hot.items)) {
+        if (!patch || typeof patch !== "object" || Array.isArray(patch)) continue;
+        const target = base.items[id] ||= {};
+        const baseSec = Number(target.seconds) || 0, hotSec = Number(patch.seconds) || 0;
+        if (hotSec >= baseSec && Number.isFinite(patch.seconds)) target.seconds = patch.seconds;
+        if (typeof patch.unreadOverride === "boolean") target.unreadOverride = patch.unreadOverride;
+        if (typeof patch.lastRead === "string" && (!target.lastRead || patch.lastRead >= target.lastRead)) target.lastRead = patch.lastRead;
+        if (patch.readingAttachments && typeof patch.readingAttachments === "object" && !Array.isArray(patch.readingAttachments)) {
+          target.readingAttachments = { ...(target.readingAttachments || {}), ...patch.readingAttachments };
+        }
+        if (Number.isInteger(patch.readingAttachmentID) && patch.readingAttachmentID > 0) target.readingAttachmentID = patch.readingAttachmentID;
+        merged = true;
+      }
+      return merged;
+    };
+    customStyle = new globalThis.CustomStyleRuntime({ Zotero, catalog, ownCatalog: true, io: IOUtils, paths: PathUtils,
       model: globalThis.CustomStyleData, marquee: globalThis.CustomStyleMarquee,
       reading: globalThis.CustomStyleReading, legacy,
       storage: {
         async read() {
-          if (!await IOUtils.exists(path)) return { schema: 1, items: {} };
-          if ((await IOUtils.stat(path)).size > 50 * 1024 * 1024) throw new Error("Style Custom cache is too large");
-          return JSON.parse(await IOUtils.readUTF8(path));
+          let base = { schema: 1, items: {} };
+          if (await IOUtils.exists(path)) {
+            if ((await IOUtils.stat(path)).size > 50 * 1024 * 1024) throw new Error("Style Custom cache is too large");
+            base = JSON.parse(await IOUtils.readUTF8(path));
+          }
+          hadHotReadingOnRead = false;
+          try {
+            if (await IOUtils.exists(hotPath) && (await IOUtils.stat(hotPath)).size <= 16 * 1024 * 1024) {
+              const hot = JSON.parse(await IOUtils.readUTF8(hotPath));
+              hadHotReadingOnRead = mergeHotReading(base, hot);
+            }
+          } catch (error) { Zotero.logError(error); }
+          return base;
+        },
+        hadHot() { return hadHotReadingOnRead; },
+        async writeHot(encoded) {
+          if(encoded.length>16*1024*1024)throw new Error('Style Custom reading overlay is too large.');
+          await IOUtils.writeUTF8(hotPath, encoded, { tmpPath: hotPath + ".tmp" });
+        },
+        async clearHot() {
+          hadHotReadingOnRead = false;
+          try { await IOUtils.remove?.(hotPath, { ignoreAbsent: true }); } catch (_) {}
         },
         async writeRaw(encoded) {
           if(encoded.length>16*1024*1024)throw new Error('Style Custom storage is too large. Remove boards and drafts you no longer use.');
@@ -83,6 +151,7 @@ async function startup({ id, version, rootURI }) {
     });
     customStyle.jcrCatalog = jcrCatalog;
     customStyle.jcrCatalogError = jcrCatalogError;
+    customStyle.ensureJcrCatalog = loadJcrCatalog;
     customStyle.journalLayers = journalLayers;
     customStyle.journalDir = journalDir;
     customStyle.jcrBrowser = globalThis.CustomStyleJCRBrowser;
