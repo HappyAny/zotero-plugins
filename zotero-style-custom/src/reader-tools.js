@@ -465,6 +465,27 @@
       for(const d of ['M12 4a8 8 0 1 0 0 16c1.2 0 1.6-.8 1.2-1.6-.5-1 .1-2.4 1.6-2.4H17a3 3 0 0 0 3-3c0-5-3.6-9-8-9z','M7.5 11.5h.01','M10 7.5h.01','M14.5 7.5h.01']){const path=doc.createElementNS(NS,'path');path.setAttribute('d',d);svg.appendChild(path);}
       return svg;
     }
+    /* Crisp folder icon matching the reader's toolbar icon geometry (16x16, 1.8px stroke). */
+    function showFileIcon(doc){
+      if(typeof doc.createElementNS!=='function')return null;
+      const NS='http://www.w3.org/2000/svg',svg=doc.createElementNS(NS,'svg');if(!svg||typeof svg.setAttribute!=='function')return null;
+      for(const[k,v]of [['viewBox','0 0 24 24'],['width','16'],['height','16'],['fill','none'],['stroke','currentColor'],['stroke-width','1.8'],['stroke-linecap','round'],['stroke-linejoin','round'],['aria-hidden','true']])svg.setAttribute(k,v);
+      for(const d of ['M3 7a2 2 0 0 1 2-2h4.6a2 2 0 0 1 1.4.6l1.4 1.4H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z','M12 11v5','M9.5 13.5L12 11l2.5 2.5']){const path=doc.createElementNS(NS,'path');path.setAttribute('d',d);svg.appendChild(path);}
+      return svg;
+    }
+    async function revealReaderFile(reader){
+      const attachment=reader?._item||(reader?.itemID!=null?(typeof Z.Items?.getAsync==='function'?await Z.Items.getAsync(reader.itemID):Z.Items?.get?.(reader.itemID)):null);
+      const filePath=attachment&&typeof attachment.getFilePathAsync==='function'?await attachment.getFilePathAsync():(attachment&&typeof attachment.getFilePath==='function'?attachment.getFilePath():'');
+      if(!filePath)throw new Error('The attachment file is not available on this computer');
+      if(typeof Z.File?.reveal==='function'){await Z.File.reveal(filePath);return filePath;}
+      if(typeof Z.File?.pathToFile==='function'){
+        const nsFile=Z.File.pathToFile(filePath);
+        if(nsFile&&typeof nsFile.reveal==='function'){nsFile.reveal();return filePath;}
+      }
+      const parentDir=typeof PathUtils?.parent==='function'?PathUtils.parent(filePath):String(filePath).replace(/[/\\][^/\\]+$/,'');
+      if(parentDir&&typeof Z.launchFile==='function'){await Z.launchFile(parentDir);return filePath;}
+      throw new Error('This Zotero cannot reveal the file in the file manager');
+    }
     /* "여기서부터 듣기" in the reader's own text-selection popup: the reader panel starts at the selected sentence. */
     function selectionHook(event){
       if(stopped)return;
@@ -476,8 +497,13 @@
       state.toolbars.get(reader)?.remove();
       /* One row of icon buttons like Zotero's own: the reader's toolbar-button is display:flex, so inside an inline
          span they stacked vertically and the label of the last one hung below the toolbar. */
-      const container=doc.createElement('span'),button=doc.createElement('button'),menu=doc.createElement('div');
+      const container=doc.createElement('span'),showFileBtn=doc.createElement('button'),button=doc.createElement('button'),menu=doc.createElement('div');
       container.className='sc-toolbar-group';container.style.cssText='display:flex;align-items:center;gap:4px;';
+      showFileBtn.type='button';showFileBtn.className='toolbar-button sc-show-file-btn';
+      showFileBtn.title=t('파일 위치 열기');showFileBtn.setAttribute('aria-label',t('파일 위치 열기'));showFileBtn.setAttribute('data-opens','external');
+      const folderSvg=showFileIcon(doc);if(folderSvg)showFileBtn.appendChild(folderSvg);else showFileBtn.textContent=t('파일 위치 열기');
+      showFileBtn.addEventListener('click',()=>{revealReaderFile(reader).catch(report);});
+      container.appendChild(showFileBtn);
       let assistButtons=null;try{assistButtons=runtime.readerAssist?.mountToolbar({reader,doc,container});}catch(e){report(e);}
       button.type='button';button.className='toolbar-button';button.title=t('Style Custom 리더 도구');button.setAttribute('aria-expanded','false');button.setAttribute('aria-label',t('Style Custom 리더 도구'));
       const paint=styleIcon(doc);if(paint)button.appendChild(paint);else button.textContent=t('스타일');

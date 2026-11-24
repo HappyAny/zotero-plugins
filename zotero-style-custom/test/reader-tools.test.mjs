@@ -164,7 +164,7 @@ test('margin cards also mount in secondary split PDF view and clear when split c
 test('native toolbar hook provides standalone controls and removes only our registration',async()=>{
  const f=fixture();let openedWith;f.runtime.openWorkbench=win=>{openedWith=win;};const other={type:'renderToolbar',handler(){},pluginID:'other-plugin'};f.Z.Reader._registeredListeners.push(other);
  const listener=f.Z.Reader._registeredListeners.find(l=>l!==other),appended=[];
- listener.handler({reader:f.reader,doc:f.doc,append:node=>appended.push(node)});assert.equal(appended.length,1);const button=appended[0].children[0];button.emit('click');const menu=f.doc.documentElement.children.find(n=>n.attrs['aria-label']==='Reader appearance and workspace');assert.equal(menu.hidden,false);
+ listener.handler({reader:f.reader,doc:f.doc,append:node=>appended.push(node)});assert.equal(appended.length,1);const button=appended[0].children.find(n=>n.attrs['aria-label']==='Style Custom reader tools');button.emit('click');const menu=f.doc.documentElement.children.find(n=>n.attrs['aria-label']==='Reader appearance and workspace');assert.equal(menu.hidden,false);
  const open=menu.children.find(n=>n.textContent==='Open research workspace');open.emit('click');await Promise.resolve();await Promise.resolve();assert.equal(openedWith,f.win);
  const sidebar=menu.children.find(n=>n.textContent==='Toggle reader sidebar');sidebar.emit('click');await Promise.resolve();await Promise.resolve();assert.equal(f.core._state.sidebarOpen,true);
  f.service.stop();assert.deepEqual(f.Z.Reader._registeredListeners,[other]);assert.equal(menu.isConnected,false);assert.equal(appended[0].isConnected,false);
@@ -438,10 +438,28 @@ test('the toolbar group is one row of icon buttons: no text label hangs under th
  let container=null;f.Z.Reader._registeredListeners.find(l=>l.type==='renderToolbar').handler({reader:f.reader,doc:f.doc,append:n=>{container=n;}});
  assert.ok(container,'the group is appended');
  assert.match(container.style.cssText,/display:flex/,'buttons side by side, not stacked as blocks inside an inline span');
+ const showFile=container.children[0];
+ assert.ok(showFile && showFile.className.includes('sc-show-file-btn'),'Show File button sits immediately left of Paper Assist');
+ assert.equal(showFile.attrs['data-opens'],'external','Show File opens the OS file manager so self-check skips it');
+ assert.equal(showFile.children[0].tagName,'svg');
  const style=container.children.find(n=>n.attrs['aria-label']==='Style Custom reader tools');
  assert.ok(style);assert.equal(style.textContent,undefined,'no visible text');assert.equal(style.children[0].tagName,'svg');
  assert.equal(style.title,'Style Custom reader tools','the name is the tooltip');
  assert.ok(f.Z.Reader._registeredListeners.some(l=>l.type==='renderTextSelectionPopup'),'the selection popup hook is registered');
+ f.service.stop();
+});
+
+test('clicking Show File in the reader toolbar reveals the attachment file in the OS file manager',async()=>{
+ const f=fixture();f.service.attach(f.win);
+ const revealed=[];
+ f.Z.Items.getAsync=async id=>id===f.reader.itemID?{getFilePathAsync:async()=>'D:\\Apps\\Zotero\\storage\\ABC123\\paper.pdf'}:null;
+ f.Z.File={reveal:async p=>{revealed.push(p);}};
+ let container=null;f.Z.Reader._registeredListeners.find(l=>l.type==='renderToolbar').handler({reader:f.reader,doc:f.doc,append:n=>{container=n;}});
+ const showFile=container.children[0];
+ assert.ok(showFile && showFile.className.includes('sc-show-file-btn'),'Show File button is first (left of Paper Assist)');
+ showFile.emit('click');
+ await new Promise(r=>setTimeout(r,15));
+ assert.deepEqual(revealed,['D:\\Apps\\Zotero\\storage\\ABC123\\paper.pdf']);
  f.service.stop();
 });
 

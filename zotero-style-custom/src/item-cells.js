@@ -210,7 +210,7 @@ ${TREE} .cell .sc-more:hover{background:rgba(255,255,255,.12);color:#F3F4F6}
       mine.push(entry); (state.listeners ||= []).push(entry);
     };
     const escape = s => (win.CSS?.escape ? win.CSS.escape(s) : String(s).replace(/([^\w-])/g, "\\$1"));
-    let style = null, known = new Set(), rootNode = null, lastCell = null, pending = null, raf = 0;
+    let style = null, known = new Set(), rootNode = null, lastCell = null, lastPad = null, pending = null, raf = 0;
     const debug = state.cellsDebug = {overs: 0, trustedOvers: 0, outs: 0, clears: 0, applies: 0};
 
     const ensureStyle = () => {
@@ -238,6 +238,7 @@ ${TREE} .cell .sc-more:hover{background:rgba(255,255,255,.12);color:#F3F4F6}
     };
     const clear = () => {
       debug.clears++;
+      lastPad = null;
       if (lastCell) { lastCell.removeAttribute("data-sc-hover-cell"); lastCell = null; }
       if (rootNode) { rootNode.removeAttribute("data-sc-hover-col"); try { rootNode.style?.removeProperty?.("--sc-hover-pad"); } catch (_) {} rootNode = null; }
       // Rows are recycled while scrolling: a mark can sit on a cell this closure no longer holds.
@@ -254,16 +255,24 @@ ${TREE} .cell .sc-more:hover{background:rgba(255,255,255,.12);color:#F3F4F6}
       if (cell === lastCell) return;
       const key = keyOf(cell);
       if (!key) { clear(); return; }
+      // Read geometry BEFORE writing attributes/styles to avoid synchronous write->read layout thrash.
+      let gap = null;
+      try {
+        const rowH = row.getBoundingClientRect?.().height || 0;
+        const cellH = cell.getBoundingClientRect?.().height || 0;
+        gap = Math.max(0, Math.round((rowH - cellH) / 2));
+      } catch (_) {}
       if (!known.has(key)) rules(visibleKeys());
       debug.applies++;
       if (lastCell) lastCell.removeAttribute("data-sc-hover-cell");
       lastCell = cell; cell.setAttribute("data-sc-hover-cell", "");
+      if (rootNode !== tree) lastPad = null;
       rootNode = tree; tree.setAttribute("data-sc-hover-col", key);
       // How far the cell falls short of its row, top and bottom: the tint and the box fill that gap.
-      try {
-        const gap = Math.max(0, Math.round(((row.getBoundingClientRect?.().height || 0) - (cell.getBoundingClientRect?.().height || 0)) / 2));
-        tree.style?.setProperty?.("--sc-hover-pad", gap + "px");
-      } catch (_) {}
+      if (gap !== null && gap !== lastPad) {
+        lastPad = gap;
+        try { tree.style?.setProperty?.("--sc-hover-pad", gap + "px"); } catch (_) {}
+      }
     };
     if (hover) {
       const over = event => {
