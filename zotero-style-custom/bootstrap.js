@@ -48,15 +48,52 @@ async function startup({ id, version, rootURI }) {
       journalLayers[localName] = "shipped";
       return shipped;
     };
-    const catalog = await journalData("if-catalog.json");
-    // The registry combines the metric with OpenAlex subject paths. Optional for older
-    // builds; missing records stay unknown rather than guessed at.
+    const subsetPath = PathUtils.join(Zotero.DataDirectory.dir, "style-custom-journal-subset.json");
+    const overlaySig = async name => {
+      try {
+        const file = PathUtils.join(journalDir, name);
+        if (!await IOUtils.exists(file)) return "shipped";
+        const st = await IOUtils.stat(file);
+        return `local:${st.size || 0}:${st.lastModified || 0}`;
+      } catch (_) { return "shipped"; }
+    };
+    const subsetSignature = [String(version || ""), await overlaySig("if-catalog.json"), await overlaySig("journal-registry.json")].join("|");
+    let subsetData = null;
     try {
-      const registry = await journalData("journal-registry.json");
-      if (registry && globalThis.CustomStyleJournalIdentity) {
-        globalThis.CustomStyleJournalIdentity.loadRegistry(registry, { lazyKeys: true });
+      if (await IOUtils.exists(subsetPath) && (await IOUtils.stat(subsetPath)).size <= 16 * 1024 * 1024) {
+        const parsed = JSON.parse(await IOUtils.readUTF8(subsetPath));
+        if (parsed && parsed.schema === 1 && parsed.signature === subsetSignature
+            && Array.isArray(parsed.ifRecords) && Array.isArray(parsed.registryRows)) {
+          subsetData = parsed;
+        }
       }
-    } catch (error) { Zotero.debug("Style Custom: journal registry not loaded: " + (error && error.message)); }
+    } catch (error) { Zotero.debug("Style Custom: journal subset cache ignored: " + (error && error.message)); }
+    let catalog = [];
+    let fullIfCount = 0;
+    let fullRegistryCount = 0;
+    if (subsetData) {
+      catalog = subsetData.ifRecords;
+      fullIfCount = Number(subsetData.fullIfCount) || catalog.length;
+      fullRegistryCount = Number(subsetData.fullRegistryCount) || subsetData.registryRows.length;
+      journalLayers["if-catalog.json"] = subsetData.layers?.["if-catalog.json"] || "shipped";
+      journalLayers["journal-registry.json"] = subsetData.layers?.["journal-registry.json"] || "shipped";
+      try {
+        if (globalThis.CustomStyleJournalIdentity) {
+          globalThis.CustomStyleJournalIdentity.loadRegistry(subsetData.registryRows, { lazyKeys: true });
+        }
+      } catch (error) { Zotero.debug("Style Custom: journal registry subset not loaded: " + (error && error.message)); }
+    } else {
+      catalog = await journalData("if-catalog.json");
+      fullIfCount = Array.isArray(catalog) ? catalog.length : 0;
+      // The registry combines the metric with OpenAlex subject paths. Optional for older
+      // builds; missing records stay unknown rather than guessed at.
+      try {
+        const registry = await journalData("journal-registry.json");
+        if (registry && globalThis.CustomStyleJournalIdentity) {
+          fullRegistryCount = globalThis.CustomStyleJournalIdentity.loadRegistry(registry, { lazyKeys: true });
+        }
+      } catch (error) { Zotero.debug("Style Custom: journal registry not loaded: " + (error && error.message)); }
+    }
     let jcrCatalog = null, jcrCatalogError = null, jcrCatalogLoaded = false, jcrCatalogPromise = null;
     const loadJcrCatalog = async () => {
       if (jcrCatalogLoaded) return jcrCatalog;
@@ -155,7 +192,22 @@ async function startup({ id, version, rootURI }) {
     customStyle.journalLayers = journalLayers;
     customStyle.journalDir = journalDir;
     customStyle.jcrBrowser = globalThis.CustomStyleJCRBrowser;
+    customStyle.configureJournalSubset({
+      active: !!subsetData,
+      signature: subsetSignature,
+      subsetPath,
+      fullIfCount,
+      fullRegistryCount,
+      layers: { "if-catalog.json": journalLayers["if-catalog.json"] || "shipped", "journal-registry.json": journalLayers["journal-registry.json"] || "shipped" },
+      misses: subsetData?.misses || [],
+      subsetRegistryRows: subsetData?.registryRows || null,
+      loadFullIf: () => journalData("if-catalog.json"),
+      loadFullRegistry: () => journalData("journal-registry.json")
+    });
     await customStyle.start({ id, version, rootURI });
+    if (!subsetData && typeof Zotero.Items?.getAll === "function" && typeof Zotero.Libraries?.getAll === "function") {
+      customStyle.scheduleInitialJournalSubsetBuild(2500);
+    }
     Zotero.StyleCustom = customStyle;
     for (const window of Zotero.getMainWindows()) customStyle.addWindow(window);
     for (const reader of Zotero.Reader._readers || []) {

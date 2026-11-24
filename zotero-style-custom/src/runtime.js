@@ -259,12 +259,13 @@ var CustomStyleRuntime = class CustomStyleRuntime {
      this is how the reader is told, and how the self-check reports it. */
   journalFigureLayers() {
     const layers=this.journalLayers||{};
+    const sub=this._journalSubset;
     const table=(file,count)=>({file,layer:layers[file]||null,count:Number.isFinite(count)?count:0});
     return {
       dir:this.journalDir||'',
       tables:[
-        table('if-catalog.json',Array.isArray(this.catalog)?this.catalog.length:0),
-        table('journal-registry.json',this.journalIdentity?._registrySize?.()||0),
+        table('if-catalog.json',sub&&Number.isFinite(sub.fullIfCount)?sub.fullIfCount:(Array.isArray(this.catalog)?this.catalog.length:0)),
+        table('journal-registry.json',sub&&Number.isFinite(sub.fullRegistryCount)?sub.fullRegistryCount:(this.journalIdentity?._registrySize?.()||0)),
         table('jcr-categories.json',this.jcrCatalog?.journals?.length||0)
       ]
     };
@@ -598,12 +599,14 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     if (!old.legacyCitationIdentity) { old.legacyCitationIdentity=cached.citationKey||citationKey; this.dirty=true; }
     // Adding a previously absent author is enrichment, not a conflicting paper
     // identity. Keep opaque legacy counts while the stricter title lookup runs.
-    try {
-      const previous=JSON.parse(old.legacyCitationIdentity), current=JSON.parse(citationKey);
-      if(previous.length===6 && !previous[0] && !previous[5] && current[5] && previous.slice(0,5).every((v,i)=>v===current[i])) {
-        old.legacyCitationIdentity=citationKey;this.dirty=true;
-      }
-    } catch(_) {}
+    if (old.legacyCitationIdentity !== citationKey) {
+      try {
+        const previous=JSON.parse(old.legacyCitationIdentity), current=JSON.parse(citationKey);
+        if(previous.length===6 && !previous[0] && !previous[5] && current[5] && previous.slice(0,5).every((v,i)=>v===current[i])) {
+          old.legacyCitationIdentity=citationKey;this.dirty=true;
+        }
+      } catch(_) {}
+    }
     const changedCitation = cached.citationKey && cached.citationKey !== citationKey;
     if (changedCitation) { merged.citations=null; merged.citationSource=null; merged.citationCheckedAt=null; }
     const legacyCitation = userLibrary && old.legacyCitationIdentity===citationKey ? this.model.readLegacyCitations(legacy[item.key]?.citedCount) : {citations:null};
@@ -621,6 +624,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
        successor's. An IF typed into Extra is the reader's own and stays. */
     const detail = this.journals.lookupDetail ? this.journals.lookupDetail(item) : {record: this.journals.lookup(item), successor: null, predates: false};
     const journal = detail.record;
+    if (!journal && this._journalSubset?.active) this.noteJournalSubsetQuery(item);
     merged.impactSuccessor = '';
     if (journal) {
       merged.impactFactor = journal.impactFactor;
@@ -660,8 +664,24 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const own = number(old.seconds) ? old.seconds : 0;
     const prior = number(cached.seconds) ? cached.seconds : 0;
     merged.seconds = Math.max(own, prior, number(live.seconds) ? live.seconds : 0);
-    if (JSON.stringify(cached) !== JSON.stringify(merged)) { old.metrics = merged; this.dirty = true; }
+    if (!CustomStyleRuntime._sameMetrics(cached, merged)) { old.metrics = merged; this.dirty = true; }
     return merged;
+  }
+  static _sameMetrics(a, b) {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const ka = Object.keys(a), kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    for (let i = 0; i < ka.length; i++) {
+      const k = ka[i];
+      if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+      const va = a[k], vb = b[k];
+      if (va === vb) continue;
+      if (va && vb && typeof va === 'object' && typeof vb === 'object') {
+        if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
+      } else return false;
+    }
+    return true;
   }
   /* One computation of a row's state per repaint, not one per column.
 
@@ -1145,12 +1165,15 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     let issn = '';
     try { issn = String(item.getField('ISSN') || ''); } catch (_) {}
     const identity = title ? this.journalIdentity.identify(title, {issn}) : null;
+    if (identity && !identity.known && !identity.publisher && this._journalSubset?.active) {
+      this.noteJournalSubsetQuery(item);
+    }
     return identity ? {title, identity} : null;
   }
   // The journal's standard abbreviation: Zotero's own field when the record has
   // one, otherwise the abbreviation the mark module derives from the title.
-  journalAbbreviationOf(item) {
-    const found = this.journalIdentityOf(item);
+  journalAbbreviationOf(item, precomputedFound = undefined) {
+    const found = precomputedFound !== undefined ? precomputedFound : this.journalIdentityOf(item);
     // A title the curated table knows always gets the table's form, so the
     // column reads in one style ("Nat Commun", never "Nat. Commun." beside it).
     if (found && this.journalIdentity.ABBREVIATIONS[found.title]) return this.journalIdentity.ABBREVIATIONS[found.title];
@@ -1169,7 +1192,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     if (!found) return null;
     const tone = this.journalIdentity.colours(found.identity, {dark: P.dark});
     const mark = doc.createElementNS('http://www.w3.org/1999/xhtml', 'span');
-    mark.textContent = this.journalAbbreviationOf(item);
+    mark.textContent = this.journalAbbreviationOf(item, found);
     const bg = tone.badge || tone.fill, ink = tone.badge ? tone.badgeInk : tone.ink, edge = tone.badge ? 'transparent' : tone.edge;
     // One box: 14px tall, the line exactly as tall, so the 9px text sits in the middle of it rather than on
     // its upper edge. floor-exempt: user-requested original size, 2026-10-04.
@@ -1382,6 +1405,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // Five stars are one rating, not five marks spread across the cell.
     if (key === "rating") cell.style.gap = "1px";
     const item = doc.defaultView?.ZoteroPane?.itemsView?.getRow(index)?.ref;
+    let cellMetrics = null;
     if (key === "more") { if (this.isRegular(item)) cell.appendChild(this.moreButton(doc, index, item)); cell.style.justifyContent = "center"; return cell; }
     // Read current data when painting: do not reuse a previously cached empty cell.
     if (this.isRegular(item)) {value=["if","oaCitedness","citations","time","progress"].includes(key)?this.displayValue(key,item):this.value(key,item);if(['time','status'].includes(key)){cell.dataset.styleCustomReading=key;cell.dataset.itemId=String(item.id);}}
@@ -1669,7 +1693,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       cell.title = mark?.title || "";
       return cell;
     } else if (key === "if") {
-      this.paintJournal(cell, item, doc, P, {figure: label, estimate: false, successor: this.isRegular(item) ? this.metrics(item).impactSuccessor || '' : ''});
+      cellMetrics = this.isRegular(item) ? this.metrics(item) : null;
+      this.paintJournal(cell, item, doc, P, {figure: label, estimate: false, successor: cellMetrics?.impactSuccessor || ''});
     } else if (key === "oaCitedness") {
       const estimate = this.isRegular(item) ? this.journalCitedness(item) : null;
       this.paintJournal(cell, item, doc, P, {figure: label, estimate: true, name: estimate?.name});
@@ -1677,7 +1702,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       const count = Number(value);
       const number = doc.createElementNS("http://www.w3.org/1999/xhtml", "span");
       // A legacy count (no provider, no date) is drawn "~" and grey: a figure of unknown age, not a current one.
-      const legacy = this.isRegular(item) && !!this.metrics(item).citationLegacy;
+      cellMetrics = this.isRegular(item) ? this.metrics(item) : null;
+      const legacy = !!cellMetrics?.citationLegacy;
       number.textContent = legacy ? "~" + label : label;
       // A fixed, right-aligned number column so every bar starts at one x.
       number.style.cssText = `font-variant-numeric:tabular-nums;min-width:3.4em;text-align:right;`
@@ -1717,7 +1743,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       cell.style.cursor = "pointer";
       const armed = this.guardClick(cell, doc, index);
       cell.addEventListener("click", () => { if (!armed()) return; const win = doc.defaultView; this.windows.get(win)?.workbench?.show(key === "citations" ? "related" : "journals"); });
-      const metrics = this.metrics(item);
+      const metrics = cellMetrics || this.metrics(item);
       const source = metrics[key === "if" ? "impactSource" : "citationSource"] || this.t("저장된 메타데이터");
       if (key === "if" && cell.title) cell.title += ` · ${source}`; else cell.title = `${label} · ${source}`;
       if (key === "citations" && metrics.citationCheckedAt) cell.title += ` · ${metrics.citationCheckedAt}`;
@@ -7420,6 +7446,286 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this._journalsBuiltCatalog = this.catalog;
     this._journalsBuiltCatalogLen = this.catalog.length;
   }
+  configureJournalSubset(config) {
+    if (!config) return;
+    this._clearJournalSubsetTimers();
+    this._journalSubset = {
+      active: !!config.active,
+      fullRegistryLoaded: !config.active,
+      signature: String(config.signature || ''),
+      subsetPath: config.subsetPath || '',
+      fullIfCount: Number(config.fullIfCount) || 0,
+      fullRegistryCount: Number(config.fullRegistryCount) || 0,
+      layers: { ...(config.layers || {}) },
+      misses: new Set(Array.isArray(config.misses) ? config.misses : []),
+      checked: new Set(),
+      pending: new Map(),
+      subsetRegistryRows: Array.isArray(config.subsetRegistryRows) ? config.subsetRegistryRows : null,
+      loadFullIf: config.loadFullIf,
+      loadFullRegistry: config.loadFullRegistry,
+      hydrateTimer: null,
+      buildTimer: null,
+      releaseTimer: null,
+      timerHost: null,
+      hydrating: false,
+      fullRegPromise: null
+    };
+  }
+  isJournalSubsetActive() {
+    return !!(this._journalSubset?.active && !this._journalSubset.fullRegistryLoaded);
+  }
+  _subsetTimerHost() {
+    return this.Z.getMainWindow?.() || (typeof globalThis.setTimeout === 'function' ? globalThis : null);
+  }
+  _clearJournalSubsetTimers() {
+    const sub = this._journalSubset;
+    if (!sub) return;
+    const host = sub.timerHost;
+    if (typeof host?.clearTimeout === 'function') {
+      if (sub.hydrateTimer != null) host.clearTimeout(sub.hydrateTimer);
+      if (sub.buildTimer != null) host.clearTimeout(sub.buildTimer);
+      if (sub.releaseTimer != null) host.clearTimeout(sub.releaseTimer);
+    }
+    sub.hydrateTimer = null;
+    sub.buildTimer = null;
+    sub.releaseTimer = null;
+  }
+  _subsetRecordKey(r) {
+    const issns = (r?.issns || []).map(i => String(i || '').toUpperCase().replace(/[^0-9X]/g, '')).filter(Boolean).sort().join(',');
+    return String(r?.title || '').trim().toLowerCase() + '|' + issns;
+  }
+  _subsetQueryForItem(item) {
+    if (!this.isRegular(item)) return null;
+    const field = k => { try { return String(item.getField(k) || '').trim(); } catch (_) { return ''; } };
+    const pub = field('publicationTitle');
+    const proc = pub ? '' : field('proceedingsTitle');
+    const title = pub || proc;
+    const abbr = field('journalAbbreviation');
+    const issnRaw = field('ISSN');
+    const issns = (issnRaw.match(/\d{4}-?\d{3}[\dXx]/g) || []).map(c => c.toUpperCase().replace(/[^0-9X]/g, '')).sort();
+    const tKey = this.journalTools.name(title);
+    const aKey = this.journalTools.name(abbr);
+    if (!tKey && !aKey && !issns.length) return null;
+    return { key: `${tKey}|${aKey}|${issns.join(',')}`, title, pub, abbr, issn: issnRaw };
+  }
+  noteJournalSubsetQuery(item) {
+    const sub = this._journalSubset;
+    if (!sub?.active || !this.active || this.stopping) return;
+    const q = this._subsetQueryForItem(item);
+    if (!q || sub.misses.has(q.key) || sub.checked.has(q.key) || sub.pending.has(q.key)) return;
+    sub.pending.set(q.key, q);
+    this._scheduleSubsetHydration(250);
+  }
+  _scheduleSubsetHydration(delay = 250) {
+    const sub = this._journalSubset;
+    if (!sub || sub.hydrateTimer != null || sub.hydrating || !this.active || this.stopping) return;
+    const host = this._subsetTimerHost();
+    if (typeof host?.setTimeout !== 'function') return;
+    sub.timerHost = host;
+    try {
+      sub.hydrateTimer = host.setTimeout(() => {
+        sub.hydrateTimer = null;
+        this._hydrateJournalSubset().catch(error => this.Z.logError?.(error));
+      }, delay);
+      if (typeof sub.hydrateTimer === 'object' && typeof sub.hydrateTimer.unref === 'function') sub.hydrateTimer.unref();
+    } catch (_) {}
+  }
+  async _writeJournalSubsetFile(ifRecords, registryRows, misses) {
+    const sub = this._journalSubset;
+    if (!sub?.subsetPath || typeof this.io?.writeUTF8 !== 'function') return;
+    const payload = {
+      schema: 1,
+      signature: sub.signature,
+      layers: sub.layers,
+      fullIfCount: sub.fullIfCount,
+      fullRegistryCount: sub.fullRegistryCount,
+      ifRecords,
+      registryRows,
+      misses: [...misses].slice(0, 4000)
+    };
+    const encoded = JSON.stringify(payload);
+    await this.io.writeUTF8(sub.subsetPath, encoded, { tmpPath: sub.subsetPath + '.tmp' });
+  }
+  async _hydrateJournalSubset() {
+    const sub = this._journalSubset;
+    if (!sub?.active || sub.hydrating || !sub.pending.size || !this.active || this.stopping) return;
+    sub.hydrating = true;
+    const batch = [...sub.pending.values()];
+    sub.pending.clear();
+    let added = false;
+    try {
+      const [rawIf, rawReg] = await Promise.all([
+        typeof sub.loadFullIf === 'function' ? sub.loadFullIf() : null,
+        typeof sub.loadFullRegistry === 'function' ? sub.loadFullRegistry() : null
+      ]);
+      if (!this.active || this.stopping) return;
+      const fullIf = Array.isArray(rawIf) ? this.journalTools.create(rawIf, { ownRecords: true }) : null;
+      if (Array.isArray(rawIf)) sub.fullIfCount = rawIf.length;
+      const ifMap = new Map(this.catalog.map(r => [this._subsetRecordKey(r), r]));
+      const prevIfSize = ifMap.size;
+      const foundIfKeys = new Set();
+      if (fullIf) {
+        for (const q of batch) {
+          sub.checked.add(q.key);
+          const fakeItem = { getField: k => ({ publicationTitle: q.pub || q.title, proceedingsTitle: q.title, journalAbbreviation: q.abbr, ISSN: q.issn }[k] || '') };
+          const related = fullIf.relatedForItem ? fullIf.relatedForItem(fakeItem) : [fullIf.lookup(fakeItem)].filter(Boolean);
+          if (related.length) {
+            foundIfKeys.add(q.key);
+            for (const r of related) {
+              const rk = this._subsetRecordKey(r);
+              if (!ifMap.has(rk)) ifMap.set(rk, r);
+            }
+          }
+        }
+      }
+      const regMap = new Map((sub.subsetRegistryRows || []).map(r => [this._subsetRecordKey(r), r]));
+      const prevRegSize = regMap.size;
+      const foundRegKeys = new Set();
+      if (rawReg && this.journalIdentity) {
+        sub.fullRegistryCount = this.journalIdentity.loadRegistry(rawReg, { lazyKeys: true });
+        for (const q of batch) {
+          if (this.journalIdentity.registryLookup(q.title, q.issn)) foundRegKeys.add(q.key);
+        }
+        const extracted = this.journalIdentity.extractSubsetRows ? this.journalIdentity.extractSubsetRows(batch) : [];
+        for (const r of extracted) {
+          const rk = this._subsetRecordKey(r);
+          if (!regMap.has(rk)) regMap.set(rk, r);
+        }
+      }
+      for (const q of batch) {
+        sub.checked.add(q.key);
+        if (!foundIfKeys.has(q.key) && !foundRegKeys.has(q.key)) sub.misses.add(q.key);
+      }
+      const nextIf = [...ifMap.values()];
+      const nextReg = [...regMap.values()];
+      added = nextIf.length > prevIfSize || nextReg.length > prevRegSize;
+      sub.subsetRegistryRows = nextReg;
+      this.catalog = nextIf;
+      this._journalsBaseOnly = false;
+      this.rebuildJournals();
+      if (!sub.fullRegistryLoaded && this.journalIdentity) {
+        this.journalIdentity.loadRegistry(nextReg, { lazyKeys: true });
+      }
+      await this._writeJournalSubsetFile(nextIf, nextReg, sub.misses);
+      if (added && this.active && !this.stopping) {
+        this.bumpState();
+        await this.refreshWindows();
+      }
+    } catch (error) {
+      this.Z.logError?.(error);
+    } finally {
+      sub.hydrating = false;
+      if (sub.pending.size && this.active && !this.stopping) this._scheduleSubsetHydration(250);
+    }
+  }
+  scheduleInitialJournalSubsetBuild(delay = 2500) {
+    const sub = this._journalSubset;
+    if (!sub || sub.active || sub.buildTimer != null || !this.active || this.stopping) return;
+    const host = this._subsetTimerHost();
+    if (typeof host?.setTimeout !== 'function') return;
+    sub.timerHost = host;
+    try {
+      sub.buildTimer = host.setTimeout(() => {
+        sub.buildTimer = null;
+        this.buildInitialJournalSubset().catch(error => this.Z.logError?.(error));
+      }, delay);
+      if (typeof sub.buildTimer === 'object' && typeof sub.buildTimer.unref === 'function') sub.buildTimer.unref();
+    } catch (_) {}
+  }
+  async buildInitialJournalSubset() {
+    const sub = this._journalSubset;
+    if (!sub || sub.active || !this.active || this.stopping) return false;
+    if (typeof this.Z.Libraries?.getAll !== 'function' || typeof this.Z.Items?.getAll !== 'function') return false;
+    const queries = new Map();
+    for (const library of this.Z.Libraries.getAll() || []) {
+      const items = await this.libraryItems(library.libraryID) || [];
+      for (const item of items) {
+        if (!this.isRegular(item)) continue;
+        const q = this._subsetQueryForItem(item);
+        if (q && !queries.has(q.key)) queries.set(q.key, q);
+      }
+    }
+    if (!this.active || this.stopping) return false;
+    const queryList = [...queries.values()];
+    const ifMap = new Map();
+    const misses = new Set();
+    for (const q of queryList) {
+      const fakeItem = { getField: k => ({ publicationTitle: q.pub || q.title, proceedingsTitle: q.title, journalAbbreviation: q.abbr, ISSN: q.issn }[k] || '') };
+      const related = this.journals.relatedForItem ? this.journals.relatedForItem(fakeItem) : [this.journals.lookup(fakeItem)].filter(Boolean);
+      const regHit = this.journalIdentity?.registryLookup?.(q.title, q.issn) || null;
+      if (related.length) {
+        for (const r of related) {
+          const rk = this._subsetRecordKey(r);
+          if (!ifMap.has(rk)) ifMap.set(rk, r);
+        }
+      }
+      if (!related.length && !regHit) misses.add(q.key);
+    }
+    const subsetIf = [...ifMap.values()];
+    const subsetReg = this.journalIdentity?.extractSubsetRows ? this.journalIdentity.extractSubsetRows(queryList) : [];
+    sub.fullIfCount = sub.fullIfCount || this.catalog.length;
+    sub.fullRegistryCount = sub.fullRegistryCount || (this.journalIdentity?._registrySize?.() || 0);
+    sub.misses = misses;
+    sub.subsetRegistryRows = subsetReg;
+    await this._writeJournalSubsetFile(subsetIf, subsetReg, misses);
+    if (!this.active || this.stopping) return false;
+    // Swap live runtime to the compact library subset so SpiderMonkey GC can reclaim ~200+ MB immediately.
+    this.catalog = subsetIf;
+    this._journalsBaseOnly = false;
+    this.rebuildJournals();
+    if (this.journalIdentity) this.journalIdentity.loadRegistry(subsetReg, { lazyKeys: true });
+    sub.active = true;
+    sub.fullRegistryLoaded = false;
+    this.Z.debug?.(`Style Custom: journal subset active (${subsetIf.length} IF / ${subsetReg.length} registry rows, ${misses.size} misses)`);
+    return true;
+  }
+  async ensureFullRegistry() {
+    const sub = this._journalSubset;
+    if (!sub || !sub.active || sub.fullRegistryLoaded) return true;
+    if (sub.fullRegPromise) return sub.fullRegPromise;
+    sub.fullRegPromise = (async () => {
+      try {
+        if (typeof sub.loadFullRegistry === 'function' && this.journalIdentity) {
+          const rawReg = await sub.loadFullRegistry();
+          if (rawReg && this.active && !this.stopping) {
+            sub.fullRegistryCount = this.journalIdentity.loadRegistry(rawReg, { lazyKeys: true });
+            sub.fullRegistryLoaded = true;
+            this.touchFullRegistry();
+            return true;
+          }
+        }
+      } catch (error) {
+        this.Z.logError?.(error);
+      } finally {
+        sub.fullRegPromise = null;
+      }
+      return false;
+    })();
+    return sub.fullRegPromise;
+  }
+  touchFullRegistry(delay = 90000) {
+    const sub = this._journalSubset;
+    if (!sub?.active || !sub.fullRegistryLoaded || !this.active || this.stopping) return;
+    const host = this._subsetTimerHost();
+    if (typeof host?.setTimeout !== 'function') return;
+    if (sub.releaseTimer != null && typeof sub.timerHost?.clearTimeout === 'function') {
+      sub.timerHost.clearTimeout(sub.releaseTimer);
+    }
+    sub.timerHost = host;
+    try {
+      sub.releaseTimer = host.setTimeout(() => {
+        sub.releaseTimer = null;
+        this._releaseFullRegistry();
+      }, delay);
+      if (typeof sub.releaseTimer === 'object' && typeof sub.releaseTimer.unref === 'function') sub.releaseTimer.unref();
+    } catch (_) {}
+  }
+  _releaseFullRegistry() {
+    const sub = this._journalSubset;
+    if (!sub?.active || !sub.fullRegistryLoaded || !Array.isArray(sub.subsetRegistryRows)) return;
+    sub.fullRegistryLoaded = false;
+    if (this.journalIdentity) this.journalIdentity.loadRegistry(sub.subsetRegistryRows, { lazyKeys: true });
+  }
   async refreshJournalMetrics(items, DOMParser) {
     const rows = new Map(), unknown = new Set();
     for (const item of items) {
@@ -8693,6 +8999,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   async stop({keepColumns=false}={}) {
     if(this.stopPromise)return this.stopPromise;
     this.stopping=true;
+    this._clearJournalSubsetTimers();
     try { this.updater?.stop(); } catch (ignored) {}
     this.stopPromise=(async()=>{
       const errors=[];

@@ -176,8 +176,17 @@
       const predates=!!(successor&&successor.year&&paperYear&&paperYear<successor.year);
       return {record:predates?null:record,successor,predates};
     }
+    function relatedForItem(item) {
+      const field=k=>{try{return item.getField(k)||'';}catch(_){return '';}};
+      const names=[field('publicationTitle'),field('journalAbbreviation')].filter(Boolean);
+      const identifiers=(String(field('ISSN')).match(/\d{4}-?\d{3}[\dXx]/g)||[]).map(issn).filter(Boolean);
+      const out=new Set();
+      for(const id of identifiers)for(const r of getList(ids,id))out.add(r);
+      for(const title of names)for(const r of getList(titles,name(title)))out.add(r);
+      return [...out];
+    }
     const lookup=item=>lookupDetail(item).record;
-    return {lookup,lookupDetail,records:all};
+    return {lookup,lookupDetail,relatedForItem,records:all};
   }
   function parsePage(html, record, DOMParser) {
     if(!valid(record))return null;

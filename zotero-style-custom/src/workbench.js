@@ -9192,6 +9192,12 @@
    });
   }
   function drawOpenAlexJournals(){
+   if(runtime.isJournalSubsetActive?.()&&typeof runtime.ensureFullRegistry==='function'){
+    emptyCard(body,{title:'불러오는 중…'});
+    runtime.ensureFullRegistry().then(()=>{if(!disposed&&state.tab==='journals')render();}).catch(error=>runtime.Z.logError?.(error));
+    return;
+   }
+   runtime.touchFullRegistry?.();
    const byVenue=new Map();
    for(const item of rows()){if(!item.venue)continue;const list=byVenue.get(item.venue)||[];list.push(item);byVenue.set(item.venue,list);}
    const registry=runtime.journalIdentity?.registryRanked?.()||[];

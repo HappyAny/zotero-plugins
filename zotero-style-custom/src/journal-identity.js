@@ -845,7 +845,51 @@
       : {...badge, ink, fill: hsl(h, sat, 93), edge: hsl(h, Math.round(sat * 0.85), 84)};
   }
 
-  const api = {registryFieldRanks, registryLevels, resolveLevels, registryRevision, identify, colours, monogram, abbreviate, derivedHue, natureHue, hexToHsl, hslToHex, contrast, readable, inkOn, badgeInkFor, BADGE_FONT_PX, MIN_CONTRAST, DARK_BG, tonesFor, familyForPublisher, familyInfo, PUBLISHER_FAMILY, loadRegistry, registryLookup, registryByIssn, registryRanked, registryRank, _registrySize: () => (REGISTRY ? REGISTRY.size : 0), FAMILIES, NATURE_TITLES, ABBREVIATIONS, JOURNAL_HUES, JOURNAL_COLOURS, _cacheSize: () => seen.size};
+  function extractSubsetRows(queries) {
+    if (!REGISTRY) return [];
+    const picked = new Set();
+    let flatBuckets = null;
+    const ensureFlatBuckets = () => {
+      if (flatBuckets) return flatBuckets;
+      flatBuckets = new Map();
+      for (const row of REGISTRY.rows) {
+        const k = flat(row.title);
+        if (k) {
+          let b = flatBuckets.get(k);
+          if (!b) flatBuckets.set(k, b = []);
+          if (b.length < 2) b.push(row);
+        }
+        if (row.abbreviation) {
+          const a = flat(row.abbreviation);
+          if (a && a !== k) {
+            let b = flatBuckets.get(a);
+            if (!b) flatBuckets.set(a, b = []);
+            if (b.length < 2) b.push(row);
+          }
+        }
+      }
+      return flatBuckets;
+    };
+    const addRow = row => {
+      if (!row || picked.has(row)) return;
+      unpackRowLevels(row, REGISTRY.subjects);
+      picked.add(row);
+    };
+    for (const q of queries || []) {
+      const title = q?.title || '';
+      const issn = q?.issn || '';
+      const hit = registryLookup(title, issn);
+      if (hit) addRow(hit);
+      if (title) {
+        const k = flat(title);
+        if (k && REGISTRY.byTitle.has(k) && REGISTRY.byTitle.get(k) === null) {
+          for (const row of ensureFlatBuckets().get(k) || []) addRow(row);
+        }
+      }
+    }
+    return [...picked];
+  }
+  const api = {registryFieldRanks, registryLevels, resolveLevels, registryRevision, identify, colours, monogram, abbreviate, derivedHue, natureHue, hexToHsl, hslToHex, contrast, readable, inkOn, badgeInkFor, BADGE_FONT_PX, MIN_CONTRAST, DARK_BG, tonesFor, familyForPublisher, familyInfo, PUBLISHER_FAMILY, loadRegistry, registryLookup, registryByIssn, registryRanked, registryRank, extractSubsetRows, _registrySize: () => (REGISTRY ? REGISTRY.size : 0), FAMILIES, NATURE_TITLES, ABBREVIATIONS, JOURNAL_HUES, JOURNAL_COLOURS, _cacheSize: () => seen.size};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.CustomStyleJournalIdentity = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
