@@ -24,7 +24,7 @@ async function boot({failJCR=false,invalidJCR=false,licensed=null,version='0.8.0
   ...Object.entries(extraFiles||{}).map(([p,value])=>[p,typeof value==='string'?value:JSON.stringify(value)])
  ]);
  const context=vm.createContext({Zotero:Z,console,URL,PathUtils:{join:(...p)=>p.join('/')},
-  IOUtils:{exists:async p=>local.has(p),stat:async p=>({size:local.get(p).length}),readUTF8:async p=>local.get(p),writeUTF8:async(...args)=>writes.push(args)},pref:(k,v)=>prefs.set(k,v),setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length;},clearTimeout(){}});
+  IOUtils:{exists:async p=>local.has(p),stat:async p=>({size:local.get(p).length}),readUTF8:async p=>local.get(p),writeUTF8:async(p,data,...rest)=>{local.set(p,data);writes.push([p,data,...rest]);},remove:async p=>{local.delete(p);}},pref:(k,v)=>prefs.set(k,v),setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length;},clearTimeout(){}});
  context.Services={scriptloader:{loadSubScript:(url,scope)=>{assert.equal(scope,vm.runInContext('globalThis',context));const name=url.split('/').at(-1);loaded.push(name);vm.runInContext(fs.readFileSync(path.join(root,'src',name),'utf8'),context,{filename:name});
   if(name==='runtime.js'){
    const prototype=vm.runInContext('CustomStyleRuntime.prototype',context),start=prototype.start;
@@ -38,11 +38,13 @@ async function boot({failJCR=false,invalidJCR=false,licensed=null,version='0.8.0
 }
 test('Gecko-like bootstrap defers heavy optional modules and shipped open catalog until requested without UI',async()=>{
  const {Z,context,columns,observers,registered,writes,errors,loaded,attached,started}=await boot();
- assert.equal(columns.size,29);assert.equal(typeof Z.StyleCustom.readerTools.setVerticalTabs,'function');assert.equal(typeof Z.StyleCustom.libraryService.graph,'function');assert.equal(registered.size,1);assert.equal(writes.length,0);
- // Heavy optional panels & self-check scripts (~1.67 MB) must stay unloaded at startup!
- for (const deferred of ['workbench.js','jcr-browser.js','selfcheck.js','selfcheck-reader.js','reader-assist.js','paper-text.js','read-aloud.js','paper-chat.js','paper-translate.js','paper-graph.js','reading-path.js']) {
+ assert.equal(columns.size,29);assert.equal(typeof Z.StyleCustom.readerTools.setVerticalTabs,'function');assert.equal(registered.size,1);assert.equal(writes.length,0);
+ // Heavy optional panels & self-check scripts (~1.82 MB) must stay unloaded at startup!
+ for (const deferred of ['workbench.js','jcr-browser.js','selfcheck.js','selfcheck-reader.js','reader-assist.js','paper-text.js','read-aloud.js','paper-chat.js','paper-translate.js','paper-graph.js','reading-path.js','library.js','author-portrait.js','assist.js','library-facts.js','patents.js']) {
   assert.equal(loaded.includes(deferred), false, `${deferred} must not be loaded synchronously at startup`);
  }
+ assert.equal(typeof Z.StyleCustom.libraryService.graph,'function');
+ assert.equal(loaded.includes('library.js'), true, 'library.js loads on demand when libraryService is accessed');
  // On-demand Workbench access loads jcr-browser before workbench cleanly.
  assert.equal(Z.StyleCustom.Workbench.TABS.length,19);
  assert.ok(loaded.indexOf('jcr-categories.js')<loaded.indexOf('workbench.js'));assert.ok(loaded.indexOf('jcr-browser.js')<loaded.indexOf('workbench.js'));
@@ -114,4 +116,66 @@ test('journal subset cache signature stays stable across code-only plugin patch 
   await vm.runInContext('shutdown()',context);
   assert.equal(errors.length,0);
  }
+});
+
+test('cold workbench storage splits out of style-custom.json safely and stays unloaded on subsequent cold starts',async()=>{
+ const sampleIf=JSON.parse(fs.readFileSync(shipped('if-catalog.json'),'utf8')).slice(0,1);
+ const subsetPayload={
+  schema:1,signature:'open-v1|shipped|shipped',fullIfCount:100,fullRegistryCount:200,
+  layers:{'if-catalog.json':'shipped','journal-registry.json':'shipped'},
+  ifRecords:sampleIf,registryRows:[{title:'Nature',abbrev:'Nat',publisher:'Springer Nature'}],misses:[]
+ };
+ // 1. Monolithic legacy style-custom.json migrates two-phase (cold written FIRST, then hot trimmed)
+ const monolithic={
+  schema:1,
+  items:{'1:ABC':{seconds:120,metrics:{citations:42,citationSource:'OpenAlex works sweep',citationCheckedAt:'2026-11-01T00:00:00Z',citationKey:'doi:10.1/a'}}},
+  works:{'1:ABC':{doi:'10.1/a',citations:42,checkedAt:'2026-11-01T00:00:00Z',references:['W1']}},
+  journalMetrics:{nature:{if:50}}
+ };
+ const first=await boot({
+  version:'0.59.76',
+  extraFiles:{
+   '/isolated/data/style-custom-journal-subset.json':subsetPayload,
+   '/isolated/data/style-custom.json':monolithic
+  }
+ });
+ assert.equal(first.Z.StyleCustom._pendingColdMigration,true);
+ await vm.runInContext('shutdown()',first.context);
+ assert.equal(first.errors.length,0);
+ const writePaths=first.writes.map(w=>w[0]);
+ const coldIdx=writePaths.indexOf('/isolated/data/style-custom-workbench.json');
+ const hotIdx=writePaths.indexOf('/isolated/data/style-custom.json');
+ assert.ok(coldIdx>=0,'cold workbench file must be written on migration');
+ assert.ok(hotIdx>coldIdx,'cold file must commit BEFORE hot style-custom.json is trimmed');
+ const writtenHot=JSON.parse(first.writes[hotIdx][1]);
+ const writtenCold=JSON.parse(first.writes[coldIdx][1]);
+ assert.equal(writtenHot.works,undefined,'trimmed style-custom.json must omit works');
+ assert.equal(writtenHot.journalMetrics,undefined,'trimmed style-custom.json must omit journalMetrics');
+ assert.equal(writtenHot.items['1:ABC'].seconds,120,'hot items stay intact');
+ assert.deepEqual(writtenCold.works['1:ABC'].references,['W1'],'cold works preserved completely');
+ assert.equal(writtenCold.journalMetrics.nature.if,50,'cold journalMetrics preserved completely');
+
+ // 2. Next cold boot with split files keeps cold file UNLOADED at startup and loads on demand
+ const second=await boot({
+  version:'0.59.76',
+  extraFiles:{
+   '/isolated/data/style-custom-journal-subset.json':subsetPayload,
+   '/isolated/data/style-custom.json':writtenHot,
+   '/isolated/data/style-custom-workbench.json':writtenCold
+  }
+ });
+ assert.equal(second.Z.StyleCustom._coldLoaded,false,'cold workbench file must stay unloaded at startup');
+ assert.equal(second.Z.StyleCustom.cache.works,undefined,'works not parsed on startup');
+ // Hot save while cold is unloaded must NOT overwrite cold file
+ second.Z.StyleCustom.cache.items['1:ABC'].seconds=180;
+ second.Z.StyleCustom.dirty=true;
+ await second.Z.StyleCustom.flush();
+ assert.equal(second.writes.some(w=>w[0]==='/isolated/data/style-custom-workbench.json'),false,'hot save must leave cold file untouched on disk');
+ // On-demand load populates works & journalMetrics cleanly
+ await second.Z.StyleCustom.ensureColdCache();
+ assert.equal(second.Z.StyleCustom._coldLoaded,true);
+ assert.deepEqual(Array.from(second.Z.StyleCustom.cache.works['1:ABC'].references),['W1']);
+ assert.equal(second.Z.StyleCustom.cache.journalMetrics.nature.if,50);
+ await vm.runInContext('shutdown()',second.context);
+ assert.equal(second.errors.length,0);
 });

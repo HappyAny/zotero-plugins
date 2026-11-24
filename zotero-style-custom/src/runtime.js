@@ -3,12 +3,21 @@
 var CustomStyleRuntime = class CustomStyleRuntime {
   // What OpenAlex files that is not a paper: repository deposits, datasets, reviews of reviews.
   static NOT_A_PAPER = /^(dataset|other|paratext|peer-review|grant|libguides|supplementary-materials)$/i;
+  // Cold Workbench / research-graph keys split into style-custom-workbench.json so
+  // cold startup & ordinary hot saves skip parsing/serializing ~1.75 MB of cold data.
+  static COLD_CACHE_KEYS = [
+    "works", "journalMetrics", "readingPaths", "institutions",
+    "authorWorks", "watchedAuthors", "authorPortraits",
+    "citedBy", "freshCiters", "workbenchDrafts"
+  ];
   constructor({ Zotero, model, marquee, reading, storage, legacy = {}, catalog = [], ownCatalog = false, citations, io, paths, loadScript = null }) {
     Object.assign(this, { Z: Zotero, model, marquee, reading, storage, legacy, io, paths, loadScript });
     this.windows = new Map(); this.columns = []; this.observers = [];
     this.queue = Promise.resolve(); this.writeQueue = Promise.resolve();
     this.cache = { schema: 1, items: {} }; this.active = false; this.dirty = false;
     this._readingDirty = false; this._hotReadingKeys = new Set();
+    this._coldSplitSupported = false; this._coldLoaded = true; this._coldLoadPromise = null;
+    this._pendingColdMigration = false; this._lastColdEncoded = null;
     this.journalTools = typeof CustomStyleJournals !== "undefined" ? CustomStyleJournals : require("./journals.js");
     this.journals = this.journalTools.create(catalog, { ownRecords: !!ownCatalog });
     this.catalog = this.journals.records;
@@ -24,11 +33,11 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.attentionTools = typeof CustomStyleAttention !== "undefined" ? CustomStyleAttention : require("./attention.js");
     this.legacyReading = typeof CustomStyleLegacyReading !== "undefined" ? CustomStyleLegacyReading : require("./legacy-reading.js");
     this.journalTools2 = typeof CustomStyleJournalMetrics !== "undefined" ? CustomStyleJournalMetrics : require("./journal-metrics.js");
-    this.portraitTools = typeof CustomStyleAuthorPortrait !== "undefined" ? CustomStyleAuthorPortrait : require("./author-portrait.js");
+    this._portraitTools = typeof CustomStyleAuthorPortrait !== "undefined" ? CustomStyleAuthorPortrait : null;
     this.fileTools = typeof CustomStyleAttachmentKinds !== "undefined" ? CustomStyleAttachmentKinds : require("./attachment-kinds.js");
-    this.factTools = typeof CustomStyleLibraryFacts !== "undefined" ? CustomStyleLibraryFacts : require("./library-facts.js");
+    this._factTools = typeof CustomStyleLibraryFacts !== "undefined" ? CustomStyleLibraryFacts : null;
     this.itemKinds = typeof CustomStyleItemKinds !== "undefined" ? CustomStyleItemKinds : require("./item-kinds.js");
-    this.patentTools = typeof CustomStylePatents !== "undefined" ? CustomStylePatents : require("./patents.js");
+    this._patentTools = typeof CustomStylePatents !== "undefined" ? CustomStylePatents : null;
     this.journalIdentity = typeof CustomStyleJournalIdentity !== "undefined" ? CustomStyleJournalIdentity : require("./journal-identity.js");
     this.affiliationTools = typeof CustomStyleAffiliations !== "undefined" ? CustomStyleAffiliations : require("./affiliations.js");
     this._graphTools = typeof CustomStylePaperGraph !== "undefined" ? CustomStylePaperGraph : null;
@@ -57,13 +66,11 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.workspaceTools=typeof CustomStyleWorkspace!=="undefined"?CustomStyleWorkspace:require("./workspace.js");
     this._Workbench = typeof CustomStyleWorkbench !== "undefined" ? CustomStyleWorkbench : null;
     this._jcrBrowser = typeof CustomStyleJCRBrowser !== "undefined" ? CustomStyleJCRBrowser : undefined;
-    const Library=typeof CustomStyleLibrary!=="undefined"?CustomStyleLibrary:require("./library.js");
-    this.Library=Library;
+    this._Library = typeof CustomStyleLibrary !== "undefined" ? CustomStyleLibrary : null;
+    this._libraryService = null;
+    this._assist = null;
     const Reader=typeof CustomStyleReaderTools!=="undefined"?CustomStyleReaderTools:require("./reader-tools.js");
-    const Assist=typeof CustomStyleAssist!=="undefined"?CustomStyleAssist:require("./assist.js");
-    this.libraryService=Library.create({Zotero:this.Z,runtime:this});
     this.readerTools=Reader.create({Zotero:this.Z,runtime:this});
-    this.assist=Assist.create({Zotero:this.Z,runtime:this});
     // Listening, a summary, a chat and a translation inside the reader.
     // Lazy-loaded (~504 KB) when a PDF reader actually mounts or is probed.
     this._realReaderAssist = null;
@@ -96,6 +103,52 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const CollectionCounts=typeof CustomStyleCollectionCounts!=="undefined"?CustomStyleCollectionCounts:require("./collection-counts.js");
     this.collectionCounts=CollectionCounts.create({Zotero:this.Z,runtime:this});
   }
+  get portraitTools() {
+    if (!this._portraitTools) {
+      if (typeof CustomStyleAuthorPortrait === "undefined" && typeof this.loadScript === "function") this.loadScript("author-portrait");
+      this._portraitTools = typeof CustomStyleAuthorPortrait !== "undefined" ? CustomStyleAuthorPortrait : require("./author-portrait.js");
+    }
+    return this._portraitTools;
+  }
+  set portraitTools(value) { this._portraitTools = value; }
+  get factTools() {
+    if (!this._factTools) {
+      if (typeof CustomStyleLibraryFacts === "undefined" && typeof this.loadScript === "function") this.loadScript("library-facts");
+      this._factTools = typeof CustomStyleLibraryFacts !== "undefined" ? CustomStyleLibraryFacts : require("./library-facts.js");
+    }
+    return this._factTools;
+  }
+  set factTools(value) { this._factTools = value; }
+  get patentTools() {
+    if (!this._patentTools) {
+      if (typeof CustomStylePatents === "undefined" && typeof this.loadScript === "function") this.loadScript("patents");
+      this._patentTools = typeof CustomStylePatents !== "undefined" ? CustomStylePatents : require("./patents.js");
+    }
+    return this._patentTools;
+  }
+  set patentTools(value) { this._patentTools = value; }
+  get Library() {
+    if (!this._Library) {
+      if (typeof CustomStyleLibrary === "undefined" && typeof this.loadScript === "function") this.loadScript("library");
+      this._Library = typeof CustomStyleLibrary !== "undefined" ? CustomStyleLibrary : require("./library.js");
+    }
+    return this._Library;
+  }
+  set Library(value) { this._Library = value; }
+  get libraryService() {
+    if (!this._libraryService) this._libraryService = this.Library.create({ Zotero: this.Z, runtime: this });
+    return this._libraryService;
+  }
+  set libraryService(value) { this._libraryService = value; }
+  get assist() {
+    if (!this._assist) {
+      if (typeof CustomStyleAssist === "undefined" && typeof this.loadScript === "function") this.loadScript("assist");
+      const Assist = typeof CustomStyleAssist !== "undefined" ? CustomStyleAssist : require("./assist.js");
+      this._assist = Assist.create({ Zotero: this.Z, runtime: this });
+    }
+    return this._assist;
+  }
+  set assist(value) { this._assist = value; }
   get graphTools() {
     if (!this._graphTools) {
       if (typeof CustomStylePaperGraph === "undefined" && typeof this.loadScript === "function") this.loadScript("paper-graph");
@@ -183,7 +236,54 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   /* Rows for papers that are no longer in any library. Deleting a paper left
      its reading time, ratings and citation counts in the store, where they were
      re-read and re-written on every save. Run once per start, never during one. */
+  async ensureColdCache() {
+    if (this._coldLoaded || !this._coldSplitSupported) return true;
+    if (this._coldLoadPromise) return this._coldLoadPromise;
+    this._coldLoadPromise = (async () => {
+      const cold = await this.storage.readCold();
+      if (cold && typeof cold === "object") {
+        for (const key of CustomStyleRuntime.COLD_CACHE_KEYS) {
+          if (!Object.prototype.hasOwnProperty.call(cold, key)) continue;
+          const live = this.cache[key];
+          const fromDisk = cold[key];
+          if (live === undefined || live === null) {
+            this.cache[key] = fromDisk;
+          } else if (Array.isArray(live)) {
+            if (!live.length && Array.isArray(fromDisk)) this.cache[key] = fromDisk;
+          } else if (typeof live === "object" && fromDisk && typeof fromDisk === "object" && !Array.isArray(fromDisk)) {
+            this.cache[key] = { ...fromDisk, ...live };
+          }
+        }
+      }
+      this._coldLoaded = true;
+      this._lastColdEncoded = this._encodeColdCache();
+      this._coldLoadPromise = null;
+      return true;
+    })();
+    return this._coldLoadPromise;
+  }
+  _encodeColdCache() {
+    const coldObj = { schema: 1 };
+    let hasAny = false;
+    for (const key of CustomStyleRuntime.COLD_CACHE_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(this.cache, key) && this.cache[key] !== undefined) {
+        coldObj[key] = this.cache[key];
+        hasAny = true;
+      }
+    }
+    return hasAny ? JSON.stringify(coldObj) : null;
+  }
+  _hasUnsavedColdMemory() {
+    for (const key of CustomStyleRuntime.COLD_CACHE_KEYS) {
+      const v = this.cache[key];
+      if (!v) continue;
+      if (Array.isArray(v) && v.length > 0) return true;
+      if (typeof v === "object" && !Array.isArray(v) && Object.keys(v).length > 0) return true;
+    }
+    return false;
+  }
   async pruneDeletedItems({ scheduled = false } = {}) {
+    await this.ensureColdCache();
     const store = this.cache.items;
     if (!store || typeof store !== 'object') return 0;
     const works = this.paperWorks();
@@ -619,6 +719,12 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       throw new Error("Style Custom cache has an unsupported format; existing file was preserved");
     }
     this.cache = loaded; this.active = true;
+    this._coldSplitSupported = typeof this.storage?.readCold === "function" && typeof this.storage?.writeCold === "function";
+    const hadMonolithicCold = this._coldSplitSupported && !!this.storage.hadMonolithicCold?.();
+    const hasColdFile = this._coldSplitSupported && !!this.storage.hasColdFile?.();
+    this._coldLoaded = !this._coldSplitSupported || !hasColdFile || hadMonolithicCold;
+    this._pendingColdMigration = hadMonolithicCold;
+    this._lastColdEncoded = (this._coldSplitSupported && this._coldLoaded && !hadMonolithicCold) ? this._encodeColdCache() : null;
     // Historical cache cleanups run once per store revision instead of scanning all
     // 1000+ works/items/reading-paths synchronously on every cold launch.
     if (this.cache.startupCleanupVersion !== 1) {
@@ -628,6 +734,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       try { if (this.recheckStoredLinks()) this.dirty = true; } catch (error) { this.Z.logError?.(error); }
       this.cache.startupCleanupVersion = 1;
     }
+    if (this._pendingColdMigration) this.scheduleFlush(15000);
     // The reading history the old plugin left in its notes is this plugin's own to keep. Brought
     // in once, well after the library has opened, so 읽은 시간, 쪽 and the phone all know what
     // was read before this plugin arrived. Style Custom's own clock still wins every paper.
@@ -813,17 +920,32 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     }
     /* The works sweep (OpenAlex, by DOI) also records a citation count and the
        time it was read. The column shows whichever of the two readings is newer;
-       on the same day the larger count stands, since counts only grow. */
-    const swept = this.paperWorks()[this.identity(item)];
-    if (swept && !swept.missing && number(swept.citations) && (swept.doi || '') === (this.discoverTools.bareDOI(this.bibliographyRecord(item).DOI) || '')) {
-      const theirs = Date.parse(swept.checkedAt || ''), mine = Date.parse(merged.citationCheckedAt || '');
-      // An undated stored count (typed into Extra) yields only to a larger one.
-      const newer = Number.isFinite(mine) ? Number.isFinite(theirs) && (theirs > mine || (theirs === mine && swept.citations > merged.citations))
-        : swept.citations > (merged.citations ?? -1);
-      if (newer || !number(merged.citations)) {
-        merged.citations = swept.citations;
-        merged.citationSource = 'OpenAlex works sweep';
-        merged.citationCheckedAt = swept.checkedAt || null;
+       on the same day the larger count stands, since counts only grow. When the
+       cold workbench store is still unloaded on startup, preserve the previously
+       merged OpenAlex works sweep reading from cached metrics without touching disk. */
+    if (this._coldSplitSupported && !this._coldLoaded) {
+      if (cached.citationSource === 'OpenAlex works sweep' && number(cached.citations) && cached.citationKey === citationKey) {
+        const theirs = Date.parse(cached.citationCheckedAt || ''), mine = Date.parse(merged.citationCheckedAt || '');
+        const newer = Number.isFinite(mine) ? Number.isFinite(theirs) && (theirs > mine || (theirs === mine && cached.citations > merged.citations))
+          : cached.citations > (merged.citations ?? -1);
+        if (newer || !number(merged.citations)) {
+          merged.citations = cached.citations;
+          merged.citationSource = 'OpenAlex works sweep';
+          merged.citationCheckedAt = cached.citationCheckedAt || null;
+        }
+      }
+    } else {
+      const swept = this.paperWorks()[this.identity(item)];
+      if (swept && !swept.missing && number(swept.citations) && (swept.doi || '') === (this.discoverTools.bareDOI(this.bibliographyRecord(item).DOI) || '')) {
+        const theirs = Date.parse(swept.checkedAt || ''), mine = Date.parse(merged.citationCheckedAt || '');
+        // An undated stored count (typed into Extra) yields only to a larger one.
+        const newer = Number.isFinite(mine) ? Number.isFinite(theirs) && (theirs > mine || (theirs === mine && swept.citations > merged.citations))
+          : swept.citations > (merged.citations ?? -1);
+        if (newer || !number(merged.citations)) {
+          merged.citations = swept.citations;
+          merged.citationSource = 'OpenAlex works sweep';
+          merged.citationCheckedAt = swept.checkedAt || null;
+        }
       }
     }
     merged.citationKey=citationKey;
@@ -4176,6 +4298,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   }
 
   async watchAuthor(person) {
+    await this.ensureColdCache();
     const id = this.discoverTools.shortID(person?.id);
     if (!id.startsWith('A')) throw new Error('저자 식별자가 올바르지 않습니다. 관심 저자 목록에서 저자를 다시 고르세요.');
     /* One person on several OpenAlex records (one ORCID, two ids): all are
@@ -4223,6 +4346,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   }
 
   async unwatchAuthor(authorID) {
+    await this.ensureColdCache();
     const id = this.discoverTools.shortID(authorID);
     // Any of a merged person's ids lets the whole person go.
     this.cache.watchedAuthors = this.watchedAuthors().filter(row => !CustomStyleRuntime.authorIDsOf(row).includes(id) && row.id !== id);
@@ -5561,6 +5685,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   }
 
   async sweepPaperWorks(items, {signal, onProgress, refetch = false, stale = false} = {}) {
+    await this.ensureColdCache();
     const store = this.paperWorks();
     const report = {asked: 0, found: 0, noDOI: 0, missing: 0, already: 0, references: 0, errors: 0, institutions: 0};
     const options = this.discoverOptions();
@@ -5914,6 +6039,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
      out of the day's OpenAlex budget before anything came back is an error the
      panel explains, not an empty plan. */
   async readingPath(item, {signal, have, onProgress, maxReferences = 150} = {}) {
+    await this.ensureColdCache();
     const options = {...this.discoverOptions(), fields: this.discoverTools.PATH_FIELDS};
     const tools = this.discoverTools;
     const record = this.bibliographyRecord(item);
@@ -7481,6 +7607,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.entry(item).citationExtra={identity:result.identity,line};this.dirty=true;if(flush)await this.flush();return true;
   }
   async syncLibraryCitations(libraryID=this.Z.Libraries.userLibraryID,{lookup=true}={}) {
+    await this.ensureColdCache();
     if(this.bulkCitationPromise)return this.bulkCitationPromise;
     const work=(async()=>{
       const items=(await this.Z.Items.getAll(libraryID,true,false)).filter(item=>this.isRegular(item));
@@ -7987,7 +8114,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const work = this.writeQueue.then(async () => {
       const hasHotKeys = !!(this._hotReadingKeys && this._hotReadingKeys.size > 0);
       const hadHotOnStart = typeof this.storage?.hadHot === 'function' && this.storage.hadHot();
-      if (full && (this._readingDirty || hasHotKeys || hadHotOnStart)) this._dirty = true;
+      const needMigration = !!this._pendingColdMigration;
+      if ((full && (this._readingDirty || hasHotKeys || hadHotOnStart)) || needMigration) this._dirty = true;
       if (!this.dirty && !this._readingDirty) return;
       if (!this.dirty && this._readingDirty && typeof this.storage?.writeHot === 'function') {
         const hotItems = {};
@@ -8020,14 +8148,38 @@ var CustomStyleRuntime = class CustomStyleRuntime {
         }
         return;
       }
+      // If cold keys were modified in memory before cold file loaded, merge disk first so nothing is lost.
+      if (this._coldSplitSupported && !this._coldLoaded && this._hasUnsavedColdMemory()) {
+        await this.ensureColdCache();
+      }
       const useRaw = typeof this.storage?.writeRaw === 'function';
-      const encoded = useRaw ? JSON.stringify(this.cache) : null;
-      const snapshot = useRaw ? null : JSON.parse(JSON.stringify(this.cache));
+      let encoded = null, snapshot = null, coldEncoded = null;
+      if (this._coldSplitSupported) {
+        const coldSet = new Set(CustomStyleRuntime.COLD_CACHE_KEYS);
+        const hotObj = {};
+        for (const [k, v] of Object.entries(this.cache)) {
+          if (!coldSet.has(k)) hotObj[k] = v;
+        }
+        encoded = useRaw ? JSON.stringify(hotObj) : null;
+        snapshot = useRaw ? null : JSON.parse(JSON.stringify(hotObj));
+        if (this._coldLoaded) {
+          coldEncoded = this._encodeColdCache();
+        }
+      } else {
+        encoded = useRaw ? JSON.stringify(this.cache) : null;
+        snapshot = useRaw ? null : JSON.parse(JSON.stringify(this.cache));
+      }
       this._dirty = false;
       this._readingDirty = false;
       const savedHotKeys = this._hotReadingKeys ? [...this._hotReadingKeys] : [];
       this._hotReadingKeys?.clear();
       try {
+        // Crash-safe two-phase write: commit cold workbench store BEFORE trimming cold keys from style-custom.json.
+        if (this._coldSplitSupported && this._coldLoaded && coldEncoded != null && (coldEncoded !== this._lastColdEncoded || needMigration)) {
+          await this.storage.writeCold(coldEncoded);
+          this._lastColdEncoded = coldEncoded;
+        }
+        this._pendingColdMigration = false;
         if (useRaw) await this.storage.writeRaw(encoded);
         else await this.storage.write(snapshot);
         if (typeof this.storage?.clearHot === 'function') await this.storage.clearHot();
@@ -8036,6 +8188,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       }
       catch (error) {
         this._dirty = true;
+        if (needMigration) this._pendingColdMigration = true;
         if (savedHotKeys.length) {
           this._hotReadingKeys ||= new Set();
           for (const k of savedHotKeys) this._hotReadingKeys.add(k);
@@ -9070,7 +9223,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       updateLabel();
       const onOpen = () => {
         if (disposed) return;
-        Promise.resolve(materialize().toggle(true)).catch(error => this.Z.logError?.(error));
+        Promise.resolve(this.ensureColdCache()).then(() => disposed ? undefined : materialize().toggle(true)).catch(error => this.Z.logError?.(error));
       };
       stubBtn.addEventListener('command', onOpen);
       stubBtn.addEventListener('click', () => { if (!doc.createXULElement) onOpen(); });
@@ -9087,9 +9240,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       panel: null,
       state: proxyState,
       updateLabel,
-      show: (tab, focus) => disposed ? undefined : materialize().show(tab, focus),
-      toggle: (open, opts) => (disposed || open === false) ? undefined : materialize().toggle(open, opts),
-      notify: (text, opts) => disposed ? undefined : materialize().notify(text, opts),
+      show: async (tab, focus) => { if (disposed) return; await this.ensureColdCache(); if (disposed) return; return materialize().show(tab, focus); },
+      toggle: async (open, opts) => { if (disposed || open === false) return; await this.ensureColdCache(); if (disposed) return; return materialize().toggle(open, opts); },
+      notify: async (text, opts) => { if (disposed) return; await this.ensureColdCache(); if (disposed) return; return materialize().notify(text, opts); },
       setStatus: value => { if (real) real.setStatus?.(value); },
       refreshMetrics: itemID => { if (real) real.refreshMetrics?.(itemID); },
       refreshReading: () => { if (real) real.refreshReading?.(); },
@@ -9246,7 +9399,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.stopPromise=(async()=>{
       const errors=[];
       const attempt=async fn=>{try{await fn();}catch(error){errors.push(error);}};
-      await attempt(()=>this.assist.stop());await attempt(()=>this.readerAssist.stop());await attempt(()=>this.readerTools.stop());
+      await attempt(()=>this._assist?.stop?.());await attempt(()=>this.readerAssist.stop());await attempt(()=>this.readerTools.stop());
       await attempt(()=>this.collectionCounts.stop());
       if(this.itemObserver!=null){const observer=this.itemObserver;this.itemObserver=null;await attempt(()=>this.Z.Notifier.unregisterObserver(observer));}
       if(this.metadataTimer!=null){const timer=this.metadataTimer;this.metadataTimer=null;await attempt(()=>this.metadataTimerWindow.clearTimeout(timer));}

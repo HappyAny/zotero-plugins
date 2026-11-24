@@ -22,13 +22,17 @@ async function startup({ id, version, rootURI }) {
     };
     // Core modules required on the startup path. Heavy optional panels and tools
     // (workbench 801KB, reader-assist + helpers 504KB, selfcheck 206KB, paper-graph 70KB,
-    // reading-path 51KB, jcr-browser 36KB = ~1.67 MB) load on first use via loadScript().
-    for (const name of ["settings-schema", "data", "journals", "citations", "citation-formats", "supplementary", "discover", "paper-signals", "attention", "legacy-reading", "journal-metrics", "i18n", "strings", "author-portrait", "attachment-kinds", "library-facts", "item-kinds", "patents", "journal-identity", "jcr-categories", "affiliations", "failures", "brand-icons", "workspace", "assist", "library", "reader-tools", "collection-counts", "marquee", "item-cells", "reading", "updater", "runtime"]) {
+    // library 58KB, reading-path 51KB, jcr-browser 36KB, author-portrait 29KB, assist 24KB,
+    // library-facts + patents ~30KB = ~1.82 MB) load on first use via loadScript().
+    for (const name of ["settings-schema", "data", "journals", "citations", "citation-formats", "supplementary", "discover", "paper-signals", "attention", "legacy-reading", "journal-metrics", "i18n", "strings", "attachment-kinds", "item-kinds", "journal-identity", "jcr-categories", "affiliations", "failures", "brand-icons", "workspace", "reader-tools", "collection-counts", "marquee", "item-cells", "reading", "updater", "runtime"]) {
       loadScript(name);
     }
     const path = PathUtils.join(Zotero.DataDirectory.dir, "style-custom.json");
     const hotPath = PathUtils.join(Zotero.DataDirectory.dir, "style-custom-reading.json");
+    const coldPath = PathUtils.join(Zotero.DataDirectory.dir, "style-custom-workbench.json");
     let hadHotReadingOnRead = false;
+    let hadMonolithicColdOnRead = false;
+    let coldExistsOnRead = false;
     let legacy = {};
     try {
       const oldPath = PathUtils.join(Zotero.DataDirectory.dir, "zoterostyle.json");
@@ -167,6 +171,23 @@ async function startup({ id, version, rootURI }) {
             if ((await IOUtils.stat(path)).size > 50 * 1024 * 1024) throw new Error("Style Custom cache is too large");
             base = JSON.parse(await IOUtils.readUTF8(path));
           }
+          const coldKeys = globalThis.CustomStyleRuntime?.COLD_CACHE_KEYS || [];
+          hadMonolithicColdOnRead = coldKeys.some(k => Object.prototype.hasOwnProperty.call(base, k));
+          coldExistsOnRead = false;
+          try { coldExistsOnRead = await IOUtils.exists(coldPath); } catch (_) { coldExistsOnRead = false; }
+          // Crash recovery: if a prior migration wrote coldPath before trimming path, coldPath is strictly newer.
+          if (hadMonolithicColdOnRead && coldExistsOnRead) {
+            try {
+              if ((await IOUtils.stat(coldPath)).size <= 50 * 1024 * 1024) {
+                const cold = JSON.parse(await IOUtils.readUTF8(coldPath));
+                if (cold && typeof cold === "object") {
+                  for (const k of coldKeys) {
+                    if (Object.prototype.hasOwnProperty.call(cold, k)) base[k] = cold[k];
+                  }
+                }
+              }
+            } catch (error) { Zotero.logError(error); }
+          }
           hadHotReadingOnRead = false;
           try {
             if (await IOUtils.exists(hotPath) && (await IOUtils.stat(hotPath)).size <= 16 * 1024 * 1024) {
@@ -177,6 +198,24 @@ async function startup({ id, version, rootURI }) {
           return base;
         },
         hadHot() { return hadHotReadingOnRead; },
+        hasColdFile() { return coldExistsOnRead; },
+        hadMonolithicCold() { return hadMonolithicColdOnRead; },
+        async readCold() {
+          try {
+            if (await IOUtils.exists(coldPath)) {
+              if ((await IOUtils.stat(coldPath)).size > 50 * 1024 * 1024) throw new Error("Style Custom workbench cache is too large");
+              const parsed = JSON.parse(await IOUtils.readUTF8(coldPath));
+              if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+            }
+          } catch (error) { Zotero.logError(error); }
+          return { schema: 1 };
+        },
+        async writeCold(encoded) {
+          if (encoded.length > 50 * 1024 * 1024) throw new Error("Style Custom workbench cache is too large.");
+          await IOUtils.writeUTF8(coldPath, encoded, { tmpPath: coldPath + ".tmp" });
+          coldExistsOnRead = true;
+          hadMonolithicColdOnRead = false;
+        },
         async writeHot(encoded) {
           if(encoded.length>16*1024*1024)throw new Error('Style Custom reading overlay is too large.');
           await IOUtils.writeUTF8(hotPath, encoded, { tmpPath: hotPath + ".tmp" });
