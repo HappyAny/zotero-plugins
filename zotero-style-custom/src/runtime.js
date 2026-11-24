@@ -3,8 +3,8 @@
 var CustomStyleRuntime = class CustomStyleRuntime {
   // What OpenAlex files that is not a paper: repository deposits, datasets, reviews of reviews.
   static NOT_A_PAPER = /^(dataset|other|paratext|peer-review|grant|libguides|supplementary-materials)$/i;
-  constructor({ Zotero, model, marquee, reading, storage, legacy = {}, catalog = [], ownCatalog = false, citations, io, paths }) {
-    Object.assign(this, { Z: Zotero, model, marquee, reading, storage, legacy, io, paths });
+  constructor({ Zotero, model, marquee, reading, storage, legacy = {}, catalog = [], ownCatalog = false, citations, io, paths, loadScript = null }) {
+    Object.assign(this, { Z: Zotero, model, marquee, reading, storage, legacy, io, paths, loadScript });
     this.windows = new Map(); this.columns = []; this.observers = [];
     this.queue = Promise.resolve(); this.writeQueue = Promise.resolve();
     this.cache = { schema: 1, items: {} }; this.active = false; this.dirty = false;
@@ -31,9 +31,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.patentTools = typeof CustomStylePatents !== "undefined" ? CustomStylePatents : require("./patents.js");
     this.journalIdentity = typeof CustomStyleJournalIdentity !== "undefined" ? CustomStyleJournalIdentity : require("./journal-identity.js");
     this.affiliationTools = typeof CustomStyleAffiliations !== "undefined" ? CustomStyleAffiliations : require("./affiliations.js");
-    this.graphTools = typeof CustomStylePaperGraph !== "undefined" ? CustomStylePaperGraph : require("./paper-graph.js");
+    this._graphTools = typeof CustomStylePaperGraph !== "undefined" ? CustomStylePaperGraph : null;
     this.itemCells = typeof CustomStyleItemCells !== "undefined" ? CustomStyleItemCells : require("./item-cells.js");
-    this.pathTools = typeof CustomStyleReadingPath !== "undefined" ? CustomStyleReadingPath : require("./reading-path.js");
+    this._pathTools = typeof CustomStyleReadingPath !== "undefined" ? CustomStyleReadingPath : null;
     // Held in memory only: a lookup is cheap to repeat and must not go stale on disk.
     this.discoverCache = new Map();
     // Portrait records older than this were made by the ORCID-homepage-only
@@ -55,7 +55,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     try{this.i18n.load(typeof CustomStyleStrings!=='undefined'?CustomStyleStrings:require('./strings.js'));}catch(error){}
     this.settingsTools=typeof CustomStyleSettingsSchema!=='undefined'?CustomStyleSettingsSchema:require('./settings-schema.js');this.settingsSchema=this.settingsTools.schema;
     this.workspaceTools=typeof CustomStyleWorkspace!=="undefined"?CustomStyleWorkspace:require("./workspace.js");
-    this.Workbench=typeof CustomStyleWorkbench!=="undefined"?CustomStyleWorkbench:require("./workbench.js");
+    this._Workbench = typeof CustomStyleWorkbench !== "undefined" ? CustomStyleWorkbench : null;
+    this._jcrBrowser = typeof CustomStyleJCRBrowser !== "undefined" ? CustomStyleJCRBrowser : undefined;
     const Library=typeof CustomStyleLibrary!=="undefined"?CustomStyleLibrary:require("./library.js");
     this.Library=Library;
     const Reader=typeof CustomStyleReaderTools!=="undefined"?CustomStyleReaderTools:require("./reader-tools.js");
@@ -63,11 +64,82 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.libraryService=Library.create({Zotero:this.Z,runtime:this});
     this.readerTools=Reader.create({Zotero:this.Z,runtime:this});
     this.assist=Assist.create({Zotero:this.Z,runtime:this});
-    // Listening, a summary, a chat and a translation inside the reader. Idle until a reader opens the panel.
-    const ReaderAssist=typeof CustomStyleReaderAssist!=="undefined"?CustomStyleReaderAssist:require("./reader-assist.js");
-    this.readerAssist=ReaderAssist.create({Zotero:this.Z,runtime:this});
+    // Listening, a summary, a chat and a translation inside the reader.
+    // Lazy-loaded (~504 KB) when a PDF reader actually mounts or is probed.
+    this._realReaderAssist = null;
+    if (typeof CustomStyleReaderAssist !== "undefined" || typeof this.loadScript !== "function") {
+      const ReaderAssist = typeof CustomStyleReaderAssist !== "undefined" ? CustomStyleReaderAssist : require("./reader-assist.js");
+      this._realReaderAssist = ReaderAssist.create({ Zotero: this.Z, runtime: this });
+      this.readerAssist = this._realReaderAssist;
+    } else {
+      const self = this;
+      this.readerAssist = Object.freeze({
+        sync(win, readers, selectedID) {
+          if (!self._realReaderAssist && (!readers || !readers.length)) return;
+          return self.ensureReaderAssist().sync(win, readers, selectedID);
+        },
+        applyPreferences() { return self._realReaderAssist ? self._realReaderAssist.applyPreferences() : undefined; },
+        mountToolbar(opts) { return self.ensureReaderAssist().mountToolbar(opts); },
+        releaseWindow(win) { return self._realReaderAssist ? self._realReaderAssist.releaseWindow(win) : undefined; },
+        selectionPopup(ev) { return self.ensureReaderAssist().selectionPopup(ev); },
+        probe(...args) { return self.ensureReaderAssist().probe(...args); },
+        probeAll(...args) { return self.ensureReaderAssist().probeAll(...args); },
+        diagnose(...args) { return self.ensureReaderAssist().diagnose(...args); },
+        reserve(...args) { return self.ensureReaderAssist().reserve(...args); },
+        setGuard(...args) { return self.ensureReaderAssist().setGuard(...args); },
+        pruneCache(...args) { return self.ensureReaderAssist().pruneCache(...args); },
+        stop() { return self._realReaderAssist ? self._realReaderAssist.stop() : undefined; },
+        sessions() { return self._realReaderAssist ? self._realReaderAssist.sessions() : []; },
+        owner(...args) { return self.ensureReaderAssist().owner(...args); }
+      });
+    }
     const CollectionCounts=typeof CustomStyleCollectionCounts!=="undefined"?CustomStyleCollectionCounts:require("./collection-counts.js");
     this.collectionCounts=CollectionCounts.create({Zotero:this.Z,runtime:this});
+  }
+  get graphTools() {
+    if (!this._graphTools) {
+      if (typeof CustomStylePaperGraph === "undefined" && typeof this.loadScript === "function") this.loadScript("paper-graph");
+      this._graphTools = typeof CustomStylePaperGraph !== "undefined" ? CustomStylePaperGraph : require("./paper-graph.js");
+    }
+    return this._graphTools;
+  }
+  set graphTools(value) { this._graphTools = value; }
+  get pathTools() {
+    if (!this._pathTools) {
+      if (typeof CustomStyleReadingPath === "undefined" && typeof this.loadScript === "function") this.loadScript("reading-path");
+      this._pathTools = typeof CustomStyleReadingPath !== "undefined" ? CustomStyleReadingPath : require("./reading-path.js");
+    }
+    return this._pathTools;
+  }
+  set pathTools(value) { this._pathTools = value; }
+  get jcrBrowser() {
+    if (this._jcrBrowser === undefined) {
+      if (typeof CustomStyleJCRBrowser === "undefined" && typeof this.loadScript === "function") this.loadScript("jcr-browser");
+      this._jcrBrowser = typeof CustomStyleJCRBrowser !== "undefined" ? CustomStyleJCRBrowser : null;
+    }
+    return this._jcrBrowser;
+  }
+  set jcrBrowser(value) { this._jcrBrowser = value; }
+  ensureWorkbench() {
+    if (!this._Workbench) {
+      if (typeof CustomStyleJCRBrowser === "undefined" && typeof this.loadScript === "function") this.loadScript("jcr-browser");
+      if (typeof CustomStyleWorkbench === "undefined" && typeof this.loadScript === "function") this.loadScript("workbench");
+      if (typeof CustomStyleJCRBrowser !== "undefined" && this._jcrBrowser === undefined) this._jcrBrowser = CustomStyleJCRBrowser;
+      this._Workbench = typeof CustomStyleWorkbench !== "undefined" ? CustomStyleWorkbench : require("./workbench.js");
+    }
+    return this._Workbench;
+  }
+  get Workbench() { return this.ensureWorkbench(); }
+  set Workbench(value) { this._Workbench = value; }
+  ensureReaderAssist() {
+    if (!this._realReaderAssist) {
+      if (typeof this.loadScript === "function") {
+        for (const name of ["read-aloud", "paper-chat", "paper-translate", "reader-assist"]) this.loadScript(name);
+      }
+      const ReaderAssist = typeof CustomStyleReaderAssist !== "undefined" ? CustomStyleReaderAssist : require("./reader-assist.js");
+      this._realReaderAssist = ReaderAssist.create({ Zotero: this.Z, runtime: this });
+    }
+    return this._realReaderAssist;
   }
   // Cache writers (including reader/workbench modules) schedule their own save.
   // Idle list scanning must never be needed to discover unsaved changes.
@@ -547,10 +619,15 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       throw new Error("Style Custom cache has an unsupported format; existing file was preserved");
     }
     this.cache = loaded; this.active = true;
-    this.retireLooseMoves();
-    try { this.dedupeStoredNews(); this.reclassifyStoredNews(); } catch (error) { this.Z.logError?.(error); }
-    try { this.dedupePaperPeople(); } catch (error) { this.Z.logError?.(error); }
-    try { if (this.recheckStoredLinks()) this.dirty = true; } catch (error) { this.Z.logError?.(error); }
+    // Historical cache cleanups run once per store revision instead of scanning all
+    // 1000+ works/items/reading-paths synchronously on every cold launch.
+    if (this.cache.startupCleanupVersion !== 1) {
+      this.retireLooseMoves();
+      try { this.dedupeStoredNews(); this.reclassifyStoredNews(); } catch (error) { this.Z.logError?.(error); }
+      try { this.dedupePaperPeople(); } catch (error) { this.Z.logError?.(error); }
+      try { if (this.recheckStoredLinks()) this.dirty = true; } catch (error) { this.Z.logError?.(error); }
+      this.cache.startupCleanupVersion = 1;
+    }
     // The reading history the old plugin left in its notes is this plugin's own to keep. Brought
     // in once, well after the library has opened, so 읽은 시간, 쪽 and the phone all know what
     // was read before this plugin arrived. Style Custom's own clock still wins every paper.
@@ -8955,6 +9032,76 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     };
     state.listBind(); request();
   }
+  attachLazyWorkbench(win, winState) {
+    const doc = win.document;
+    const proxyState = {};
+    let real = null, disposed = false, stubBtn = null;
+    const T = value => typeof this.t === 'function' ? this.t(value, 'workbench') : value;
+    const updateLabel = () => {
+      if (!stubBtn) return;
+      stubBtn.setAttribute('tooltiptext', T('Style Custom 연구 작업 패널'));
+      stubBtn.setAttribute('label', T('연구 작업 패널'));
+    };
+    const materialize = () => {
+      if (real) return real;
+      if (stubBtn) { try { stubBtn.remove(); } catch (_) {} stubBtn = null; }
+      const Workbench = this.ensureWorkbench();
+      real = Workbench.attach(win, {
+        runtime: this,
+        library: this.Library.create({ Zotero: this.Z, runtime: this }),
+        reader: this.readerTools,
+        model: this.workspaceTools,
+        assist: this.assist
+      });
+      if (real && real.state) {
+        for (const [k, v] of Object.entries(proxyState)) real.state[k] = v;
+      }
+      if (winState && this.windows.get(win) === winState) winState.workbench = real;
+      return real;
+    };
+    const target = doc?.getElementById?.('zotero-items-toolbar');
+    if (target) {
+      stubBtn = doc.createXULElement ? doc.createXULElement('toolbarbutton') : doc.createElement('button');
+      stubBtn.id = 'style-custom-workbench-button';
+      stubBtn.className = 'zotero-tb-button';
+      stubBtn.setAttribute('image', this.rootURI + 'content/icons/style-custom-toolbar.svg');
+      stubBtn.style?.setProperty?.('fill', 'currentColor');
+      stubBtn.style?.setProperty?.('-moz-context-properties', 'fill, fill-opacity');
+      updateLabel();
+      const onOpen = () => {
+        if (disposed) return;
+        Promise.resolve(materialize().toggle(true)).catch(error => this.Z.logError?.(error));
+      };
+      stubBtn.addEventListener('command', onOpen);
+      stubBtn.addEventListener('click', () => { if (!doc.createXULElement) onOpen(); });
+      const anchor = target.querySelector('#zotpop-toolbar-button')
+        || target.querySelector('#zotero-tb-note-add')
+        || target.querySelector('#zotero-tb-attachment-add')
+        || [...target.children].reverse().find(child => child.localName === 'toolbarbutton');
+      const spacer = [...target.children].find(child => child.localName === 'spacer' || child.localName === 'toolbarspacer');
+      if (anchor && anchor.parentNode === target) target.insertBefore(stubBtn, anchor.nextSibling);
+      else if (spacer) target.insertBefore(stubBtn, spacer);
+      else target.appendChild(stubBtn);
+    }
+    return {
+      panel: null,
+      state: proxyState,
+      updateLabel,
+      show: (tab, focus) => disposed ? undefined : materialize().show(tab, focus),
+      toggle: (open, opts) => (disposed || open === false) ? undefined : materialize().toggle(open, opts),
+      notify: (text, opts) => disposed ? undefined : materialize().notify(text, opts),
+      setStatus: value => { if (real) real.setStatus?.(value); },
+      refreshMetrics: itemID => { if (real) real.refreshMetrics?.(itemID); },
+      refreshReading: () => { if (real) real.refreshReading?.(); },
+      applyPreferences: async () => { updateLabel(); if (real) await real.applyPreferences?.(); },
+      docked: () => real ? !!real.docked?.() : false,
+      destroy: () => {
+        disposed = true;
+        if (real) { real.destroy?.(); return; }
+        if (stubBtn) { try { stubBtn.remove(); } catch (_) {} stubBtn = null; }
+      }
+    };
+  }
   addWindow(win) {
     if (!this.active || this.stopping || this.windows.has(win)) return;
     const state = { nodes:[], listeners:[], signature:null,titleNodes:new Set(),titlePositions:new Map(),titleWeights:new Map() }; this.windows.set(win,state);
@@ -8968,7 +9115,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     state.readerCleanup=this.readerTools.attach(win);
     state.collectionCountCleanup=this.collectionCounts.attach(win);
     for(const tab of this.readerTools.tabs(win))if(tab.itemID)this.tabItems.set(tab.id,tab.itemID);
-    state.workbench=this.Workbench.attach(win,{runtime:this,library:this.Library.create({Zotero:this.Z,runtime:this}),reader:this.readerTools,model:this.workspaceTools,assist:this.assist});
+    state.workbench = (!this._Workbench && typeof CustomStyleWorkbench === "undefined" && typeof this.loadScript === "function")
+      ? this.attachLazyWorkbench(win, state)
+      : this.Workbench.attach(win,{runtime:this,library:this.Library.create({Zotero:this.Z,runtime:this}),reader:this.readerTools,model:this.workspaceTools,assist:this.assist});
     const doc = win.document;
     state.menuNodes = [];
     this.buildMenus(win, state);

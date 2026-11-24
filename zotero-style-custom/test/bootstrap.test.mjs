@@ -28,23 +28,30 @@ async function boot({failJCR=false,invalidJCR=false,licensed=null,version='0.8.0
  context.Services={scriptloader:{loadSubScript:(url,scope)=>{assert.equal(scope,vm.runInContext('globalThis',context));const name=url.split('/').at(-1);loaded.push(name);vm.runInContext(fs.readFileSync(path.join(root,'src',name),'utf8'),context,{filename:name});
   if(name==='runtime.js'){
    const prototype=vm.runInContext('CustomStyleRuntime.prototype',context),start=prototype.start;
-   prototype.start=function(...args){started.push({catalog:this.jcrCatalog,browser:this.jcrBrowser});return start.apply(this,args);};
-   prototype.addWindow=function(window){attached.push({window,catalog:this.jcrCatalog,browser:this.jcrBrowser});};
+   prototype.start=function(...args){started.push({catalog:this.jcrCatalog});return start.apply(this,args);};
+   prototype.addWindow=function(window){attached.push({window,catalog:this.jcrCatalog});};
   }
  }},obs:{addObserver:o=>registered.add(o),removeObserver:o=>registered.delete(o)}};
  vm.runInContext(fs.readFileSync(path.join(root,'prefs.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(root,'bootstrap.js'),'utf8'),context);
  await vm.runInContext(`startup({id:'style-custom@sungjaeyoon.dev',version:${JSON.stringify(version)},rootURI:'file:///plugin/'})`,context);
  return {Z,context,columns,observers,registered,writes,errors,debug,loaded,attached,started,timers,resourceReads};
 }
-test('Gecko-like bootstrap defers the shipped open catalog until requested without UI',async()=>{
+test('Gecko-like bootstrap defers heavy optional modules and shipped open catalog until requested without UI',async()=>{
  const {Z,context,columns,observers,registered,writes,errors,loaded,attached,started}=await boot();
- assert.equal(columns.size,29);assert.equal(Z.StyleCustom.Workbench.TABS.length,19);assert.equal(typeof Z.StyleCustom.readerTools.setVerticalTabs,'function');assert.equal(typeof Z.StyleCustom.libraryService.graph,'function');assert.equal(registered.size,1);assert.equal(writes.length,0);
+ assert.equal(columns.size,29);assert.equal(typeof Z.StyleCustom.readerTools.setVerticalTabs,'function');assert.equal(typeof Z.StyleCustom.libraryService.graph,'function');assert.equal(registered.size,1);assert.equal(writes.length,0);
+ // Heavy optional panels & self-check scripts (~1.67 MB) must stay unloaded at startup!
+ for (const deferred of ['workbench.js','jcr-browser.js','selfcheck.js','selfcheck-reader.js','reader-assist.js','paper-text.js','read-aloud.js','paper-chat.js','paper-translate.js','paper-graph.js','reading-path.js']) {
+  assert.equal(loaded.includes(deferred), false, `${deferred} must not be loaded synchronously at startup`);
+ }
+ // On-demand Workbench access loads jcr-browser before workbench cleanly.
+ assert.equal(Z.StyleCustom.Workbench.TABS.length,19);
+ assert.ok(loaded.indexOf('jcr-categories.js')<loaded.indexOf('workbench.js'));assert.ok(loaded.indexOf('jcr-browser.js')<loaded.indexOf('workbench.js'));
+ assert.equal(typeof Z.StyleCustom.jcrBrowser.mount,'function');
  // Shipped 28.7 MB OpenAlex category catalog stays unloaded at startup (0 MB / 0 ms) until Journals tab opens.
  assert.equal(Z.StyleCustom.jcrCatalog,null);
  assert.equal(typeof Z.StyleCustom.ensureJcrCatalog,'function');
  assert.equal(Z.StyleCustom.journalLayers['jcr-categories.json'],'shipped');
- assert.ok(loaded.indexOf('jcr-categories.js')<loaded.indexOf('workbench.js'));assert.ok(loaded.indexOf('jcr-browser.js')<loaded.indexOf('workbench.js'));
- assert.equal(started[0].catalog,null);assert.equal(attached[0].catalog,null);assert.equal(typeof attached[0].browser.mount,'function');
+ assert.equal(started[0].catalog,null);assert.equal(attached[0].catalog,null);
  // On-demand load returns the exact openly licensed catalog.
  await Z.StyleCustom.ensureJcrCatalog();
  const packaged=JSON.parse(fs.readFileSync(shipped('journal-catalog.json'),'utf8'));

@@ -267,7 +267,8 @@
   const log=error=>{try{Z.logError?.(error);}catch(_){}};
   // A message this plugin wrote for its reader is shown as written; only transport errors go through the generic wording (whose 429 means a daily quota).
   const describe=error=>{if(error&&error.own)return t(String(error.message));const fail=root.CustomStyleFailures;return t(fail?fail.describe(error,{translate:t}):String(error&&error.message||error));};
-  const paperText=()=>root.StyleCustomPaperText||RA.fallbackPaperText;
+  const ensurePaperText=()=>{if(!root.StyleCustomPaperText&&typeof runtime.loadScript==='function'){try{runtime.loadScript('paper-text');}catch(error){Z.debug?.('Style Custom: paper-text not loaded: '+(error&&error.message));}}return root.StyleCustomPaperText||RA.fallbackPaperText;};
+  const paperText=()=>ensurePaperText();
   const sessions=new Map(),toolbarStates=new Map();let stopped=false,cssPromise=null,sequence=0,probing=0,guard=null;
   // Readers a live self-check opened for itself: sync() leaves them alone, so no ordinary session (one that may save) is made.
   const reserved=new WeakSet();
@@ -436,6 +437,8 @@
    const sig=await fileSignature(session);
    const name=session.name+'.struct';
    const saved=await store.read(name,{touch:!session.probing});
+   // Ensure the structured PDF text extractor is loaded on first Paper Assist extraction.
+   ensurePaperText();
    // A structure made from plain text is not kept once the real extractor is there to do better.
    if(saved&&sig&&saved.sig===sig&&saved.structured&&saved.v===STRUCT_VERSION&&saved.extractor===extractorVersion()&&(!saved.fallback||saved.unreadable||!root.StyleCustomPaperText)){session.pageSizes=saved.sizes||[];session.unreadable=!!saved.unreadable;return {structured:saved.structured,fallback:!!saved.fallback,unreadable:!!saved.unreadable,fromCache:true};}
    let structured=null,fallback=false,sizes=[],unreadable=false;

@@ -5741,3 +5741,33 @@ test('itemObserver coalesces UI refreshes during syncInProgress and startup main
  assert.equal(plugin.startupPruneTimer,null,'stop() clears startup prune timer');
  assert.equal(plugin.syncRefreshTimer,null,'stop() clears post-sync timer');
 });
+
+test('startupCleanupVersion skips redundant historical cache sweeps on subsequent cold starts',async()=>{
+ const {plugin}=fixture();
+ let sweeps=0;
+ plugin.retireLooseMoves=()=>{sweeps++;};
+ plugin.dedupeStoredNews=()=>{sweeps++;};
+ plugin.reclassifyStoredNews=()=>{sweeps++;};
+ plugin.dedupePaperPeople=()=>{sweeps++;};
+ plugin.recheckStoredLinks=()=>{sweeps++;return false;};
+ const origRead=plugin.storage.read.bind(plugin.storage);
+ // First boot without startupCleanupVersion runs all 5 sweeps and stamps version 1
+ await plugin.start({id:'custom',version:'0.59.75',rootURI:'file:///custom/'});
+ assert.equal(sweeps,5,'first launch runs historical cleanup sweeps once');
+ assert.equal(plugin.cache.startupCleanupVersion,1);
+ await plugin.stop();
+ // Second boot with startupCleanupVersion=1 skips all 5 sweeps completely
+ const second=fixture();
+ let sweeps2=0;
+ second.plugin.retireLooseMoves=()=>{sweeps2++;};
+ second.plugin.dedupeStoredNews=()=>{sweeps2++;};
+ second.plugin.reclassifyStoredNews=()=>{sweeps2++;};
+ second.plugin.dedupePaperPeople=()=>{sweeps2++;};
+ second.plugin.recheckStoredLinks=()=>{sweeps2++;return false;};
+ const origRead2=second.plugin.storage.read.bind(second.plugin.storage);
+ second.plugin.storage.read=async()=>({...(await origRead2()),startupCleanupVersion:1});
+ await second.plugin.start({id:'custom',version:'0.59.75',rootURI:'file:///custom/'});
+ assert.equal(sweeps2,0,'subsequent cold starts skip already-completed historical sweeps');
+ await second.plugin.stop();
+ void origRead;
+});

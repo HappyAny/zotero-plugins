@@ -13,13 +13,19 @@ function uninstall() {}
 async function startup({ id, version, rootURI }) {
   try {
     await Zotero.initializationPromise;
-    for (const name of ["settings-schema", "data", "journals", "citations", "citation-formats", "supplementary", "discover", "paper-signals", "attention", "legacy-reading", "journal-metrics", "i18n", "strings", "author-portrait", "attachment-kinds", "library-facts", "item-kinds", "patents", "journal-identity", "jcr-categories", "jcr-browser", "affiliations", "paper-graph", "reading-path", "failures", "brand-icons", "selfcheck", "selfcheck-reader", "workspace", "paper-chat", "paper-translate", "read-aloud", "assist", "library", "reader-assist", "reader-tools", "collection-counts", "workbench", "marquee", "item-cells", "reading", "updater", "runtime"]) {
+    const loadedScripts = new Set();
+    const loadScript = name => {
+      if (loadedScripts.has(name)) return true;
       Services.scriptloader.loadSubScript(rootURI + "src/" + name + ".js", globalThis);
+      loadedScripts.add(name);
+      return true;
+    };
+    // Core modules required on the startup path. Heavy optional panels and tools
+    // (workbench 801KB, reader-assist + helpers 504KB, selfcheck 206KB, paper-graph 70KB,
+    // reading-path 51KB, jcr-browser 36KB = ~1.67 MB) load on first use via loadScript().
+    for (const name of ["settings-schema", "data", "journals", "citations", "citation-formats", "supplementary", "discover", "paper-signals", "attention", "legacy-reading", "journal-metrics", "i18n", "strings", "author-portrait", "attachment-kinds", "library-facts", "item-kinds", "patents", "journal-identity", "jcr-categories", "affiliations", "failures", "brand-icons", "workspace", "assist", "library", "reader-tools", "collection-counts", "marquee", "item-cells", "reading", "updater", "runtime"]) {
+      loadScript(name);
     }
-    // The text extraction for the reader panel. Optional at load time: without it the panel
-    // falls back to Zotero's plain-text index (no positions, so no highlight on the page).
-    try { Services.scriptloader.loadSubScript(rootURI + "src/paper-text.js", globalThis); }
-    catch (error) { Zotero.debug("Style Custom: paper-text not loaded: " + (error && error.message)); }
     const path = PathUtils.join(Zotero.DataDirectory.dir, "style-custom.json");
     const hotPath = PathUtils.join(Zotero.DataDirectory.dir, "style-custom-reading.json");
     let hadHotReadingOnRead = false;
@@ -153,7 +159,7 @@ async function startup({ id, version, rootURI }) {
     };
     customStyle = new globalThis.CustomStyleRuntime({ Zotero, catalog, ownCatalog: true, io: IOUtils, paths: PathUtils,
       model: globalThis.CustomStyleData, marquee: globalThis.CustomStyleMarquee,
-      reading: globalThis.CustomStyleReading, legacy,
+      reading: globalThis.CustomStyleReading, legacy, loadScript,
       storage: {
         async read() {
           let base = { schema: 1, items: {} };
@@ -194,7 +200,6 @@ async function startup({ id, version, rootURI }) {
     customStyle.ensureJcrCatalog = loadJcrCatalog;
     customStyle.journalLayers = journalLayers;
     customStyle.journalDir = journalDir;
-    customStyle.jcrBrowser = globalThis.CustomStyleJCRBrowser;
     customStyle.configureJournalSubset({
       active: !!subsetData,
       signature: subsetSignature,
@@ -237,6 +242,8 @@ async function startup({ id, version, rootURI }) {
     // The failures worth catching -- SVG innerHTML, a dialog whose rows overlap,
     // a column that throws while painting -- only exist in the real runtime.
     if (Zotero.Prefs.get("extensions.style-custom.selfCheck", true)) {
+      loadScript("selfcheck");
+      loadScript("selfcheck-reader");
       // Read the flags before clearing them: clearing first and reading inside
       // the timer meant repair and fill were always false by the time they were
       // asked for, and the run silently did nothing but the read-only checks.
