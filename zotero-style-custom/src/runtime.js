@@ -314,7 +314,12 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     return removed;
   }
   _timerHost() {
-    return this.Z.getMainWindow?.() || (typeof globalThis.setTimeout === 'function' ? globalThis : null);
+    const main = this.Z.getMainWindow?.();
+    if (main && !main.closed && typeof main.setTimeout === 'function') return main;
+    for (const win of this.windows?.keys?.() || []) {
+      if (win && !win.closed && typeof win.setTimeout === 'function') return win;
+    }
+    return typeof globalThis.setTimeout === 'function' ? globalThis : null;
   }
   _clearStartupAndSyncTimers() {
     for (const [timerKey, hostKey] of [
@@ -362,6 +367,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     if (this.stopping) return;
     const host = this._timerHost();
     if (typeof host?.setTimeout !== 'function') return;
+    this._startupMaintenanceArmed = true;
     if (this.startupBrightenTimer == null) {
       this.startupBrightenHost = host;
       try {
@@ -8086,14 +8092,14 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // A window supplies the clock; during startup there may not be one yet, and
     // the plugin's own sandbox has no timers at all. Then the write simply waits
     // for the next explicit flush.
-    const host = this.Z.getMainWindow?.() || (typeof globalThis.setTimeout === 'function' ? globalThis : null);
+    const host = this._timerHost();
     if (typeof host?.setTimeout !== 'function') return;
     let timer;
     try {
       timer = host.setTimeout(() => {
         this.flushTimer = null;
         this.flushTimerWindow = null;
-        if (this.dirty || this._readingDirty) this.flush().catch(error => this.Z.logError(error));
+        if (this.dirty || this._readingDirty || this._pendingColdMigration) this.flush().catch(error => this.Z.logError(error));
       }, delay);
     } catch (_) { return; } // A closing window cannot prevent an explicit flush.
     if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
@@ -9278,6 +9284,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const quickFilter=event=>{if(!this.featureEnabled('itemTypeFilter')||!this.pref('quickTypeFilter',true)||event.button!==0||!event.target.closest?.('.cell-icon'))return;const row=event.target.closest('.row');if(!row)return;const item=win.ZoteroPane?.itemsView?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref;if(!this.isRegular(item)||!state.workbench)return;event.preventDefault();event.stopPropagation();state.workbench.state.type=this.Z.ItemTypes.getName(item.itemTypeID);state.workbench.show('explore').catch(e=>this.Z.logError(e));};
     const tree=doc.getElementById('zotero-items-tree');if(tree){tree.addEventListener('click',quickFilter,true);state.listeners.push([tree,'click',quickFilter,true]);}
     const css=this.pref('panelCSS','');if(css)try{this.setPanelCSS(css);}catch(error){this.Z.logError(error);}
+    // Re-arm deferred startup timers once a window supplies setTimeout (Zotero bootstrap sandboxes have no global setTimeout).
+    if (!this._startupMaintenanceArmed) this.scheduleStartupMaintenance();
+    if (this._pendingColdMigration && !this.flushTimer) this.scheduleFlush(15000);
   }
   async useColumns(win) {
     const manager=win.ZoteroPane?.itemsView?.tree?._columns;
