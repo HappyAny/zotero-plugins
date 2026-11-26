@@ -212,6 +212,19 @@ test('hover clears on what Zotero fires: mouseout to outside the tree, mouseleav
   hover(); mouseout(null); clear();
 });
 
+test('scrolling with no active hover performs zero document queries and zero clears', async () => {
+  const {document, window} = await page();
+  const state = {listeners: []};
+  const off = Cells.attach(window, state, fakeRT(window), {hover: true});
+  let queries = 0;
+  const origQSA = document.querySelectorAll.bind(document);
+  document.querySelectorAll = (...args) => { queries++; return origQSA(...args); };
+  for (let i = 0; i < 20; i++) document.body.dispatchEvent(new window.Event('scroll', {bubbles: true}));
+  assert.equal(queries, 0, 'idle scroll events skip full-document querySelectorAll scans');
+  assert.equal(state.cellsDebug.clears, 0, 'idle scroll events skip clear()');
+  off();
+});
+
 test('R9 with several rows selected, refreshing citations and adding a tag act on every selected paper', async () => {
   const {document, window} = await page();
   const rt = fakeRT(window);

@@ -237,6 +237,7 @@ ${TREE} .cell .sc-more:hover{background:rgba(255,255,255,.12);color:#F3F4F6}
       ensureStyle().textContent = baseCSS() + (hover ? hoverCSS(keys, escape) : "");
     };
     const clear = () => {
+      if (!lastCell && !rootNode && !pending) return;
       debug.clears++;
       lastPad = null;
       if (lastCell) { lastCell.removeAttribute("data-sc-hover-cell"); lastCell = null; }
@@ -297,7 +298,12 @@ ${TREE} .cell .sc-more:hover{background:rgba(255,255,255,.12);color:#F3F4F6}
         }
         if (!to || !(to.closest?.(TREE))) { pending = null; clear(); }
       };
-      const leave = () => { pending = null; clear(); };
+      const leave = () => {
+        if (!lastCell && !rootNode && !pending) return;
+        pending = null;
+        if (raf && raf !== -1) { unframe(win, raf); raf = 0; }
+        clear();
+      };
       listen(doc, "mouseover", over, true);
       listen(doc.documentElement, "mouseleave", leave, false);
       const treeNode = doc.querySelector?.(TREE);

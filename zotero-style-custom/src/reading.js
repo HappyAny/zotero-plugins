@@ -10,28 +10,30 @@
     if (typeof options.onTick !== 'function') throw new TypeError('onTick is required');
     const now = options.now || (() => window.performance.now());
     const interval = Number.isFinite(options.intervalMs)
-      ? Math.max(250, Math.min(5000, options.intervalMs)) : 1000;
+      ? Math.max(250, Math.min(60000, options.intervalMs)) : 1000;
     const idle = Number.isFinite(options.idleMs) ? Math.max(5000, Math.min(300000, options.idleMs)) : IDLE_MS;
-    const maxGap = Math.min(5000, interval * 2);
+    const maxGap = Math.min(interval > 2500 ? 65000 : 5000, interval * 2);
     let disposed = false;
     let current = null;
     let previousLocation = null;
     let previous = now();
     let lastActivity = -Infinity;
+    let lastResolve = -Infinity;
     let chain = Promise.resolve();
     const bound = new Map();
     function report(error) { try { options.onError?.(error); } catch (_) {} }
     function resolveReader() {
       if (window.closed || window.document.hidden || !window.document.hasFocus()) return null;
       const manager = window.Zotero?.Reader;
+      const tabID = window.Zotero_Tabs ? window.Zotero_Tabs.selectedID : null;
       let reader;
-      if (window.Zotero_Tabs) reader = manager?.getByTabID(window.Zotero_Tabs.selectedID);
+      if (window.Zotero_Tabs) reader = manager?.getByTabID(tabID);
       else reader = manager?._readers?.find(value => value._window === window);
       if (!reader || reader._window !== window || reader.type !== 'pdf') return null;
       const attachment = window.Zotero.Items.get(reader.itemID);
       if (!attachment) return null;
       const item = attachment.parentID ? window.Zotero.Items.get(attachment.parentID) : attachment;
-      return item ? { reader, item } : null;
+      return item ? { reader, item, tabID } : null;
     }
     function locationOf(reader) {
       const internal = reader?._internalReader;
@@ -47,9 +49,20 @@
     function activity(event) {
       if (disposed || event.isTrusted === false) return;
       try {
+        const time = now();
+        // Fast-path throttle for 60-120Hz pointermove/wheel bursts: skip repeated
+        // cross-compartment Zotero.Reader / Zotero.Items lookups within 500ms.
+        if (current && lastActivity !== -Infinity
+            && !window.closed && !window.document.hidden && window.document.hasFocus()
+            && time >= lastResolve && (time - lastResolve) < 500
+            && time >= lastActivity && (time - lastActivity) < idle
+            && (!window.Zotero_Tabs || window.Zotero_Tabs.selectedID === current.tabID)
+            && current.reader._window === window && current.reader.type === 'pdf') {
+          lastActivity = time;
+          return;
+        }
         const active = resolveReader();
         if (!active) return;
-        const time = now();
         // Activity after idle/focus/tab changes starts a new interval, never backfills it.
         if (current?.reader !== active.reader || time - lastActivity >= idle) {
           // Baseline foreign history once, before the first measured interval.
@@ -60,6 +73,7 @@
         }
         current = active;
         lastActivity = time;
+        lastResolve = time;
       } catch (error) { report(error); }
     }
     function collectFrames(frame, targets) {
@@ -113,11 +127,11 @@
         syncListeners(active);
         const gap = time - previous;
         if (active && current?.reader === active.reader) credit(time, active);
-        if (current?.reader !== active?.reader || gap < 0 || !active) lastActivity = -Infinity;
+        if (current?.reader !== active?.reader || gap < 0 || !active) { lastActivity = -Infinity; lastResolve = -Infinity; }
         current = active;
         previousLocation = active ? locationOf(active.reader) : null;
         previous = time;
-      } catch (error) { previous = now(); current = null; lastActivity = -Infinity; report(error); }
+      } catch (error) { previous = now(); current = null; lastActivity = -Infinity; lastResolve = -Infinity; report(error); }
     }
     function inactive() {
       if (disposed) return;
@@ -127,6 +141,7 @@
       previousLocation = null;
       previous = now();
       lastActivity = -Infinity;
+      lastResolve = -Infinity;
       syncListeners(null);
     }
     function cleanup() {

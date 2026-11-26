@@ -350,3 +350,37 @@ test("counts of 0, 1, 2 and 1,200 read correctly through every translated senten
   assert.equal(i18n.count(1, "paper", "papers"), "1 papers", "Korean takes the one form, the table supplies the Korean words");
   i18n.use("en-US");
 });
+
+test("pruneUnused releases inactive locale tables and reloads transparently when switching locale", () => {
+  const saved = strings;
+  let reloads = 0;
+  const makeCatalog = () => ({
+    en: {'보유 문헌': 'Library'},
+    zh: {'보유 문헌': '资料库'},
+    contexts: {'zh-CN': {'reader-assist': {'읽기': '朗读'}}}
+  });
+  let live = makeCatalog();
+  try {
+    i18n.load(live);
+    i18n.use('zh-CN');
+    assert.equal(i18n.pruneUnused(() => { reloads++; live = makeCatalog(); i18n.load(live); }), true);
+    assert.equal(live.en, undefined, 'en table removed when zh-CN is active');
+    assert.equal(i18n.t('보유 문헌'), '资料库');
+    assert.equal(i18n.t('읽기', 'reader-assist'), '朗读');
+    // Switching to en-US transparently triggers reload
+    i18n.use('en-US');
+    assert.equal(reloads, 1);
+    assert.equal(i18n.t('보유 문헌'), 'Library');
+    // Pruning in en-US removes zh + contexts, and switching back to zh-CN reloads cleanly
+    assert.equal(i18n.pruneUnused(), true);
+    assert.equal(live.zh, undefined);
+    assert.equal(live.contexts, undefined);
+    i18n.use('zh-CN');
+    assert.equal(reloads, 2);
+    assert.equal(i18n.t('보유 문헌'), '资料库');
+    assert.equal(i18n.t('읽기', 'reader-assist'), '朗读');
+  } finally {
+    i18n.load(saved);
+    i18n.use('en-US');
+  }
+});

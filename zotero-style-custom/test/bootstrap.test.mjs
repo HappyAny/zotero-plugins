@@ -39,13 +39,23 @@ async function boot({failJCR=false,invalidJCR=false,licensed=null,version='0.8.0
 test('Gecko-like bootstrap defers heavy optional modules and shipped open catalog until requested without UI',async()=>{
  const {Z,context,columns,observers,registered,writes,errors,loaded,attached,started}=await boot();
  assert.equal(columns.size,29);assert.equal(typeof Z.StyleCustom.readerTools.setVerticalTabs,'function');assert.equal(registered.size,1);assert.equal(writes.length,0);
- // Heavy optional panels & self-check scripts (~1.82 MB) must stay unloaded at startup!
- for (const deferred of ['workbench.js','jcr-browser.js','selfcheck.js','selfcheck-reader.js','reader-assist.js','paper-text.js','read-aloud.js','paper-chat.js','paper-translate.js','paper-graph.js','reading-path.js','library.js','author-portrait.js','assist.js','library-facts.js','patents.js']) {
+ // Heavy optional panels, self-check scripts & deferred helpers (~1.98 MB) must stay unloaded at startup!
+ for (const deferred of ['workbench.js','jcr-browser.js','selfcheck.js','selfcheck-reader.js','reader-assist.js','paper-text.js','read-aloud.js','paper-chat.js','paper-translate.js','paper-graph.js','reading-path.js','library.js','author-portrait.js','assist.js','library-facts.js','patents.js','discover.js','workspace.js','attention.js','jcr-categories.js','citation-formats.js','supplementary.js','legacy-reading.js','item-kinds.js']) {
   assert.equal(loaded.includes(deferred), false, `${deferred} must not be loaded synchronously at startup`);
  }
+ // Inactive locale table is pruned after startup settles on en-US, and reloads transparently on live locale switch.
+ assert.equal(vm.runInContext('CustomStyleStrings.zh', context), undefined, 'unused zh table is pruned in en-US mode');
+ assert.equal(Z.StyleCustom.t('보유 문헌'), 'Library');
+ Z.Prefs.set('extensions.style-custom.language', 'zh-CN');
+ Z.StyleCustom.applyLocale();
+ assert.equal(Z.StyleCustom.t('보유 문헌'), '资料库', 'live switch reloads strings.js transparently');
+ assert.equal(vm.runInContext('CustomStyleStrings.en', context), undefined, 'unused en table is pruned after switching to zh-CN');
+ Z.Prefs.set('extensions.style-custom.language', 'en-US');
+ Z.StyleCustom.applyLocale();
+ assert.equal(Z.StyleCustom.t('보유 문헌'), 'Library');
  assert.equal(typeof Z.StyleCustom.libraryService.graph,'function');
  assert.equal(loaded.includes('library.js'), true, 'library.js loads on demand when libraryService is accessed');
- // On-demand Workbench access loads jcr-browser before workbench cleanly.
+ // On-demand Workbench access loads jcr-categories and jcr-browser before workbench cleanly.
  assert.equal(Z.StyleCustom.Workbench.TABS.length,19);
  assert.ok(loaded.indexOf('jcr-categories.js')<loaded.indexOf('workbench.js'));assert.ok(loaded.indexOf('jcr-browser.js')<loaded.indexOf('workbench.js'));
  assert.equal(typeof Z.StyleCustom.jcrBrowser.mount,'function');

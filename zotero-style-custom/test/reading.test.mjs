@@ -248,3 +248,33 @@ test('configurable idle timeout is clamped and still credits only actual active 
 test('configured sampling cadence preserves fractional time and page snapshots',async()=>{
  const f=fixture({intervalMs:250,idleMs:5000});f.pdf.emit('wheel');await f.advance(250);await f.advance(250);f.elapse(100);await f.cleanup();assert.deepEqual(f.ticks.map(t=>t.seconds),[.25,.25,.1]);
 });
+test('high-rate pointermove/wheel bursts hit the 500ms fast-path throttle and long intervals up to 60s are honored', async () => {
+ let intervalUsed = 0, lookups = 0;
+ const f = fixture({ intervalMs: 30000, idleMs: 60000 });
+ const origSetInterval = f.window.setInterval;
+ const origGet = f.window.Zotero.Items.get;
+ f.window.Zotero.Items.get = id => { lookups++; return origGet(id); };
+ // Verify high-rate 120Hz pointermove bursts within 500ms skip repeated cross-compartment lookups
+ f.pdf.emit('pointermove');
+ const afterFirst = lookups;
+ assert.ok(afterFirst > 0, 'first activity resolves reader');
+ for (let i = 0; i < 40; i++) {
+   f.elapse(10); // 400ms total < 500ms throttle window
+   f.pdf.emit('pointermove');
+ }
+ assert.equal(lookups, afterFirst, '40 rapid pointermove events within 500ms perform zero extra Items.get lookups');
+ f.elapse(150); // 550ms since lastResolve -> re-verifies once
+ f.pdf.emit('pointermove');
+ assert.ok(lookups > afterFirst, 'activity after 500ms refreshes reader identity');
+ await f.advance(30000 - 550);
+ assert.equal(f.ticks.length, 1);
+ assert.equal(f.ticks[0].seconds, 30, '30s recordIntervalMs credits full 30s without clamping to 5s');
+ // Verify actual timer interval passed to setInterval honors 30000ms
+ const intervals = [];
+ const w2 = f.window;
+ w2.setInterval = (fn, ms) => { intervals.push(ms); return origSetInterval(fn, ms); };
+ const off2 = reading.attach(w2, { intervalMs: 30000, onTick: () => {} });
+ assert.equal(intervals[0], 30000, 'setInterval receives 30000ms instead of clamped 5000ms');
+ await off2();
+ await f.cleanup();
+});

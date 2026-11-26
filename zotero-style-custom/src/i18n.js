@@ -22,13 +22,36 @@
 
   // Filled from strings.js; kept separate so the table can be regenerated
   // without touching this logic.
-  let TABLE = {}, CATALOG = null;
+  let TABLE = {}, CATALOG = null, reloadCatalog = null;
 
   function load(table) {
-    CATALOG = table?.en && typeof table.en === 'object' ? table : null;
-    TABLE = CATALOG ? (current === 'zh-CN' ? CATALOG.zh : CATALOG.en) || {} : table && typeof table === 'object' ? table : {};
+    CATALOG = (table?.en && typeof table.en === 'object') || (table?.zh && typeof table.zh === 'object') ? table : null;
+    TABLE = CATALOG ? (current === 'zh-CN' ? CATALOG.zh : current === 'en-US' ? CATALOG.en : null) || {} : table && typeof table === 'object' ? table : {};
     patterns = null; misses.clear();
     return Object.keys(TABLE).length;
+  }
+
+  // Release inactive locale tables (~1-2 MB JS heap) once startup settles on a
+  // language. If the user switches locale live, `reloadCatalog()` restores the
+  // full strings.js catalog transparently before resolving the new table.
+  function pruneUnused(reloadFn) {
+    if (typeof reloadFn === 'function') reloadCatalog = reloadFn;
+    if (!CATALOG) return false;
+    if (current === 'zh-CN') {
+      if (CATALOG.en) delete CATALOG.en;
+      TABLE = CATALOG.zh || {};
+    } else if (current === 'en-US') {
+      if (CATALOG.zh) delete CATALOG.zh;
+      if (CATALOG.contexts) delete CATALOG.contexts;
+      TABLE = CATALOG.en || {};
+    } else {
+      if (CATALOG.en) delete CATALOG.en;
+      if (CATALOG.zh) delete CATALOG.zh;
+      if (CATALOG.contexts) delete CATALOG.contexts;
+      TABLE = {};
+    }
+    patterns = null; misses.clear();
+    return true;
   }
 
   const DEFAULT = 'en-US';
@@ -51,7 +74,13 @@
   // empty or unknown choice is English, never "whatever Zotero says".
   function use(choice, zotero) {
     current = choice === 'auto' ? detect(zotero) : canonical(choice);
-    if (CATALOG) TABLE = (current === 'zh-CN' ? CATALOG.zh : CATALOG.en) || {};
+    if (CATALOG) {
+      const needKey = current === 'zh-CN' ? 'zh' : current === 'en-US' ? 'en' : null;
+      if (needKey && (!CATALOG[needKey] || (current === 'zh-CN' && !CATALOG.contexts)) && typeof reloadCatalog === 'function') {
+        try { reloadCatalog(); } catch (_) {}
+      }
+      TABLE = (current === 'zh-CN' ? CATALOG.zh : current === 'en-US' ? CATALOG.en : null) || {};
+    }
     patterns = null; misses.clear();
     return current;
   }
@@ -218,7 +247,7 @@
     return {total: wanted.length, translated: wanted.length - missing.length, missing};
   }
 
-  const api = {t, template, format, count, use, detect, locale, isKorean, isChinese, aiLanguage, load, coverage, LOCALES, DEFAULT, singular, number, date, time, plural,
+  const api = {t, template, format, count, use, detect, locale, isKorean, isChinese, aiLanguage, load, pruneUnused, coverage, LOCALES, DEFAULT, singular, number, date, time, plural,
     _table: () => TABLE};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.CustomStyleI18N = api;

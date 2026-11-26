@@ -10,6 +10,8 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     "authorWorks", "watchedAuthors", "authorPortraits",
     "citedBy", "freshCiters", "workbenchDrafts"
   ];
+  static DARK_PALETTE = Object.freeze({blue:'#7EA3E1',green:'#2BB771',orange:'#D79256',red:'#E3888B',purple:'#BC8EE5',teal:'#2FB0C9',gold:'#C09D2D',amber:'#D1963D',star:'#FFD35C',reading:'#7FC3A3',done:'#3FA372',gray:'#98989D',faint:'#676770',muted:'#A0A0A6',text:'#E8E8ED',tint:0.28,dark:true});
+  static LIGHT_PALETTE = Object.freeze({blue:'#3068CA',green:'#1C7A4B',orange:'#9D5C25',red:'#C92F34',purple:'#9043D3',teal:'#207585',gold:'#7E681E',amber:'#8F6322',star:'#FFC233',reading:'#3C775C',done:'#2D7854',gray:'#6A6A6F',faint:'#8B95A2',muted:'#6E6E73',text:'#1C1C1E',tint:0.18,dark:false});
   constructor({ Zotero, model, marquee, reading, storage, legacy = {}, catalog = [], ownCatalog = false, citations, io, paths, loadScript = null }) {
     Object.assign(this, { Z: Zotero, model, marquee, reading, storage, legacy, io, paths, loadScript });
     this.windows = new Map(); this.columns = []; this.observers = [];
@@ -25,18 +27,18 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this._journalsBuiltCatalog = this.catalog;
     this._journalsBuiltCatalogLen = this.catalog.length;
     this.citationTools = citations || (typeof CustomStyleCitations !== "undefined" ? CustomStyleCitations : require("./citations.js"));
-    this.citationFormats = typeof CustomStyleCitationFormats !== "undefined" ? CustomStyleCitationFormats : require("./citation-formats.js");
-    this.supplementaryTools = typeof CustomStyleSupplementary !== "undefined" ? CustomStyleSupplementary : require("./supplementary.js");
+    this._citationFormats = typeof CustomStyleCitationFormats !== "undefined" ? CustomStyleCitationFormats : null;
+    this._supplementaryTools = typeof CustomStyleSupplementary !== "undefined" ? CustomStyleSupplementary : null;
     this.SUPPLEMENTARY_TAG = 'style-custom:supplementary';
-    this.discoverTools = typeof CustomStyleDiscover !== "undefined" ? CustomStyleDiscover : require("./discover.js");
+    this._discoverTools = typeof CustomStyleDiscover !== "undefined" ? CustomStyleDiscover : null;
     this.signalTools = typeof CustomStylePaperSignals !== "undefined" ? CustomStylePaperSignals : require("./paper-signals.js");
-    this.attentionTools = typeof CustomStyleAttention !== "undefined" ? CustomStyleAttention : require("./attention.js");
-    this.legacyReading = typeof CustomStyleLegacyReading !== "undefined" ? CustomStyleLegacyReading : require("./legacy-reading.js");
+    this._attentionTools = typeof CustomStyleAttention !== "undefined" ? CustomStyleAttention : null;
+    this._legacyReading = typeof CustomStyleLegacyReading !== "undefined" ? CustomStyleLegacyReading : null;
     this.journalTools2 = typeof CustomStyleJournalMetrics !== "undefined" ? CustomStyleJournalMetrics : require("./journal-metrics.js");
     this._portraitTools = typeof CustomStyleAuthorPortrait !== "undefined" ? CustomStyleAuthorPortrait : null;
     this.fileTools = typeof CustomStyleAttachmentKinds !== "undefined" ? CustomStyleAttachmentKinds : require("./attachment-kinds.js");
     this._factTools = typeof CustomStyleLibraryFacts !== "undefined" ? CustomStyleLibraryFacts : null;
-    this.itemKinds = typeof CustomStyleItemKinds !== "undefined" ? CustomStyleItemKinds : require("./item-kinds.js");
+    this._itemKinds = typeof CustomStyleItemKinds !== "undefined" ? CustomStyleItemKinds : null;
     this._patentTools = typeof CustomStylePatents !== "undefined" ? CustomStylePatents : null;
     this.journalIdentity = typeof CustomStyleJournalIdentity !== "undefined" ? CustomStyleJournalIdentity : require("./journal-identity.js");
     this.affiliationTools = typeof CustomStyleAffiliations !== "undefined" ? CustomStyleAffiliations : require("./affiliations.js");
@@ -63,7 +65,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     this.i18n=typeof CustomStyleI18N!=='undefined'?CustomStyleI18N:require('./i18n.js');
     try{this.i18n.load(typeof CustomStyleStrings!=='undefined'?CustomStyleStrings:require('./strings.js'));}catch(error){}
     this.settingsTools=typeof CustomStyleSettingsSchema!=='undefined'?CustomStyleSettingsSchema:require('./settings-schema.js');this.settingsSchema=this.settingsTools.schema;
-    this.workspaceTools=typeof CustomStyleWorkspace!=="undefined"?CustomStyleWorkspace:require("./workspace.js");
+    this._workspaceTools = typeof CustomStyleWorkspace !== "undefined" ? CustomStyleWorkspace : null;
     this._Workbench = typeof CustomStyleWorkbench !== "undefined" ? CustomStyleWorkbench : null;
     this._jcrBrowser = typeof CustomStyleJCRBrowser !== "undefined" ? CustomStyleJCRBrowser : undefined;
     this._Library = typeof CustomStyleLibrary !== "undefined" ? CustomStyleLibrary : null;
@@ -103,6 +105,62 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     const CollectionCounts=typeof CustomStyleCollectionCounts!=="undefined"?CustomStyleCollectionCounts:require("./collection-counts.js");
     this.collectionCounts=CollectionCounts.create({Zotero:this.Z,runtime:this});
   }
+  get citationFormats() {
+    if (!this._citationFormats) {
+      if (typeof CustomStyleCitationFormats === "undefined" && typeof this.loadScript === "function") this.loadScript("citation-formats");
+      this._citationFormats = typeof CustomStyleCitationFormats !== "undefined" ? CustomStyleCitationFormats : require("./citation-formats.js");
+    }
+    return this._citationFormats;
+  }
+  set citationFormats(value) { this._citationFormats = value; }
+  get supplementaryTools() {
+    if (!this._supplementaryTools) {
+      if (typeof CustomStyleSupplementary === "undefined" && typeof this.loadScript === "function") this.loadScript("supplementary");
+      this._supplementaryTools = typeof CustomStyleSupplementary !== "undefined" ? CustomStyleSupplementary : require("./supplementary.js");
+    }
+    return this._supplementaryTools;
+  }
+  set supplementaryTools(value) { this._supplementaryTools = value; }
+  get discoverTools() {
+    if (!this._discoverTools) {
+      if (typeof CustomStyleDiscover === "undefined" && typeof this.loadScript === "function") this.loadScript("discover");
+      this._discoverTools = typeof CustomStyleDiscover !== "undefined" ? CustomStyleDiscover : require("./discover.js");
+    }
+    return this._discoverTools;
+  }
+  set discoverTools(value) { this._discoverTools = value; }
+  get attentionTools() {
+    if (!this._attentionTools) {
+      if (typeof CustomStyleAttention === "undefined" && typeof this.loadScript === "function") this.loadScript("attention");
+      this._attentionTools = typeof CustomStyleAttention !== "undefined" ? CustomStyleAttention : require("./attention.js");
+    }
+    return this._attentionTools;
+  }
+  set attentionTools(value) { this._attentionTools = value; }
+  get legacyReading() {
+    if (!this._legacyReading) {
+      if (typeof CustomStyleLegacyReading === "undefined" && typeof this.loadScript === "function") this.loadScript("legacy-reading");
+      this._legacyReading = typeof CustomStyleLegacyReading !== "undefined" ? CustomStyleLegacyReading : require("./legacy-reading.js");
+    }
+    return this._legacyReading;
+  }
+  set legacyReading(value) { this._legacyReading = value; }
+  get itemKinds() {
+    if (!this._itemKinds) {
+      if (typeof CustomStyleItemKinds === "undefined" && typeof this.loadScript === "function") this.loadScript("item-kinds");
+      this._itemKinds = typeof CustomStyleItemKinds !== "undefined" ? CustomStyleItemKinds : require("./item-kinds.js");
+    }
+    return this._itemKinds;
+  }
+  set itemKinds(value) { this._itemKinds = value; }
+  get workspaceTools() {
+    if (!this._workspaceTools) {
+      if (typeof CustomStyleWorkspace === "undefined" && typeof this.loadScript === "function") this.loadScript("workspace");
+      this._workspaceTools = typeof CustomStyleWorkspace !== "undefined" ? CustomStyleWorkspace : require("./workspace.js");
+    }
+    return this._workspaceTools;
+  }
+  set workspaceTools(value) { this._workspaceTools = value; }
   get portraitTools() {
     if (!this._portraitTools) {
       if (typeof CustomStyleAuthorPortrait === "undefined" && typeof this.loadScript === "function") this.loadScript("author-portrait");
@@ -175,6 +233,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   set jcrBrowser(value) { this._jcrBrowser = value; }
   ensureWorkbench() {
     if (!this._Workbench) {
+      if (typeof CustomStyleJCRCategories === "undefined" && typeof this.loadScript === "function") this.loadScript("jcr-categories");
       if (typeof CustomStyleJCRBrowser === "undefined" && typeof this.loadScript === "function") this.loadScript("jcr-browser");
       if (typeof CustomStyleWorkbench === "undefined" && typeof this.loadScript === "function") this.loadScript("workbench");
       if (typeof CustomStyleJCRBrowser !== "undefined" && this._jcrBrowser === undefined) this._jcrBrowser = CustomStyleJCRBrowser;
@@ -438,7 +497,14 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     if (!this.i18n) return 'en-US';
     let choice = 'en-US';
     try { choice = this.pref('language', 'en-US'); } catch (error) { }
-    return this.i18n.use(choice, this.Z);
+    const used = this.i18n.use(choice, this.Z);
+    if (typeof this.loadScript === 'function' && typeof this.i18n.pruneUnused === 'function') {
+      this.i18n.pruneUnused(() => {
+        this.loadScript('strings', { force: true });
+        if (typeof CustomStyleStrings !== 'undefined') this.i18n.load(CustomStyleStrings);
+      });
+    }
+    return used;
   }
 
   featureEnabled(id) { return this.pref('feature.'+id,true)!==false; }
@@ -1435,11 +1501,7 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     // gold sat at 2.1 against white and blue at 4.7, so one badge shouted and
     // another was hard to read, which is what made the row look loud.
     // The pill tint is raised instead, so the softness lives in the fills.
-    return dark
-      // Lifted a step in saturation from the first pastel set, which read as
-      // muddy on a white ground; the evenness across hues is kept.
-      ? {blue:'#7EA3E1',green:'#2BB771',orange:'#D79256',red:'#E3888B',purple:'#BC8EE5',teal:'#2FB0C9',gold:'#C09D2D',amber:'#D1963D',star:'#FFD35C',reading:'#7FC3A3',done:'#3FA372',gray:'#98989D',faint:'#676770',muted:'#A0A0A6',text:'#E8E8ED',tint:0.28,dark:true}
-      : {blue:'#3068CA',green:'#1C7A4B',orange:'#9D5C25',red:'#C92F34',purple:'#9043D3',teal:'#207585',gold:'#7E681E',amber:'#8F6322',star:'#FFC233',reading:'#3C775C',done:'#2D7854',gray:'#6A6A6F',faint:'#8B95A2',muted:'#6E6E73',text:'#1C1C1E',tint:0.18,dark:false};
+    return dark ? CustomStyleRuntime.DARK_PALETTE : CustomStyleRuntime.LIGHT_PALETTE;
   }
   tint(hex, alpha) {
     const n = parseInt(hex.slice(1), 16);
@@ -2417,53 +2479,114 @@ var CustomStyleRuntime = class CustomStyleRuntime {
 
   // Painted as a bar down the end of the row, not a background wash: a filled
   // row fights Zotero's own selection and alternating stripes.
-  paintHighlights(win, state) {
-    for (const row of win.document.querySelectorAll('#zotero-items-tree .row')) {
-      const item = win.ZoteroPane?.itemsView?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref;
-      let bar = row.querySelector('.style-custom-highlight');
-      const key = this.isRegular(item) ? this.highlightOf(item) : null;
-      if (!key) { bar?.remove(); continue; }
-      if (!bar) {
-        bar = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
-        bar.className = 'style-custom-highlight';
-        bar.setAttribute('aria-hidden', 'true');
-        bar.style.cssText = 'position:absolute;inset-inline-end:0;inset-block:2px;width:3px;border-radius:2px;pointer-events:none;';
-        if (!row.style.position) { state.highlightRows ||= new Map(); state.highlightRows.set(row, row.style.position); row.style.position = 'relative'; }
-        row.appendChild(bar);
-        state.titleNodes.add(bar);
-      }
-      bar.style.background = this.palette(win.document)[key];
+  paintHighlightRow(row, item, state, win, P) {
+    let bar = row.querySelector('.style-custom-highlight');
+    const key = this.isRegular(item) ? this.highlightOf(item) : null;
+    if (!key) { bar?.remove(); return; }
+    if (!bar) {
+      bar = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+      bar.className = 'style-custom-highlight';
+      bar.setAttribute('aria-hidden', 'true');
+      bar.style.cssText = 'position:absolute;inset-inline-end:0;inset-block:2px;width:3px;border-radius:2px;pointer-events:none;';
+      if (!row.style.position) { state.highlightRows ||= new Map(); state.highlightRows.set(row, row.style.position); row.style.position = 'relative'; }
+      row.appendChild(bar);
+      state.titleNodes.add(bar);
+    }
+    const bg = P[key];
+    if (bar.dataset.styleCustomHighlightBg !== bg) {
+      bar.style.background = bg;
+      bar.dataset.styleCustomHighlightBg = bg;
     }
   }
 
-  enhanceTitles(win,state,records) {
-    for(const row of win.document.querySelectorAll('#zotero-items-tree .row')) {
-      const item=win.ZoteroPane?.itemsView?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref;
-      this.paintKind(row,item,state,win);
-      if(!this.isRegular(item))continue;
-      this.paintVenue(row,item,state,win);
-      const cell=row.querySelector('.cell.title');if(!cell)continue;
-      const titleText=cell.querySelector('.cell-text');
-      if(titleText){
-        this.paintTitleMarkup(titleText,item,win);
-        if(this.featureEnabled('titleColumn')&&this.featureEnabled('ReadUnreadStatus')&&this.pref('unreadBold',false)&&this.state(item).status==='unread'){if(!state.titleWeights.has(titleText))state.titleWeights.set(titleText,titleText.style.fontWeight);titleText.style.fontWeight='700';}
-        else if(state.titleWeights.has(titleText)){if(titleText.style.fontWeight==='700')titleText.style.fontWeight=state.titleWeights.get(titleText);state.titleWeights.delete(titleText);}
-      }
-      let strip=cell.querySelector('.style-custom-title-strip'),tags=cell.querySelector('.style-custom-title-tags');
-      if(this.featureEnabled('titleColumn')&&this.pref('titleHeatmap',false)) {
-        const p=this.pageProgress(item);
-        if(p.total){if(!strip){strip=win.document.createElementNS('http://www.w3.org/1999/xhtml','span');strip.className='style-custom-title-strip';strip.setAttribute('aria-hidden','true');strip.style.cssText='position:absolute;left:0;right:0;bottom:0;height:3px;pointer-events:none;';if(!cell.style.position){state.titlePositions.set(cell,cell.style.position);cell.style.position='relative';}cell.appendChild(strip);state.titleNodes.add(strip);}
-          const bins=Math.min(60,p.total),colors=[];for(let b=0;b<bins;b++){let seconds=0;for(let page=Math.floor(b*p.total/bins);page<Math.floor((b+1)*p.total/bins);page++)seconds+=Number(p.pages[page])||0;const a=seconds?Math.min(.8,.15+Math.log1p(seconds)/10):0;colors.push(`rgba(36,92,120,${a}) ${b/bins*100}% ${((b+1)/bins)*100}%`);}strip.style.background='linear-gradient(90deg,'+colors.join(',')+')';}
-        else strip?.remove();
-      }else strip?.remove();
-      if(this.featureEnabled('titleColumn')&&this.pref('titleTags',false)) {
-        if(!tags){tags=win.document.createElementNS('http://www.w3.org/1999/xhtml','span');tags.className='style-custom-title-tags';tags.style.cssText='font-size:11px;white-space:nowrap;pointer-events:none;';cell.appendChild(tags);state.titleNodes.add(tags);}
-        tags.replaceChildren();const visible=this.displayTags(item).slice(0,this.getSetting('titleTagLimit'));const rating=this.state(item).rating;if(rating)visible.unshift({tag:'★'.repeat(rating),color:null});
-        for(const value of visible){const badge=win.document.createElementNS('http://www.w3.org/1999/xhtml','span');badge.textContent=value.tag;badge.title=value.tag;badge.style.marginInlineStart='4px';if(value.color)badge.style.color=value.color;tags.appendChild(badge);}
-      }else tags?.remove();
+  paintHighlights(win, state, rowPairs = null) {
+    const P = this.palette(win.document);
+    if (rowPairs) {
+      for (const [row, item] of rowPairs) this.paintHighlightRow(row, item, state, win, P);
+      return;
     }
-    this.paintHighlights(win,state);
-    for(const n of [...state.titleNodes])if(!n.isConnected)state.titleNodes.delete(n);
+    const view = win.ZoteroPane?.itemsView;
+    for (const row of win.document.querySelectorAll('#zotero-items-tree .row')) {
+      const item = view?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref;
+      this.paintHighlightRow(row, item, state, win, P);
+    }
+  }
+
+  enhanceTitles(win, state, records, rowPairs = null) {
+    const P = this.palette(win.document);
+    const titleCol = this.featureEnabled('titleColumn');
+    const wantUnreadBold = titleCol && this.featureEnabled('ReadUnreadStatus') && this.pref('unreadBold', false);
+    const wantHeatmap = titleCol && this.pref('titleHeatmap', false);
+    const wantTitleTags = titleCol && this.pref('titleTags', false);
+    const tagLimit = wantTitleTags ? this.getSetting('titleTagLimit') : 0;
+    const pubCol = this.featureEnabled('publicationColumn') !== false;
+    const view = rowPairs ? null : win.ZoteroPane?.itemsView;
+    const entries = rowPairs || [...win.document.querySelectorAll('#zotero-items-tree .row')]
+      .map(row => [row, view?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref]);
+    for (const [row, item] of entries) {
+      this.paintKind(row, item, state, win);
+      this.paintHighlightRow(row, item, state, win, P);
+      if (!this.isRegular(item)) continue;
+      this.paintVenue(row, item, state, win, P, pubCol);
+      const cell = row.querySelector('.cell.title');
+      if (!cell) continue;
+      const titleText = cell.querySelector('.cell-text');
+      if (titleText) {
+        this.paintTitleMarkup(titleText, item, win);
+        if (wantUnreadBold && this.state(item).status === 'unread') {
+          if (!state.titleWeights.has(titleText)) state.titleWeights.set(titleText, titleText.style.fontWeight);
+          if (titleText.style.fontWeight !== '700') titleText.style.fontWeight = '700';
+        } else if (state.titleWeights.has(titleText)) {
+          if (titleText.style.fontWeight === '700') titleText.style.fontWeight = state.titleWeights.get(titleText);
+          state.titleWeights.delete(titleText);
+        }
+      }
+      let strip = cell.querySelector('.style-custom-title-strip'), tags = cell.querySelector('.style-custom-title-tags');
+      if (wantHeatmap) {
+        const p = this.pageProgress(item);
+        if (p.total) {
+          if (!strip) {
+            strip = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+            strip.className = 'style-custom-title-strip';
+            strip.setAttribute('aria-hidden', 'true');
+            strip.style.cssText = 'position:absolute;left:0;right:0;bottom:0;height:3px;pointer-events:none;';
+            if (!cell.style.position) { state.titlePositions.set(cell, cell.style.position); cell.style.position = 'relative'; }
+            cell.appendChild(strip);
+            state.titleNodes.add(strip);
+          }
+          const bins = Math.min(60, p.total), colors = [];
+          for (let b = 0; b < bins; b++) {
+            let seconds = 0;
+            for (let page = Math.floor(b * p.total / bins); page < Math.floor((b + 1) * p.total / bins); page++) seconds += Number(p.pages[page]) || 0;
+            const a = seconds ? Math.min(.8, .15 + Math.log1p(seconds) / 10) : 0;
+            colors.push(`rgba(36,92,120,${a}) ${b / bins * 100}% ${((b + 1) / bins) * 100}%`);
+          }
+          strip.style.background = 'linear-gradient(90deg,' + colors.join(',') + ')';
+        } else strip?.remove();
+      } else strip?.remove();
+      if (wantTitleTags) {
+        if (!tags) {
+          tags = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+          tags.className = 'style-custom-title-tags';
+          tags.style.cssText = 'font-size:11px;white-space:nowrap;pointer-events:none;';
+          cell.appendChild(tags);
+          state.titleNodes.add(tags);
+        }
+        tags.replaceChildren();
+        const visible = this.displayTags(item).slice(0, tagLimit);
+        const rating = this.state(item).rating;
+        if (rating) visible.unshift({tag: '★'.repeat(rating), color: null});
+        for (const value of visible) {
+          const badge = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+          badge.textContent = value.tag;
+          badge.title = value.tag;
+          badge.style.marginInlineStart = '4px';
+          if (value.color) badge.style.color = value.color;
+          tags.appendChild(badge);
+        }
+      } else tags?.remove();
+    }
+    for (const n of [...state.titleNodes]) if (!n.isConnected) state.titleNodes.delete(n);
     for (const map of [state.titlePositions, state.titleWeights, state.venueColors, state.highlightRows]) {
       for (const node of map?.keys() || []) if (!node.isConnected) map.delete(node);
     }
@@ -2474,11 +2597,14 @@ var CustomStyleRuntime = class CustomStyleRuntime {
      Release our previous minimum before measuring, so grid stretching cannot
      keep an old height alive after the content shrinks. */
   fixItemPaneRows(doc) {
-    this.restoreItemPaneRows(doc);
+    const extras = doc.querySelectorAll('#zotero-item-pane .meta-row editable-text[fieldname="extra"][multiline]');
+    const marked = doc.querySelectorAll('#zotero-item-pane .meta-row[data-style-custom-row-height]');
+    if (!extras.length && !marked.length) return 0;
+    if (marked.length) this.restoreItemPaneRows(doc, marked);
     let fixed = 0;
-    for (const row of doc.querySelectorAll('#zotero-item-pane .meta-row')) {
-      const value = row.querySelector('editable-text[fieldname="extra"][multiline]');
-      if (!value) continue;
+    for (const value of extras) {
+      const row = value.closest?.('.meta-row');
+      if (!row) continue;
       const need = value.getBoundingClientRect?.().height || 0, have = row.getBoundingClientRect?.().height || 0;
       if (need > have + 1) {
         this.itemPaneRowHeights ||= new WeakMap();
@@ -2493,8 +2619,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     }
     return fixed;
   }
-  restoreItemPaneRows(doc) {
-    for (const row of doc.querySelectorAll('#zotero-item-pane .meta-row[data-style-custom-row-height]')) {
+  restoreItemPaneRows(doc, preMarked = null) {
+    const rows = preMarked || doc.querySelectorAll('#zotero-item-pane .meta-row[data-style-custom-row-height]');
+    for (const row of rows) {
       const owned = this.itemPaneRowHeights?.get(row);
       if (owned && row.style.getPropertyValue('min-height') === owned.applied) {
         if (owned.previous) row.style.setProperty('min-height', owned.previous, owned.priority);
@@ -2519,22 +2646,32 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   // The journal's own name, in its publisher's colour: Science reads red and
   // Cell blue in Zotero's own Publication column, with no second column needed.
   // The previous colour is kept so the cell can be given back as it was.
-  paintVenue(row,item,state,win) {
-    const cell=row.querySelector('.cell.publicationTitle');
-    const text=cell?.querySelector('.cell-text')||cell;
-    if(!text)return;
-    state.venueColors||=new Map();
-    const found=this.featureEnabled('publicationColumn')!==false?this.journalIdentityOf(item):null;
-    if(found){
-      const P=this.palette(win.document);
-      const tone=this.journalIdentity.colours(found.identity,{dark:P.dark});
-      if(!state.venueColors.has(text))state.venueColors.set(text,[text.style.color,text.style.fontWeight]);
-      text.style.color=tone.ink;
-      text.style.fontWeight='600';
-      text.dataset.styleCustomVenue=found.identity.family;
-    }
-    else if(state.venueColors.has(text)){
-      const[color,weight]=state.venueColors.get(text);text.style.color=color;text.style.fontWeight=weight;delete text.dataset.styleCustomVenue;state.venueColors.delete(text);
+  paintVenue(row, item, state, win, P = null, enabled = undefined) {
+    const cell = row.querySelector('.cell.publicationTitle');
+    const text = cell?.querySelector('.cell-text') || cell;
+    if (!text) return;
+    state.venueColors ||= new Map();
+    const allowed = enabled !== undefined ? enabled : this.featureEnabled('publicationColumn') !== false;
+    const found = allowed ? this.journalIdentityOf(item) : null;
+    if (found) {
+      const pal = P || this.palette(win.document);
+      const tone = this.journalIdentity.colours(found.identity, {dark: pal.dark});
+      const family = found.identity.family;
+      if (text.dataset.styleCustomVenue === family && text.dataset.styleCustomVenueInk === tone.ink && state.venueColors.has(text)) {
+        return;
+      }
+      if (!state.venueColors.has(text)) state.venueColors.set(text, [text.style.color, text.style.fontWeight]);
+      text.style.color = tone.ink;
+      text.style.fontWeight = '600';
+      text.dataset.styleCustomVenue = family;
+      text.dataset.styleCustomVenueInk = tone.ink;
+    } else if (state.venueColors.has(text)) {
+      const [color, weight] = state.venueColors.get(text);
+      text.style.color = color;
+      text.style.fontWeight = weight;
+      delete text.dataset.styleCustomVenue;
+      delete text.dataset.styleCustomVenueInk;
+      state.venueColors.delete(text);
     }
   }
   // Europe PMC hands back every supplementary file of an article as one zip.
@@ -4244,9 +4381,11 @@ var CustomStyleRuntime = class CustomStyleRuntime {
   }
 
   reclassifyStoredNews() {
+    const rows = this.watchedAuthors?.() || [];
+    if (!rows.length) return 0;
     let moved = 0;
     const library = typeof this.libraryPapers === 'function' ? this.libraryPapers() : [];
-    for (const row of this.watchedAuthors?.() || []) {
+    for (const row of rows) {
       const before = JSON.stringify([row.news, row.unverified]);
       moved += CustomStyleRuntime.reclassifyNewsRow(row, null, {library}).moved;
       if (JSON.stringify([row.news, row.unverified]) !== before) this.dirty = true;
@@ -6377,9 +6516,11 @@ var CustomStyleRuntime = class CustomStyleRuntime {
      is demoted to a candidate for the reader to confirm; the plan, derived
      from the wrong paper, is dropped, and nothing else is deleted. No request. */
   recheckStoredLinks() {
-    const tools = this.discoverTools, store = this.readingPathStore();
+    const store = this.readingPathStore();
+    const keys = Object.keys(store);
+    if (!keys.length) return 0;
     let demoted = 0;
-    for (const key of Object.keys(store)) {
+    for (const key of keys) {
       const [libraryID, itemKey] = key.split(':');
       const item = this.Z.Items.getByLibraryAndKey?.(Number(libraryID), itemKey);
       if (!item || !this.isRegular(item)) continue;
@@ -6388,8 +6529,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     return demoted;
   }
   demoteStoredLink(item) {
-    const tools = this.discoverTools, key = this.identity(item), saved = this.readingPathStore()[key];
+    const key = this.identity(item), saved = this.readingPathStore()[key];
     if (!saved) return false;
+    const tools = this.discoverTools;
     const record = this.bibliographyRecord(item);
     if (tools.bareDOI(record.DOI)) return false;
     const seedRow = (saved.plan?.steps || []).flatMap(step => [...(step.works || []), ...(step.more || [])]).find(work => work?.seed);
@@ -8430,33 +8572,9 @@ var CustomStyleRuntime = class CustomStyleRuntime {
     };
   }
 
-  paintKind(row, item, state, win) {
-    const cell = row.querySelector('.cell.title');
-    if (!cell || !item) return;
-    let chip = cell.querySelector('.style-custom-kind');
-    const found = this.itemKinds.kindOf({
-      itemType: item.itemType,
-      title: item.getField?.('title'),
-      filename: item.isAttachment?.() && !item.parentItemID ? (item.attachmentFilename || item.getField?.('title')) : ''
-    });
-    if (!found) { chip?.remove(); return; }
-    const P = this.palette(win.document);
-    const label = this.t(found.kind === 'patent' ? '특허' : '학위논문');
-    const tone = found.kind === 'patent' ? P.amber : P.purple;
-    if (!chip) {
-      chip = win.document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
-      chip.className = 'style-custom-kind';
-      // floor-exempt: user-requested original size (9px), 2026-10-04.
-      chip.style.cssText = `display:inline-block;margin-inline-end:6px;padding:0 5px;border-radius:3px;font-size:9px;font-weight:700;line-height:14px;vertical-align:middle;pointer-events:none;`;
-      cell.insertBefore(chip, cell.firstChild);
-      state.titleNodes.add(chip);
-    }
-    chip.textContent = label;
-    chip.style.background = this.tint(tone, 0.16);
-    chip.style.color = tone;
-    chip.title = found.kind === 'patent'
-      ? `${found.number ? this.t(this.itemKinds.office(found.number)) + ' ' + this.t('특허') + ' ' + found.number : this.t('특허')} · ${this.t(found.why === 'file name' ? '파일 이름으로 판별' : found.why === 'title' ? '제목으로 판별' : '항목 유형')}`
-      : `${this.t('학위논문')} · ${this.t(found.why === 'title' ? '제목으로 판별' : '항목 유형')}`;
+  // Thesis and patent prefix badges before titles are removed; clean up any stale chip on recycled rows.
+  paintKind(row) {
+    row?.querySelector?.('.cell.title .style-custom-kind')?.remove();
   }
 
   attachColumnFit(win, state) {
@@ -9108,12 +9226,15 @@ var CustomStyleRuntime = class CustomStyleRuntime {
       try {
         state.listBind?.();
         const view = win.ZoteroPane?.itemsView;
-        records = [...win.document.querySelectorAll('#zotero-items-tree .row')]
-          .map(row => view?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref)
-          .filter(item => this.isRegular(item));
+        const rowPairs = [];
+        for (const row of win.document.querySelectorAll('#zotero-items-tree .row')) {
+          const item = view?.getRow(Number(row.id.match(/-row-(\d+)$/)?.[1]))?.ref;
+          rowPairs.push([row, item]);
+          if (this.isRegular(item)) records.push(item);
+        }
         // Decorations also change DOM children. Do not observe our own paint.
         state.listObserver?.disconnect();
-        this.enhanceTitles(win,state,records);
+        this.enhanceTitles(win, state, records, rowPairs);
       } catch (error) { this.Z.logError(error); }
       finally { state.listObserve?.(); }
       if (!checkCitations) return;

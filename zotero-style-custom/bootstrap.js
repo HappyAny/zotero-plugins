@@ -14,8 +14,8 @@ async function startup({ id, version, rootURI }) {
   try {
     await Zotero.initializationPromise;
     const loadedScripts = new Set();
-    const loadScript = name => {
-      if (loadedScripts.has(name)) return true;
+    const loadScript = (name, { force = false } = {}) => {
+      if (!force && loadedScripts.has(name)) return true;
       Services.scriptloader.loadSubScript(rootURI + "src/" + name + ".js", globalThis);
       loadedScripts.add(name);
       return true;
@@ -23,8 +23,10 @@ async function startup({ id, version, rootURI }) {
     // Core modules required on the startup path. Heavy optional panels and tools
     // (workbench 801KB, reader-assist + helpers 504KB, selfcheck 206KB, paper-graph 70KB,
     // library 58KB, reading-path 51KB, jcr-browser 36KB, author-portrait 29KB, assist 24KB,
-    // library-facts + patents ~30KB = ~1.82 MB) load on first use via loadScript().
-    for (const name of ["settings-schema", "data", "journals", "citations", "citation-formats", "supplementary", "discover", "paper-signals", "attention", "legacy-reading", "journal-metrics", "i18n", "strings", "attachment-kinds", "item-kinds", "journal-identity", "jcr-categories", "affiliations", "failures", "brand-icons", "workspace", "reader-tools", "collection-counts", "marquee", "item-cells", "reading", "updater", "runtime"]) {
+    // library-facts + patents ~30KB, plus deferred helpers discover, workspace, attention,
+    // jcr-categories, citation-formats, supplementary, legacy-reading, item-kinds ~161KB
+    // = ~1.98 MB total) load on first use via loadScript().
+    for (const name of ["settings-schema", "data", "journals", "citations", "paper-signals", "journal-metrics", "i18n", "strings", "attachment-kinds", "journal-identity", "affiliations", "failures", "brand-icons", "reader-tools", "collection-counts", "marquee", "item-cells", "reading", "updater", "runtime"]) {
       loadScript(name);
     }
     const path = PathUtils.join(Zotero.DataDirectory.dir, "style-custom.json");
@@ -113,6 +115,7 @@ async function startup({ id, version, rootURI }) {
       if (jcrCatalogPromise) return jcrCatalogPromise;
       jcrCatalogPromise = (async () => {
         try {
+          loadScript("jcr-categories");
           const raw = await journalData("jcr-categories.json", "journal-catalog.json");
           jcrCatalog = globalThis.CustomStyleJCRCategories.create(raw, { copyPayload: false, freezeResult: false });
           jcrCatalogError = null;

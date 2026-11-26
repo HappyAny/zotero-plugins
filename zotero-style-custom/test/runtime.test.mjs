@@ -2532,9 +2532,9 @@ test('a watched author\'s "new papers" leave out repository deposits and say whi
   assert.match(source, /dataset\|other\|paratext\|peer-review\|grant\|libguides\|supplementary-materials/);
 });
 
-test('a patent PDF sitting as a bare attachment gets a chip in the title cell', async () => {
+test('patent PDFs and theses no longer get prefix chips in the title cell, and stale chips are cleaned up', async () => {
   const {parseHTML} = await import('linkedom');
-  const {document, window} = parseHTML('<html><body><div class="row"><span class="cell title"><span class="cell-text">US20240352440A1.pdf</span></span></div></body></html>');
+  const {document, window} = parseHTML('<html><body><div class="row"><span class="cell title"><span class="style-custom-kind">특허</span><span class="cell-text">US20240352440A1.pdf</span></span></div></body></html>');
   const {plugin} = fixture();
   plugin.applyLocale();
   const state = {titleNodes: new Set()};
@@ -2542,25 +2542,21 @@ test('a patent PDF sitting as a bare attachment gets a chip in the title cell', 
     isAttachment: () => true, isRegularItem: () => false, getField: key => key === 'title' ? 'US20240352440A1.pdf' : ''};
   const row = document.querySelector('.row');
   plugin.paintKind(row, attachment, state, window);
-  const chip = row.querySelector('.style-custom-kind');
-  assert.ok(chip, 'a chip is drawn before the title');
-  assert.equal(chip.textContent, '특허');
-  assert.match(chip.title, /미국 특허 US20240352440A1/);
-  assert.match(chip.title, /파일 이름으로 판별/);
-  assert.equal(row.querySelector('.cell.title').firstChild, chip, 'and it leads the cell');
-  // A thesis by its item type.
+  assert.equal(row.querySelector('.style-custom-kind'), null, 'patent attachment gets no prefix chip and stale chip is removed');
+  assert.equal(row.querySelector('.cell-text').textContent, 'US20240352440A1.pdf');
+  // A thesis by its item type also gets no prefix chip.
   const thesis = {itemType: 'thesis', isAttachment: () => false, isRegularItem: () => true, getField: key => key === 'title' ? 'Acetate metabolism' : ''};
   plugin.paintKind(row, thesis, state, window);
-  assert.equal(row.querySelector('.style-custom-kind').textContent, '학위논문');
-  // A paper takes the chip away again when the row is recycled.
+  assert.equal(row.querySelector('.style-custom-kind'), null, 'thesis gets no prefix chip');
+  // A regular paper also stays clean.
   const paper = {itemType: 'journalArticle', isAttachment: () => false, isRegularItem: () => true, getField: key => key === 'title' ? 'Structure of a SMC complex' : ''};
   plugin.paintKind(row, paper, state, window);
   assert.equal(row.querySelector('.style-custom-kind'), null);
 });
 
-test('English main-list title enhancement translates thesis and patent badges and offices while preserving item text', async () => {
+test('main-list title enhancement omits thesis and patent badges while preserving item text, palette reuse and item-pane fast exit', async () => {
   const {parseHTML} = await import('linkedom');
-  const {document, window} = parseHTML('<html><body><div id="zotero-items-tree"></div></body></html>');
+  const {document, window} = parseHTML('<html><body><div id="zotero-items-tree"></div><div id="zotero-item-pane"><div class="meta-row"><span>Title</span></div></div></body></html>');
   const {plugin, item, Z} = fixture();
   Z.Prefs.set('extensions.style-custom.language', 'en-US'); plugin.applyLocale();
   const inputs = [
@@ -2584,20 +2580,18 @@ test('English main-list title enhancement translates thesis and patent badges an
   plugin.featureEnabled = () => false;
   try {
     plugin.enhanceTitles(window, state);
-    const chips = [...document.querySelectorAll('.style-custom-kind')];
-    assert.equal(chips.length, 9);
-    assert.deepEqual(chips.map(n => n.textContent), ['Thesis', 'Thesis', ...Array(7).fill('Patent')]);
-    assert.ok(chips.every(n => !/[\uac00-\ud7af]/.test(n.textContent + n.title)));
-    assert.match(chips[2].title, /US Patent US20240352440A1/);
-    assert.match(chips[5].title, /KR Patent/);
+    assert.equal(document.querySelectorAll('.style-custom-kind').length, 0, 'neither thesis nor patent prefix chips are rendered');
     assert.deepEqual([...document.querySelectorAll('.cell-text')].map(n => n.textContent), inputs.map(([, title]) => title));
-    // A language change repaints existing badges, including reused rows.
-    Z.Prefs.set('extensions.style-custom.language', 'ko-KR'); plugin.applyLocale();
-    plugin.enhanceTitles(window, state);
-    assert.equal(chips[0].textContent, '학위논문');
-    Z.Prefs.set('extensions.style-custom.language', 'en-US'); plugin.applyLocale();
-    plugin.enhanceTitles(window, state);
-    assert.equal(chips[0].textContent, 'Thesis');
+    // Palette returns frozen static references without per-cell allocation.
+    const p1 = plugin.palette(document), p2 = plugin.palette(document);
+    assert.strictEqual(p1, p2);
+    assert.equal(Object.isFrozen(p1), true);
+    // fixItemPaneRows exits early without triggering layout measurements when no multiline Extra field exists.
+    let measured = 0;
+    const metaRow = document.querySelector('#zotero-item-pane .meta-row');
+    metaRow.getBoundingClientRect = () => { measured++; return {height: 20}; };
+    assert.equal(plugin.fixItemPaneRows(document), 0);
+    assert.equal(measured, 0);
   } finally { plugin.i18n.use('ko-KR'); }
 });
 
